@@ -1,6 +1,6 @@
 # 阶段验收记录
 
-日期：2026-10-18（Asia/Shanghai）。状态：M0/M1、P01 本地与远端 CI 通过；P02a 契约先行，实际结果另记于文末。
+日期：2026-10-18（Asia/Shanghai）。状态：M0/M1、P01 本地与远端 CI 通过；P02a 亦已完成本地及远端完整 CI，实际结果见文末。
 
 ## 测试与构建
 
@@ -113,3 +113,9 @@ dbe61cf的push run39126867019三个job通过，但[PR run39126870907](https://gi
 ### P02a 最终审查修复与复验
 
 最终只读 QA 发现 `CampaignManagement.load()` 的 `Promise.all` 先网络/503、后另一请求401/403时，后到撤权未被观察。21:01:40 focused RED 实际4失败/14通过；每个请求独立观察授权失败再聚合，不等待另一挂起请求。新增6项deferred回归，晚到地图/备团/管理成功均不得恢复数据。21:02:04 全量前端最终 **59通过**，构建通过。21:03协调者再运行真实 Chrome `npm run test:e2e`，**3通过**，含原两流程与P02a，没有mock/retry或放宽断言。后端生产代码未改，沿用本轮37unit/28IT及真实重启证据，不声称重跑了新的Java检查。
+
+### P02a 远端 CI 完成
+
+代码提交 **8836abbcca9a28a2e130770cb9839e0136f51fcf** 已推送至原分支。经认证 GitHub API 按该 SHA 核对：[push run39129943816](https://github.com/xianchen233/dnd-roll/actions/runs/39129943816) 与 [pull_request run39129946834](https://github.com/xianchen233/dnd-roll/actions/runs/39129946834) 均 **completed/success，frontend/backend/browser 全部通过**。标准 Compose 的新鲜 V1/V2/V3 迁移、镜像构建/启动、NGINX HTTP/WS 与全部3条真实浏览器流程均有远端证据；非仅静态配置检查。
+
+PR #1 标题/说明已按最终 P01+P02a 范围更新，仍为 open draft、base main，未合并/发布。P02a 门槛完成；下一子包 P02b 尚未开工。交接文档后续提交不改变该代码 SHA 的测试证据，交付前另核对 PR 当前 HEAD 的 Checks。任务启动的本机 Java/Vite/PG 已核实后停止，测试数据与忽略产物保留。

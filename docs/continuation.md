@@ -5,10 +5,10 @@
 ## 本轮状态与下一步
 
 - **P01 已完成，禁止重复开发。** 本轮起点 `d9a0393` 工作区干净、与 origin 一致；其 [push CI](https://github.com/xianchen233/dnd-roll/actions/runs/39127654306) 与 [PR CI](https://github.com/xianchen233/dnd-roll/actions/runs/39127657531) 均 completed/success，核对后才开工 P02a。
-- **P02a 已实现并完成本地验收，等待本轮提交的远端 CI。** 契约先写 `contracts/scenes.md`，实际 RED/GREEN 见两端 TDD.md 与 verification.md。37 后端 unit、28 真实 PG/HTTP/WS、59 前端测试、构建、19 HTTP 操作契约、3 条真实 Chrome 流程、V2→V3 旧数据比较及真实 Java 进程重启全部通过。
+- **P02a 已完成并通过本地及远端完整 CI。** 代码提交 `8836abbcca9a28a2e130770cb9839e0136f51fcf` 的 [push CI](https://github.com/xianchen233/dnd-roll/actions/runs/39129943816) 与 [PR CI](https://github.com/xianchen233/dnd-roll/actions/runs/39129946834) 均 frontend/backend/browser success，含标准 Compose 部署和全部三条真实浏览器流程。 契约先写 `contracts/scenes.md`，实际 RED/GREEN 见两端 TDD.md 与 verification.md。37 后端 unit、28 真实 PG/HTTP/WS、59 前端测试、构建、19 HTTP 操作契约、3 条真实 Chrome 流程、V2→V3 旧数据比较及真实 Java 进程重启全部通过。
 - DM 创建多个空场景（创建不切图）、明确切换全团当前场景；玩家不能列出未激活场景。旧场景位置/版本/控制权保存；历史激活回执只返回原结果，不再次切图。服务器仅接受当前场景的移动/移动重放，前端隔离旧场景在途响应和重试。
 - V3 保留 V1/V2，回填当前场景指针并通过复合 FK 限制归属；P01/demo 在同一事务设置指针，demo 重启不重置选择。scene-command 回执独立命名空间，全局 actor→campaign 锁；与 P01 共用 campaignVersion。
-- 当前下一可执行步骤：统一检查并提交推送 P02a，核实该 SHA 的 push 与 PR CI 全绿；任何实际失败先修复，不能用重复运行掩盖断言失败。CI 后更新证据、PR 描述及本入口。**P02b 持久素材与地图配置仍未开工，P02 整体未完成。**
+- 下一可执行步骤：核对 Git / PR #1 当前 HEAD（交接文档提交也要查看 Checks），再进入 **P02b 持久素材与地图配置**，先素材契约和最小失败测试，再实现稳定 ID、上传校验、数据库引用与下载授权、Compose 持久目录。先验证玩家/其他战役无法取得 DM 原图、猜 ID/直链没有绕过，失败不留有效半成品，最后做文件与数据库实际重启。P02b 尚未开工，P02 整体仍未完成。
 
 ## 用户授权与开发约定
 
@@ -25,7 +25,7 @@
 
 V2 浏览器库升级前后逐项比较 5 个战役/场景、2 个棋子、controls 与旧回执数量一致。独立自动迁移 IT 另外逐行比较全部原表内容并验证跨团指针 FK。真实 Java 进程停止/同库重启后，当前指针、创建/切换/移动回执、旧场景位置与版本保持；demo 不重置选择，历史切换重放不重新切图。
 
-本机无 Docker，本轮容器构建/Compose/代理浏览器以远端 CI 为准。公网 TLS、触屏、容量、完整素材备份和异机恢复未验收；素材/地图配置 P02b、棋子作者 P02c、遮盖 P02d、整体验收 P02e 及 P03–P10/A 工作包继续见 work-packages.md。约 556 kB 主 chunk 提示保留为后续优化，不放宽检查。
+本机无 Docker；8836abb 的两次远端 CI 已实际通过容器构建、Compose、代理及三条浏览器流程。公网 TLS、触屏、容量、完整素材备份和异机恢复未验收；素材/地图配置 P02b、棋子作者 P02c、遮盖 P02d、整体验收 P02e 及 P03–P10/A 工作包继续见 work-packages.md。约 556 kB 主 chunk 提示保留为后续优化，不放宽检查。
 
 ## GitHub 与 CI
 
