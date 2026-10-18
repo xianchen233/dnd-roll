@@ -43,3 +43,7 @@
 - 尚未进行完整测试团、手机触控、性能/容量测量、完整备份与异机恢复。这些属于后续业务/发布阶段，未因本轮验收而标为完成。
 - 首版完整业务与模组/自动化仍待实现，按 `work-packages.md` 的P/A工作包继续。
 - 本地实现已提交。CLI push缺GitHub凭据，GitHub连接器写入返回403，因此尚无远端CI运行结果；解决认证/Contents写权限后推送，再验证CI。没有把CI配置的存在记为执行通过。
+
+## 远端CI首次执行
+
+2026-10-18，用户通过Desktop发布79cf832后，运行 [Build and test #1](https://github.com/xianchen233/dnd-roll/actions/runs/39124170015)：frontend与backend通过；browser在后端Docker构建时失败，还未执行浏览器步骤。Temurin构建镜像没有unzip，only-script Wrapper将ZIP替换为tar.gz，导致与ZIP的固定SHA-256不符。已为构建阶段补unzip，保留校验，需推送并等待新CI结果。此项为真实部署RED，不是业务单元测试失败。

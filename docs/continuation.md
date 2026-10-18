@@ -1,6 +1,6 @@
 # 继续工作的入口
 
-更新：2026-10-18，M0/M1本地验收完成，代码已提交；推送受GitHub认证/写入权限阻塞。**本文件用于上下文用尽或新会话接手，必须随着实际进度更新。**
+更新：2026-10-18，用户通过GitHub Desktop发布main，首轮CI前后端通过、Docker校验失败修复中。用户要求CI通过后才进入P01。**本文件用于上下文用尽或新会话接手，必须随着实际进度更新。**
 
 ## 用户已明确的授权与约束
 
@@ -33,10 +33,12 @@
 ## 当前下一步（按顺序）
 
 1. 本地检查与重启回放已完成，详见verification；不用因为旧会话的中断或代理不可用重做已通过检查。
-2. 首先解决GitHub认证/写权限并推送：`git fetch origin`，确认远端是否仍为空，再 `git push -u origin main`。现有本地提交不得丢失；远端若已有提交先审查并安全整合，严禁force覆盖。
+2. main已通过Desktop发布到79cf832，远端与本地初始两提交一致。首轮CI链接 https://github.com/xianchen233/dnd-roll/actions/runs/39124170015 ：frontend/backend成功，browser在Docker build失败；镜像无unzip使Wrapper自动改下载tar.gz，与固定ZIP的SHA-256不匹配。当前修复是在构建阶段安装unzip，保持相同ZIP与校验。推送修复再观察CI。CLI凭据仍未共享Desktop登录，必要时通过Desktop Push origin，不能标成尚未发布仓库。
 3. 查看远端CI三项job：frontend、backend、browser。browser使用Compose构建并启动标准部署，验证生产代理链的HTTP/WS；本机无Docker，不能提前标为通过。
 4. 有CI失败先修并添加必要回归；如CI未运行或权限受限，明确记录，不把配置存在当作执行成功。
 5. 当前框架批次交接完成后进入P01正式账号与邀请，再按work-packages推进P02场景/素材、P03角色卡。后续能力未实现，不能因当前40项检查通过而关闭整个产品计划。
+
+读取Actions时可用已连接GitHub的通用fetch读取 `/repos/xianchen233/dnd-roll/actions/runs`，再读取jobs/logs；专用fetch_commit_workflow_runs只筛PR事件，push会返回空。匿名API共享出口可能限流；不要重复匿名轮询。当前尚未开始P01编码。
 
 ## 当前机器的辅助环境（仅供接手定位，不是项目依赖）
 
