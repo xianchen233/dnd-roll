@@ -1,6 +1,16 @@
 # 继续工作的入口
 
-更新：2026-10-18（Asia/Shanghai）。最新分支、HEAD 和工作区以 `git status --short --branch` / `git log -5 --oneline` 为准。当前沿用 `feat/accounts-and-invitations` 和 [草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，未合并、未发布。
+更新：2026-10-19（Asia/Shanghai）。最新分支、HEAD 和工作区以 `git status --short --branch` / `git log -5 --oneline` 为准。当前沿用 `feat/accounts-and-invitations` 和 [草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，未合并、未发布。
+
+## 交给下一会话：P02d
+
+2026-10-19交接前再次核验：`a3e7f7ba9c2b66349e38df8f2c84ae087c9b60c0`工作区干净、与origin一致；[push39142300219](https://github.com/xianchen233/dnd-roll/actions/runs/39142300219)与[PR39142302856](https://github.com/xianchen233/dnd-roll/actions/runs/39142302856)均completed/success，frontend/backend/browser全绿。这是P02c最终交接HEAD的独立证据，不只引用代码5160c0f。以下本次仅补交接文档；其新HEAD Checks由下一会话开工时独立核对，不能将a3e7f7b绿灯当作新文档SHA结果。
+
+下一会话按AGENTS先读本文、verification、work-packages，再读product-design、implementation-plan、CONTEXT和contracts/README及scenes/assets/tokens契约。不重复P01/P02a/b/c；保留56后端unit、50真实PG/HTTP/WS、112前端测试、27契约操作和7真实浏览器全部既有覆盖。
+
+P02d先固定玩家安全图像/手动揭露的契约，再实际运行秘密像素泄漏的失败测试：玩家不能取得DM原图或遮盖区域原始像素，已公开内容再次遮盖不能声称从玩家缓存中撤回。覆盖直接URL、猜ID、跨团、撤权、历史回执、重连/切图及派生图缓存失效；客户端遮罩不能作为秘密边界，单位隐藏仍独立。随后实现服务端安全图像交付、DM手动揭露/遮盖及原生Pixi平移/缩放/网格校准/吸附/测距，按工作包先协调契约再分工，IT数据库串行使用。
+
+继续维护CHANGELOG Unreleased和实际RED/GREEN/验收/交接；沿用当前分支与草稿PR #1，不合并、不发布。P02d完成后才进入P02e整体验收，不能提前标整个P02完成。本机Java/Vite/PG已停止，凭据与运行时均在外层.tools；重启前核对端口和进程身份，不依赖旧代理或本聊天历史。
 
 ## 本轮状态与下一步
 

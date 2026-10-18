@@ -1,5 +1,19 @@
 # 阶段验收记录
 
+## 2026-10-19：P02d续接前的最终基线核验
+
+用户要求将下一阶段交接给下一会话，本次不实施P02d。交接前Git HEAD为
+`a3e7f7ba9c2b66349e38df8f2c84ae087c9b60c0`，工作区干净，与origin一致。
+[push39142300219](https://github.com/xianchen233/dnd-roll/actions/runs/39142300219)及
+[PR39142302856](https://github.com/xianchen233/dnd-roll/actions/runs/39142302856)均
+completed/success，frontend/backend/browser全绿；最终文档HEAD也已独立验收。
+这两条browser日志均确认7 passed（PR4.7m/push4.8m），随后素材/棋子两个seed及
+两个实际db/backend容器重启后的verify均PASS。原P02c代码验收和失败闭环见下文。
+
+本次仅更新交接文档，不新增生产行为，不重复运行本地测试。下一会话先核对本次
+交接提交的新HEAD Checks，再按continuation.md开始P02d契约及秘密像素泄漏实际RED。
+P02d/e未实现，P02整体未完成；继续沿用既有分支和草稿PR #1。
+
 ## P02c 开工核对（2026-10-18）
 
 沿用 `feat/accounts-and-invitations` 和 open/draft PR #1，开工 HEAD
