@@ -26,6 +26,7 @@ import org.springframework.web.socket.server.HandshakeInterceptor;
 @EnableWebSocketMessageBroker
 public class RealtimeConfiguration implements WebSocketMessageBrokerConfigurer {
     private final SessionSockets sockets = new SessionSockets();
+    public void closeUser(String username) { sockets.closeUser(username); }
     @Bean ServletListenerRegistrationBean<HttpSessionListener> sessionLifecycle() {
         return new ServletListenerRegistrationBean<>(new HttpSessionListener() {
             public void sessionDestroyed(HttpSessionEvent event) { sockets.close(event.getSession().getId()); }
@@ -36,7 +37,7 @@ public class RealtimeConfiguration implements WebSocketMessageBrokerConfigurer {
             public void afterConnectionEstablished(WebSocketSession socket) throws Exception {
                 var httpSession = (HttpSession) socket.getAttributes().get("httpSession");
                 var sessionId = (String) socket.getAttributes().get("httpSessionId");
-                sockets.register(sessionId, socket.getId(), () -> {
+                sockets.register(sessionId, socket.getId(), socket.getPrincipal().getName(), () -> {
                     try { socket.close(CloseStatus.POLICY_VIOLATION); } catch (IOException ignored) { /* Transport is already unavailable. */ }
                 });
                 try { httpSession.getCreationTime(); }

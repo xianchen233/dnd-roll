@@ -1,60 +1,69 @@
 # 继续工作的入口
 
-更新：2026-10-18，用户通过GitHub Desktop发布main，并已完成终端GCM设备授权，自动Git推送已可用。第二轮CI镜像构建成功，当前修复启动就绪检查；CI通过后才进入P01。**本文件用于上下文用尽或新会话接手，必须随着实际进度更新。**
+更新：2026-10-18。当前分支 `feat/accounts-and-invitations`，P01实现与本地验收完成，待推送/远端CI。
+**基线c57c35a已推送，第三轮CI全通过；已按用户要求通过CI后才开始P01。**
+本文件用于上下文用尽或新会话接手，必须随实际进度更新。
 
-## 用户已明确的授权与约束
+## 已明确的用户授权与约束
 
-- 已授权开始业务编码，并要求“整体框架 → 最小单元测试 → 继续代码 → 最终阶段”，按 TDD 执行，允许具体分工。
-- 指定仓库 `https://github.com/xianchen233/dnd-roll.git`，应用位于独立 `dnd-roll/`。本地规则材料和索引不进仓库。
-- 使用 frontend/backend/contracts/deploy/docs/.github/workflows 目录布局。
-- PostgreSQL放在Docker中作为标准开发和部署入口；本机便携式PG仅用于当前真实数据库验证。
-- 已有产品决策见 `product-design.md`、`design-map.md`、`decisions/`；无需重问设计目标。完整未完成工作见 `work-packages.md`。
-- 用户要求交接不依赖聊天上下文；不要把当前骨架冒称为全部产品完成。
+- 已授权持续编码及具体分工，按“整体框架 → 最小单元测试 → 实现 → 阶段验收”推进，遵循TDD。
+- 仓库 `https://github.com/xianchen233/dnd-roll.git`；本地 `D:/workspace/dnd/dnd-roll`。
+- PostgreSQL容器为标准部署；本机原生PG只用于本地测试。目录沿用frontend/backend/contracts/deploy/docs/CI。
+- 规则基线5R、既有产品决策见product-design/CONTEXT；不要重问已经决定的目标。当前P01没有D&D机制实现，无需规则查证。
+- 用户要求CI通过后进入下一阶段；已满足M0/M1门槛。新阶段仍需自身测试和CI通过，不能只引用旧基线。
+- 用户要求及时维护交接记录，并按Keep a Changelog维护根CHANGELOG.md；实际功能完成再加Unreleased条目，不伪造发布版本。
 
 ## 接手顺序
 
-1. 在应用仓库运行 `git status --short`、`git log -5 --oneline`，确认远端与未提交文件；不要重建/覆盖已有仓库。
-2. 读 `verification.md` 和 `implementation-plan.md`，再按当前工作包读取源文件与契约。
-3. 核实实际运行进程和端口；聊天中报告过的服务可能已经停止。不要重复启动同端口数据库或并发运行会改同库的集成测试。
-4. 从下面“当前下一步”继续；执行后更新本文件与验收记录。
+1. `git status --short`、`git log -5 --oneline`、检查当前分支/远端；保留未提交实现，禁止重建、reset或force覆盖。
+2. 读verification.md、work-packages.md及当前契约 `../contracts/accounts.md`，按下方下一步继续。
+3. 核实实际进程、端口和代理状态；不要并发运行会修改同一数据库的集成测试。
+4. 代理是否仍可用不是续接前提；源码、测试、TDD证据和本文件才是依据。
 
-## 已落地但需要区分验证层级
+## 已完成且有实际证据的基线
 
-- 前端React/TS/Pixi、API/状态/组件/STOMP替身测试；最终14测试通过、TypeScript与Vite构建通过；真实Chrome双context流程通过。
-- 后端Java25/Spring4.1.1、纯领域与应用/JDBC/会话/CSRF/STOMP/Flyway；最终16unit与9真实PG/HTTP/WS测试通过，0跳过。
-- 已修复Jackson浮点到整数静默转换；握手时物化CSRF令牌；已补退出关闭既有WebSocket。
-- 契约 OpenAPI3.1 与scene event schema已落地，`node scripts/check-contracts.mjs`通过。
-- 已修复默认fetch原生receiver、画布autoDensity裁切、scene版本不递增与demo重启恢复撤权；均有实际RED/GREEN。
-- Compose/NGINX/Dockerfile、PowerShell检查入口和CI已写，官方Maven Wrapper3.9.16已生成、校验并用于统一检查。
-- 本地main已提交实现，初始实现提交为 `3e3aa70`；后续交接提交请以 `git log` 为准。工作区应保持干净。
-- GitHub远端最初为空，**未推送成功**。CLI的Git Credential Manager无可用凭据，非交互push失败；已连接GitHub工具能读且metadata显示push权限，但实际create_file返回 `403 Resource not accessible by integration`，没有创建远端README或提交。不要因读取权限存在而继续假设可写，不要尝试绕过权限。
-- 需要用户在Git Credential Manager完成GitHub登录，或为连接的GitHub App授予此仓库实际Contents写权限；然后重新核实远端历史并推送。用户已授权推送，无需重问是否推送，仅缺实际认证/权限。
+- M0/M1：Java25/Spring4.1.1/PostgreSQL18.6、React/TS/Pixi、session/CSRF、权限过滤、网格移动、乐观版本、持久幂等回执、私有STOMP失效通知与重连。
+- 本地16后端unit、9真实PG/HTTP/WS、14前端测试、真实双Chrome上下文、构建和打包进程重启回放通过。
+- 曾发现并修复原生fetch receiver、autoDensity画布裁切、严格整数JSON、WS的CSRF/注销、scene版本、demo重启恢复撤权。实际RED/GREEN保留在backend/TDD.md和frontend/TDD.md。
+- 初始实现3e3aa70；交接79cf832。首轮CI的Docker无unzip导致ZIP SHA失败，d903d40补unzip；第二轮容器就绪curl错误56，c57c35a补有界retry-all-errors。
+- [基线CI成功](https://github.com/xianchen233/dnd-roll/actions/runs/39124712714)：c57c35aed9c7a52c11ab598937a5b537654eda64，frontend/backend/browser三个job均success，包含标准Compose镜像构建、启动和真实浏览器流程。
+- 尚未进行公网部署、完整M2业务、团测、容量测试、完整备份及异机恢复，不因框架通过CI而关闭这些工作包。
 
-## 当前下一步（按顺序）
+## 当前P01工作与责任
 
-1. 本地检查与重启回放已完成，详见verification；不用因为旧会话的中断或代理不可用重做已通过检查。
-2. main已通过Desktop发布到79cf832，远端与本地初始两提交一致。首轮CI链接 https://github.com/xianchen233/dnd-roll/actions/runs/39124170015 ：frontend/backend成功，browser在Docker build失败；镜像无unzip使Wrapper自动改下载tar.gz，与固定ZIP的SHA-256不匹配。当前修复是在构建阶段安装unzip，保持相同ZIP与校验。推送修复再观察CI。CLI凭据仍未共享Desktop登录，必要时通过Desktop Push origin，不能标成尚未发布仓库。
-3. 查看远端CI三项job：frontend、backend、browser。browser使用Compose构建并启动标准部署，验证生产代理链的HTTP/WS；本机无Docker，不能提前标为通过。
-4. 有CI失败先修并添加必要回归；如CI未运行或权限受限，明确记录，不把配置存在当作执行成功。
-5. 当前框架批次交接完成后进入P01正式账号与邀请，再按work-packages推进P02场景/素材、P03角色卡。后续能力未实现，不能因当前40项检查通过而关闭整个产品计划。
+契约详见 `../contracts/accounts.md`。实现已落地，未提交；P01的CI尚未运行，不应预先标阶段完成。代理均已交付，其可用性不影响接手。
 
-读取Actions时可用已连接GitHub的通用fetch读取 `/repos/xianchen233/dnd-roll/actions/runs`，再读取jobs/logs；专用fetch_commit_workflow_runs只筛PR事件，push会返回空。匿名API共享出口可能限流；不要重复匿名轮询。当前尚未开始P01编码。
+| 范围 | 当前责任 | 工作 |
+| --- | --- | --- |
+| backend/** | p01_backend | Bootstrap固定账号、战役创建、邀请/注册/接受、DM成员管理、版本/回执/撤权；先RED再实现及真实IT；V2迁移不能修改V1 |
+| frontend/** | p01_frontend | 创建战役、DM管理、fragment邀请页、受邀固定账号、既有账号接受；401/403清除地图；unit与真实E2E |
+| contracts/openapi.json、scripts/check-contracts.mjs | p01_contract_qa | 扩展机器契约与检查，随后只读安全审查 |
+| 其余contracts、docs、deploy、CHANGELOG、Git/CI/整合 | 协调者 | 契约协调、环境、最终浏览器与CI验收、统一提交 |
 
-最近CI为d903d40 / run39124457926：镜像已构建成功，前后端检查通过；browser因容器刚启动时curl连接重置(56)退出。已为curl加retry-all-errors并限制120秒，准备推送再观察。用户另要求Keep a Changelog，已建立CHANGELOG.md的Unreleased分类并在AGENTS.md要求随功能同步维护。
+重要约定：邀请明文仅首次返回，数据库及回执只存hash/metadata；重复创建返回token:null而不再发明文；分享放URL fragment不进入服务端日志。受邀注册事务内创建账号、成员与claim；重放已消费邀请不能恢复被移除成员。管理命令使用campaignVersion和持久requestId，独立于scene/token版本。P01新战役为空网格，作者入口属于P02。
 
-## 当前机器的辅助环境（仅供接手定位，不是项目依赖）
+## 下一步
 
-这些下载都在应用仓库外，不应提交。其他机器按README配置正常JDK/PostgreSQL即可。
+1. 本地最终证据已在verification.md：30后端unit+18真实PG/HTTP/WS、31前端unit/组件、构建、16HTTP操作契约、2条真实Chrome流程和真实Java进程重启全部通过。V1既有库已成功升级V2，M1回归保留。
+2. Root已核查实现、权限/回执、前端异步撤权，人工查看实际截图；README/deploy已切bootstrap owner，CHANGELOG按Keep a Changelog记录P01。
+3. 执行Git diff检查、提交并推送当前feature分支，创建可审阅PR并附到聊天。所有文件仍未提交，禁止丢弃。
+4. 观察当前提交的CI全通过，失败先修；不以旧基线绿灯冒充P01结果。更新本文件/verification/work-packages/CHANGELOG实际状态。
+5. 清理仅属于本任务的Java/Vite/PG进程，保留本地测试数据及产物。P01之后再按依赖进入P02场景/素材和P03角色卡，M2其余包仍待实现。
 
-- 工作区：`D:/workspace/dnd`；应用：`D:/workspace/dnd/dnd-roll`。
-- PowerShell7可用；Node24.21.0、npm11.19.0。Git如提示ownership，可对命令使用 `-c safe.directory=D:/workspace/dnd/dnd-roll`，不要放开全盘。
-- JDK：`D:/workspace/dnd/.tools/java/jdk-25.0.4.1+1`，Maven：`D:/workspace/dnd/.tools/apache-maven-3.9.16/bin/mvn.cmd`，缓存：`.tools/m2`。
-- 此机器C盘临时目录曾报权限错误，运行Java/浏览器测试时将 `TEMP`、`TMP` 指向工作区外层 `.tools/tmp`，并为Java设置 `JAVA_TOOL_OPTIONS=-Djava.io.tmpdir=D:/workspace/dnd/.tools/tmp`。这属于本机配置，不把路径写死到应用中，也不算行为RED。
-- 临时PostgreSQL18.6：`.tools/postgres/bin`，数据`.tools/pg-data`，回环`127.0.0.1:55432`；Windows下测试实例使用 `huge_pages=off` 排除巨页权限错误。连接配置在仓库外 `.tools/test-database.json`，**读取成环境变量，不打印或复制密码到文档/聊天**。
-- 本机Chrome：`C:/Program Files/Google/Chrome/Application/chrome.exe`；E2E可用 `E2E_CHROME_PATH`，CI使用Playwright Chromium。
-- 本轮临时Java/Vite/PostgreSQL测试服务在交接时关闭；数据与本地截图保留，接手不要假设8080/5173/55432仍有服务。浏览器测试账号配置在仓库外 `.tools/browser-credentials.json`，数据库配置 `.tools/browser-database.json`，不要打印或提交密码。
-- 之前沙箱网络受限；用户已切换完全权限。按当前工具策略执行，不要沿用旧会话的提权参数或旧进程编号。
+中途审查已发现并通过真实RED/GREEN修复：邀请消费后preview失败仍可登录并恢复accept；Unicode密码字符数两端一致；任一当前epoch的401/403都会废弃在途旧成功响应，不能重新显示被撤权地图；邀请到期时间统一PG微秒精度。测试专用Hikari池3避免小PG连接上限，生产配置未变。实际Java重启后权限/邀请/管理回执均已验收，不仅调用bootstrap模拟。
 
-## 续接后的默认方向
+## GitHub与CI访问
 
-当前M0/M1收敛后优先P01正式账号/邀请与P02/P03场景和角色卡。每包按TDD推进，规则相关实现先用本工作区dnd-rule-lookup核对5R；不要用2014研究结果替代新版依据。M2整个首版完成后再按依赖进入模组与自动化。
+- 用户先通过Desktop发布，随后完成Git Credential Manager设备授权。CLI `git push`已成功，自动推送可用；不要再让用户反复登录Desktop。
+- GitHub连接器读取Actions可用；先前写Contents返回403。正常代码推送用已认证Git，不读取或打印任何凭据。
+- 通用GitHub fetch可读 `/repos/xianchen233/dnd-roll/actions/runs`，然后用jobs/logs工具读取；专用fetch_commit_workflow_runs只筛PR，push可能空。匿名API共享出口可能限流，避免重复匿名轮询。
+- CI包含frontend、真实PG backend、Compose部署browser。每次以目标提交SHA核实结论。
+
+## 本机辅助环境（均在应用仓库外，不提交）
+
+- PowerShell7、Node24.21.0/npm11.19.0。Git ownership提示时仅对该命令加 `-c safe.directory=D:/workspace/dnd/dnd-roll`。
+- JDK `.tools/java/jdk-25.0.4.1+1`；Maven `.tools/apache-maven-3.9.16/bin/mvn.cmd`；依赖缓存 `.tools/m2`（均相对于D:/workspace/dnd）。
+- Java命令设置JAVA_HOME；TEMP/TMP设 `D:/workspace/dnd/.tools/tmp`，JAVA_TOOL_OPTIONS设 `-Djava.io.tmpdir=D:/workspace/dnd/.tools/tmp`，避免此机器C盘临时目录权限故障。Maven的-D参数用完整引号，避免PowerShell拆点号版本。
+- 当前PG已启动于127.0.0.1:55432，data `.tools/pg-data`，启动使用huge_pages=off。测试连接 `.tools/test-database.json`；browser库连接 `.tools/browser-database.json`。**读取为环境变量，禁止打印/复制密码。**
+- 当前Java/Vite测试服务仍运行，PID见 `.tools/browser-backend.pid`/`browser-frontend.pid`；停止前通过CIM核实命令行确为本任务。browser测试账号 `.tools/browser-credentials.json`，默认E2E需四个账号变量；本机Chrome路径 `C:/Program Files/Google/Chrome/Application/chrome.exe`。辅助脚本 `.tools/start-p01-browser.ps1` 和 `.tools/smoke-p01-restart.ps1` 均在应用仓库外，不提交、不打印凭据。
+- 当前完全权限；不要沿用旧沙箱的提权参数，也不要假设中断后的进程和代理仍在运行。

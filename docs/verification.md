@@ -1,6 +1,6 @@
-# M0/M1 验收记录
+# 阶段验收记录
 
-日期：2026-10-18（Asia/Shanghai）。状态：M0/M1本地功能验收完成；远端提交与容器CI结果见续接记录。
+日期：2026-10-18（Asia/Shanghai）。状态：M0/M1本地与远端CI通过；P01正在实现，结果单独列于文末。
 
 ## 测试与构建
 
@@ -34,7 +34,7 @@
 
 ## 当前范围
 
-本轮交付仓库框架与最小纵向切片；完整首版业务、模组与自动化见实施路线。demo 是显式启用的开发入口，账号密码从环境提供。正式的邀请、账号管理与场景作者入口尚属后续工作。
+M0/M1交付仓库框架与最小纵向切片；完整首版业务、模组与自动化见实施路线。demo 是显式启用的开发入口，账号密码从环境提供。正式的邀请与账号管理在P01推进，场景作者入口为P02。
 
 ## 尚未验证与后续工作
 
@@ -42,10 +42,32 @@
 - 外层TLS证书及反向代理链只完成配置与说明，仍需部署环境验证HTTPS和WSS。未部署到公网。
 - 尚未进行完整测试团、手机触控、性能/容量测量、完整备份与异机恢复。这些属于后续业务/发布阶段，未因本轮验收而标为完成。
 - 首版完整业务与模组/自动化仍待实现，按 `work-packages.md` 的P/A工作包继续。
-- 本地实现已提交。CLI push缺GitHub凭据，GitHub连接器写入返回403，因此尚无远端CI运行结果；解决认证/Contents写权限后推送，再验证CI。没有把CI配置的存在记为执行通过。
+- 原先CLI认证阻塞已在用户完成GCM授权后解除；基线已推送，远端CI实际结果见下文。新的P01提交仍须单独验收。
 
 ## 远端CI首次执行
 
 2026-10-18，用户通过Desktop发布79cf832后，运行 [Build and test #1](https://github.com/xianchen233/dnd-roll/actions/runs/39124170015)：frontend与backend通过；browser在后端Docker构建时失败，还未执行浏览器步骤。Temurin构建镜像没有unzip，only-script Wrapper将ZIP替换为tar.gz，导致与ZIP的固定SHA-256不符。已为构建阶段补unzip，保留校验，需推送并等待新CI结果。此项为真实部署RED，不是业务单元测试失败。
 
 [Build and test #2](https://github.com/xianchen233/dnd-roll/actions/runs/39124457926)（d903d40）：frontend/backend仍通过，前后端镜像均成功构建、PostgreSQL健康；紧接容器启动的curl遇到连接重置(56)，原有retry未涵盖此错误，browser尚未执行。就绪检查改为重试所有暂时错误、单次5秒、总重试120秒；没有跳过就绪检查或放宽业务测试断言。
+
+[Build and test #3](https://github.com/xianchen233/dnd-roll/actions/runs/39124712714)（c57c35a）：**frontend、backend、browser全部success**。标准Docker Compose的前后端镜像构建、PostgreSQL启动、代理HTTP/WS及真实双浏览器流程均有远端运行证据。至此M0/M1的容器检查门槛完成；公网TLS和完整产品验收仍另行进行。用户确认GCM终端授权后CLI推送已成功。
+
+## 当前P01
+
+在上述CI通过后开工，契约位于contracts/accounts.md，分支feat/accounts-and-invitations。以下为P01本地实际结果，远端CI另行记录。
+
+| 检查 | 实际结果 |
+| --- | --- |
+| 机器契约 | `node scripts/check-contracts.mjs`：16个HTTP操作通过；保留M1并增加账号、版本、秘密字段及fragment约束；聚焦检查器不冒充完整OpenAPI validator |
+| Java unit | 20:10:41，全量Maven `-Pintegration verify`中30通过，0失败/错误/跳过，无数据库的单元层包含bootstrap、policy、application及socket registry |
+| 真实PG/HTTP/WS | 同次verify共18通过，0失败/错误/跳过：AccountsIT9、FirstSliceIT5、RealtimeIT4；V1既有数据库成功升级V2 |
+| 前端 | 20:06:21，`npm test`共31通过；`npm run build` TypeScript/Vite通过，约550kB主chunk提示仍保留 |
+| 真实Chrome | 20:11，`npm run test:e2e`两条通过（13.6秒）：原M1双会话回归和新P01三会话账号/邀请/移除流程，无HTTP/STOMP mock |
+| 打包进程重启 | 20:12，停止Java、同库重启、新会话认证后，创建战役回执不重复建团；邀请回执保持id/到期/version且token:null；被移除玩家仍403，旧邀请仍409；未使用邀请仍能接受，旧移除回执不删除新授予成员 |
+| 静态审查 | 邀请明文不进入表、回执、列表或后端URL；管理授权先于回执；跨战役控制权删除带campaign scope；成员删除和回执故障均原子回滚；`git diff --check`通过 |
+
+TDD实际发现并修复：邀请首次响应纳秒与PG微秒精度不一致；邀请消费后preview失败阻断恢复；Unicode密码字符计数不同；较早403被忽略、在途旧快照恢复撤权地图。证据见两端TDD.md。全量IT曾遇本机PG连接上限，测试专用Hikari池缩至3后18项全通过；环境失败未算业务RED。
+
+真实P01浏览器步骤：DM创建空战役→分享`#invite=`链接→第三个独立context注册固定账号并自动正常登录→选择新战役→DM刷新成员并移除→真实socket关闭、客户端地图清空、后续场景403→账号仍保持有效且重新登录也不恢复成员。原M1截图已重新生成并人工查看，画布完整、管理区及权限单位列表正常。
+
+进程重启为本机外置smoke脚本，非Maven自动测试；复现时用独立数据库执行上表命令顺序，不把在同一Spring context内调用bootstrap视为进程重启。P02场景与素材、P03角色卡以及M2其余工作包未完成。

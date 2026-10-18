@@ -14,6 +14,10 @@ export class SceneStore {
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
   private update(patch: Partial<SceneState>) { this.state = { ...this.state, ...patch }; this.listeners.forEach(listener => listener()); }
   reset() { this.epoch++; this.refreshId++; this.campaignId = undefined; this.command = undefined; this.state = { status: 'idle', message: '' }; this.listeners.forEach(listener => listener()); }
+  private denyAccess() {
+    this.epoch++; this.refreshId++; this.command = undefined;
+    this.update({ scene: undefined, status: 'failed', message: '已失去战役访问权限或会话已失效，地图已清空。请刷新战役列表。' });
+  }
   async open(campaignId: string) { this.reset(); this.campaignId = campaignId; this.update({ status: 'loading', message: '读取场景…' }); await this.refresh(); }
   async refresh(): Promise<boolean> {
     if (!this.campaignId) return false;
@@ -25,6 +29,8 @@ export class SceneStore {
       this.update({ scene, ...(this.state.status === 'loading' || this.state.status === 'idle' ? { status: 'confirmed' as const, message: '已读取服务器状态' } : {}) });
       return true;
     } catch (error) {
+      // Any denial in this campaign epoch invalidates all in-flight successes.
+      if (epoch === this.epoch && error instanceof ApiError && (error.status === 401 || error.status === 403)) { this.denyAccess(); return false; }
       if (epoch === this.epoch && refreshId === this.refreshId) this.update({ message: `场景刷新失败；保留上次确认状态。${error instanceof Error ? error.message : ''}`, ...(this.state.scene ? {} : { status: 'failed' as const }) });
       return false;
     }
@@ -49,6 +55,7 @@ export class SceneStore {
       this.update({ status: refreshed ? 'confirmed' : 'failed', message: refreshed ? '移动已保存，场景已同步' : '服务器已接受移动；场景刷新失败，请刷新查看最新位置' });
     } catch (error) {
       if (epoch !== this.epoch) return;
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) { this.denyAccess(); return; }
       if (error instanceof ApiError && error.status === 409) {
         this.command = undefined; const refreshed = await this.refresh();
         if (epoch !== this.epoch) return;

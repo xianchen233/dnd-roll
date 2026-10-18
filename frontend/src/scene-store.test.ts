@@ -2,6 +2,29 @@ import { describe, it, expect, vi } from 'vitest';
 import { SceneStore } from './scene-store';
 import { ApiError } from './api';
 import type { Scene } from './types';
+describe('membership loss', () => {
+  it('invalidates every in-flight snapshot when an older refresh reports revoked membership', async () => {
+    let rejectDenied!: (error: Error) => void, resolveStale!: (scene: Scene) => void;
+    const api = { scene: vi.fn().mockResolvedValueOnce(snapshot()).mockImplementationOnce(() => new Promise<Scene>((_resolve, reject) => { rejectDenied = reject; })).mockImplementationOnce(() => new Promise<Scene>(resolve => { resolveStale = resolve; })), move: vi.fn() };
+    const store = new SceneStore(api); await store.open('c');
+    const denied = store.refresh(), stale = store.refresh();
+    rejectDenied(new ApiError(403, '成员已移除')); await denied;
+    resolveStale(snapshot(1, 6)); await stale;
+    expect(store.getSnapshot().scene).toBeUndefined();
+    expect(store.getSnapshot().message).toContain('已失去战役访问权限');
+  });
+  it.each([401, 403])('clears the scene and a retryable command on refresh %i', async status => {
+    const api = { scene: vi.fn().mockResolvedValueOnce(snapshot()).mockRejectedValueOnce(new ApiError(status, '无权访问')), move: vi.fn().mockRejectedValue(new Error('network')) };
+    const store = new SceneStore(api);
+    await store.open('c'); await store.move('hero', 4, 4);
+    expect(store.canRetry()).toBe(true);
+    await store.refresh();
+    expect(store.getSnapshot().scene).toBeUndefined();
+    expect(store.canRetry()).toBe(false);
+    await store.retry();
+    expect(api.move).toHaveBeenCalledTimes(1);
+  });
+});
 const snapshot = (version = 0, x = 2): Scene => ({ id: 'scene', campaignId: 'c', name: '营地', width: 24, height: 16, gridSize: 48, version, tokens: [{ id: 'hero', name: '游侠', x, y: 3, version, canMove: true }, { id: 'ally', name: '队友', x: 6, y: 3, version, canMove: false }] });
 const deferred = <T,>() => { let resolve!: (v: T) => void; const promise = new Promise<T>(r => { resolve = r; }); return { resolve, promise }; };
 describe('authoritative scene state', () => {
@@ -20,7 +43,7 @@ describe('authoritative scene state', () => {
     const store = new SceneStore(api); await store.open('c'); await store.move('hero', 4, 5);
     expect(store.canRetry()).toBe(false);
     expect(store.getSnapshot()).toMatchObject({ status: 'failed' });
-    expect(store.getSnapshot().scene?.tokens[0].x).toBe(2);
+    expect(store.getSnapshot().scene).toBeUndefined();
   });
   it('ignores an in-flight move result after switching campaigns', async () => {
     const move = deferred<unknown>();

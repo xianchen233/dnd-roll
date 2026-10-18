@@ -31,7 +31,7 @@ public class SecurityConfiguration {
         http.authenticationManager(authentication)
             .securityContext(context -> context.securityContextRepository(contexts))
             .csrf(csrf -> csrf.csrfTokenRepository(csrfTokens).csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
-            .authorizeHttpRequests(auth -> auth.requestMatchers("/api/auth/csrf", "/api/auth/login").permitAll().anyRequest().authenticated())
+            .authorizeHttpRequests(auth -> auth.requestMatchers("/api/auth/csrf", "/api/auth/login", "/api/invitations/preview", "/api/invitations/register").permitAll().anyRequest().authenticated())
             .exceptionHandling(errors -> errors
                 .authenticationEntryPoint((request, response, error) -> ApiErrors.write(response, 401, "UNAUTHENTICATED", "Login required"))
                 .accessDeniedHandler((request, response, error) -> ApiErrors.write(response, 403, "FORBIDDEN", "Request denied; refresh your CSRF token or check access")))

@@ -40,4 +40,6 @@ Application error JSON: `{ "code": "VERSION_CONFLICT", "message": "..." }`. Code
 
 ## Initial data
 
-An opt-in `demo` profile bootstraps one campaign, one DM account, one player account, a player-controlled token and a hidden DM token. Passwords are supplied by environment variables, never committed defaults. This enables the first two-client acceptance flow. Account registration, invitations and scene authoring belong to the next slice.
+Optional paired `BOOTSTRAP_USERNAME` and `BOOTSTRAP_PASSWORD` insert one initial account without granting global access or resetting existing credentials. An opt-in `demo` profile bootstraps one campaign, one DM account, one player account, a player-controlled token and a hidden DM token. Passwords are supplied by environment variables, never committed defaults. This preserves the first two-client acceptance flow.
+
+Account invitations, campaign creation and member management are specified in [P01](accounts.md). P01 uses a separate campaign management version, single-use hashed invitation secrets and durable command receipts. Scene authoring remains P02.

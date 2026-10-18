@@ -1,6 +1,6 @@
 # DND Roll
 
-面向固定伙伴的 D&D 5R 网页虚拟桌面。电脑优先，长期保存战役进度。当前实现 **M0 框架 + M1 首个纵向切片**：登录、战役场景、网格棋子移动、权限过滤、事务保存与实时同步。
+面向固定伙伴的 D&D 5R 网页虚拟桌面。电脑优先，长期保存战役进度。当前实现 **M0 框架、M1 纵向切片及 P01 账号邀请**：固定账号、创建战役、邀请与成员管理、战役场景、网格棋子移动、权限过滤、事务保存与实时同步。
 
 功能与修复记录见 [CHANGELOG](CHANGELOG.md)，按 Keep a Changelog 维护；未发布的变更统一列在 Unreleased。
 
@@ -26,18 +26,17 @@ Copy-Item .env.example .env
 docker compose --env-file .env -f deploy/compose.yaml up --build -d
 ```
 
-访问 `http://localhost:8080`；使用 .env 配置的 dm/player 账号。账号初始化仅在显式开启 `demo` profile 时执行，修改环境变量不会重置已经建立的账号密码。详见 [部署说明](deploy/README.md)。
+访问 `http://localhost:8080`；使用 .env 的 `BOOTSTRAP_USERNAME` / `BOOTSTRAP_PASSWORD` 登录，创建战役并邀请伙伴。初始化只插入不存在的账号，修改环境变量不会重置已有密码或成员权限。两个 bootstrap 变量必须同时配置或同时留空；新账号名使用 3–32 位小写字母、数字、下划线或连字符，以字母开头；密码至少 12 个字符且不超过 72 个 UTF-8 字节。详见 [部署说明](deploy/README.md)。
 
 本地源码开发需要 JDK 25、Node.js 24.22.0（本次也验证了 24.21.0）和 PostgreSQL 18.6。Maven Wrapper 固定下载 Maven 3.9.16。
 
 ```powershell
-# 后端：设置实际数据库和 demo 密码，不把凭据写入源码
+# 后端：设置实际数据库和初始账号，不把凭据写入源码
 $env:DATABASE_URL = 'jdbc:postgresql://localhost:5432/dnd_roll'
 $env:DATABASE_USERNAME = 'dnd_roll'
 $env:DATABASE_PASSWORD = '<your database password>'
-$env:SPRING_PROFILES_ACTIVE = 'demo'
-$env:DEMO_DM_PASSWORD = '<your DM password>'
-$env:DEMO_PLAYER_PASSWORD = '<your player password>'
+$env:BOOTSTRAP_USERNAME = 'owner'
+$env:BOOTSTRAP_PASSWORD = '<your initial account password>'
 cd backend
 .\mvnw.cmd spring-boot:run
 
@@ -69,6 +68,6 @@ pwsh -File scripts/check.ps1 -Integration
 
 当前提供探索移动：同一玩家可移动被授权棋子，DM 可操作本团所有棋子；玩家快照不包含隐藏单位；请求版本检查和幂等回执在事务内保存。STOMP 只发送场景失效提示，重连重新查询权威状态。
 
-账号邀请、场景/地图作者入口、完整角色卡、掷骰、战斗、RP、素材与备份恢复是 M2；模组与自动结算是 M3。具体分工及验收条件见 [实施路线](docs/implementation-plan.md)，产品范围见 [设计方案](docs/product-design.md)。Docker 容器、云端发布和完整产品验收未因骨架完成而自动视为通过。
+账号邀请与成员管理已实现；新战役暂为空网格。M2 接下来提供场景/地图作者入口、完整角色卡、掷骰、战斗、RP、素材与备份恢复；模组与自动结算为 M3。具体分工及验收条件见 [实施路线](docs/implementation-plan.md)，实际检查见 [验收记录](docs/verification.md)，产品范围见 [设计方案](docs/product-design.md)。云端发布和完整产品验收按各自阶段执行。
 
 仓库仅包含应用代码和自主设计资料。工作区的本地规则原文、全文索引、模型、私人战役与下载的运行时不随仓库分发。来源与资料边界见 [说明](docs/local-sources.md)。

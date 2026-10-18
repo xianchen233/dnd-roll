@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const read = (path) => readFile(new URL(path, import.meta.url), 'utf8');
-const [apiText, eventText, readme] = await Promise.all([
+const [apiText, eventText, readme, accounts] = await Promise.all([
   read('../contracts/openapi.json'),
   read('../contracts/scene-events.schema.json'),
   read('../contracts/README.md'),
+  read('../contracts/accounts.md'),
 ]);
 const api = JSON.parse(apiText);
 const event = JSON.parse(eventText);
@@ -17,6 +18,13 @@ const resolve = (schema) => schema.$ref
 function validate(schema, value) {
   schema = resolve(schema);
   assert.ok(schema, 'Referenced schema exists');
+  if (schema.type === 'null') { assert.equal(value, null); return; }
+  if (Array.isArray(schema.type)) {
+    const types = schema.type;
+    assert.ok(types.includes(value === null ? 'null' : typeof value), 'Value has an allowed type');
+    if (value === null) return;
+    schema = { ...schema, type: types.find((type) => type !== 'null') };
+  }
   if (schema.const !== undefined) assert.equal(value, schema.const);
   if (schema.enum) assert.ok(schema.enum.includes(value));
   if (schema.type === 'object') {
@@ -36,7 +44,14 @@ function validate(schema, value) {
     if (schema.minimum !== undefined) assert.ok(value >= schema.minimum);
   } else if (schema.type === 'string') {
     assert.equal(typeof value, 'string');
-    if (schema.minLength !== undefined) assert.ok(value.length >= schema.minLength);
+    if (schema.minLength !== undefined) assert.ok([...value].length >= schema.minLength);
+    if (schema.maxLength !== undefined) assert.ok([...value].length <= schema.maxLength);
+    if (schema.pattern !== undefined) assert.match(value, new RegExp(schema.pattern));
+    if (schema['x-maxUtf8Bytes'] !== undefined) assert.ok(Buffer.byteLength(value, 'utf8') <= schema['x-maxUtf8Bytes']);
+    if (schema.format === 'date-time') {
+      assert.match(value, /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z$/);
+      assert.ok(Number.isFinite(Date.parse(value)), 'UTC instant is valid');
+    }
     if (schema.format === 'uuid') assert.match(value, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
   } else if (schema.type === 'boolean') assert.equal(typeof value, 'boolean');
 }
@@ -54,7 +69,7 @@ assert.equal(api.openapi, '3.1.0');
 assert.equal(api.jsonSchemaDialect, 'https://json-schema.org/draft/2020-12/schema');
 assert.equal(event.$schema, api.jsonSchemaDialect);
 checkRefs(api);
-const documentedOperations = [...readme.matchAll(/`(GET|POST) (\/api[^` ]*)`/g)]
+const documentedOperations = [...`${readme}\n${accounts}`.matchAll(/(?:`|### )(GET|POST) (\/api[^` \r\n]*)/g)]
   .map(([, method, path]) => `${method} ${path}`);
 const actualOperations = Object.entries(api.paths).flatMap(([path, item]) =>
   Object.keys(item).filter((method) => ['get', 'post'].includes(method))
@@ -91,7 +106,10 @@ assert.deepEqual(schemas.SceneSnapshot.required, ['id', 'campaignId', 'name', 'w
 assert.deepEqual(schemas.TokenView.required, ['id', 'name', 'x', 'y', 'version', 'canMove']);
 assert.equal(schemas.TokenView.additionalProperties, false);
 assert.deepEqual(schemas.ApiError.required, ['code', 'message']);
-assert.deepEqual(schemas.ApiError.properties.code.enum, ['UNAUTHENTICATED', 'FORBIDDEN', 'NOT_FOUND', 'VERSION_CONFLICT', 'IDEMPOTENCY_CONFLICT', 'INVALID_INPUT']);
+for (const code of ['UNAUTHENTICATED', 'FORBIDDEN', 'NOT_FOUND', 'VERSION_CONFLICT', 'IDEMPOTENCY_CONFLICT', 'INVALID_INPUT',
+  'INVITE_NOT_FOUND', 'INVITE_EXPIRED', 'INVITE_UNAVAILABLE', 'USERNAME_TAKEN', 'DM_REMOVAL_DENIED']) {
+  assert.ok(schemas.ApiError.properties.code.enum.includes(code), `Error code ${code} is documented`);
+}
 assert.deepEqual(Object.keys(event.properties).sort(), ['campaignId', 'type']);
 assert.deepEqual(event.required, ['type', 'campaignId']);
 assert.equal(event.additionalProperties, false);
@@ -100,6 +118,43 @@ assert.equal(event['x-stomp'].subscription, '/user/queue/scene-changes');
 assert.equal(event['x-stomp'].connectCsrfHeader, 'X-CSRF-TOKEN');
 assert.equal(event['x-stomp'].clientSendAllowed, false);
 assert.equal(event['x-stomp'].arbitrarySubscriptionsAllowed, false);
+
+const requestSchema = (path) => resolve(api.paths[path].post.requestBody.content['application/json'].schema);
+const responseSchema = (path, method, status) => resolve(api.paths[path][method].responses[status].content['application/json'].schema);
+const createCampaign = '/api/campaigns';
+const invitations = '/api/campaigns/{campaignId}/invitations';
+const members = '/api/campaigns/{campaignId}/members';
+const revoke = `${invitations}/{invitationId}/revoke`;
+const remove = `${members}/{username}/remove`;
+assert.deepEqual(requestSchema(createCampaign).required, ['requestId', 'name']);
+for (const path of [invitations, revoke, remove]) {
+  assert.deepEqual(requestSchema(path).required, ['requestId', 'expectedVersion']);
+  assert.equal(requestSchema(path).additionalProperties, false);
+  assert.ok(api.paths[path].post.responses['409']);
+  assert.deepEqual(api.paths[path].post['x-idempotency'].key, ['sessionActor', 'requestId']);
+  assert.ok(api.paths[path].post['x-idempotency'].payload.includes('campaignId'));
+  assert.match(api.paths[path].post['x-idempotency'].authorization, /before.*replay/i);
+}
+for (const path of ['/api/invitations/preview', '/api/invitations/register']) {
+  assert.deepEqual(api.paths[path].post.security, []);
+}
+for (const path of ['/api/invitations/preview', '/api/invitations/accept', '/api/invitations/register']) {
+  for (const status of ['400', '404', '409', '410']) assert.ok(api.paths[path].post.responses[status]);
+}
+assert.deepEqual(requestSchema('/api/invitations/register').required, ['token', 'username', 'password']);
+assert.deepEqual(requestSchema('/api/invitations/accept').required, ['token']);
+assert.deepEqual(requestSchema('/api/invitations/preview').required, ['token']);
+assert.deepEqual(responseSchema(members, 'get', '200').required, ['campaignVersion', 'members']);
+assert.deepEqual(responseSchema(invitations, 'get', '200').required, ['campaignVersion', 'invitations']);
+assert.deepEqual(schemas.InvitationCreated.properties.token.type, ['string', 'null']);
+assert.equal(schemas.InvitationCreated.properties.token.writeOnly, undefined);
+assert.match(api['x-invitation-policy'].shareUrl, /\/#invite=TOKEN$/);
+assert.equal(api['x-invitation-policy'].backendTokenTransport, 'POST JSON body only; never URL paths or query strings');
+assert.equal(api['x-invitation-policy'].tokenLifetimeSeconds, 7 * 24 * 60 * 60);
+assert.match(api['x-invitation-policy'].persistence, /SHA-256.*receipts.*logs/);
+assert.match(api['x-invitation-policy'].fragmentLifecycle, /clear.*success.*never log/i);
+assert.equal(api.paths[revoke].post.responses['204'].content, undefined);
+assert.equal(api.paths[remove].post.responses['204'].content, undefined);
 
 const id = '12345678-1234-1234-1234-123456789abc';
 const token = { id, name: 'Adventurer', x: 2, y: 3, version: 0, canMove: true };
@@ -119,4 +174,54 @@ assert.throws(() => validate(schemas.TokenView, { ...token, hidden: true }));
 for (const extra of [{ tokenId: id }, { tokens: [token] }, { name: 'hidden enemy' }, { x: 2 }, { count: 1 }]) {
   assert.throws(() => validate(event, { type: 'SCENE_CHANGED', campaignId: id, ...extra }));
 }
-console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; CSRF/session, movement/idempotency, snapshot and token-free STOMP event constraints.`);
+const inviteToken = 'A'.repeat(43);
+const expiresAt = '2026-10-25T09:30:00Z';
+const invitation = { id, createdBy: 'dm', expiresAt, status: 'ACTIVE', usedBy: null };
+const invitationCreated = { id, token: inviteToken, expiresAt, campaignVersion: 1 };
+const registration = { token: inviteToken, username: 'new_player', password: 'strong password' };
+const membersView = { campaignVersion: 1, members: [{ username: 'dm', role: 'DM' }] };
+const invitationsView = { campaignVersion: 1, invitations: [invitation] };
+for (const [schema, value] of [
+  [schemas.CampaignCreateRequest, { requestId: id, name: 'New campaign' }],
+  [schemas.ManagementRequest, { requestId: id, expectedVersion: 0 }],
+  [schemas.InvitationCreated, invitationCreated],
+  [schemas.InvitationCreated, { ...invitationCreated, token: null }],
+  [schemas.InvitationList, invitationsView], [schemas.MemberList, membersView],
+  [schemas.InvitationPreview, { campaignId: id, campaignName: 'New campaign', expiresAt }],
+  [schemas.InvitationTokenRequest, { token: inviteToken }], [schemas.InvitationRegisterRequest, registration],
+  [schemas.InvitationAccepted, { campaignId: id }],
+  [schemas.InvitationRegistered, { username: 'new_player', campaignId: id }],
+]) validate(schema, value);
+for (const invalid of [false, true, 0, {}, '', 'x'.repeat(42), 'x'.repeat(43), 'x'.repeat(44), '+'.repeat(43)]) {
+  assert.throws(() => validate(schemas.InvitationCreated, { ...invitationCreated, token: invalid }));
+  assert.throws(() => validate(schemas.InvitationTokenRequest, { token: invalid }));
+}
+for (const username of ['ab', 'New_player', '1player', ' has_space', 'x'.repeat(33)]) {
+  assert.throws(() => validate(schemas.InvitationRegisterRequest, { ...registration, username }));
+}
+for (const password of ['short', '界'.repeat(25), '😀'.repeat(6)]) {
+  assert.throws(() => validate(schemas.InvitationRegisterRequest, { ...registration, password }));
+}
+validate(schemas.InvitationRegisterRequest, { ...registration, password: ' 界'.repeat(18) });
+validate(schemas.InvitationRegisterRequest, { ...registration, password: '😀'.repeat(12) });
+for (const invalid of [
+  { name: 'Name' }, { requestId: id, name: '' }, { requestId: id, name: 'x'.repeat(101) },
+  { requestId: id, name: 'Name', role: 'DM' },
+]) assert.throws(() => validate(schemas.CampaignCreateRequest, invalid));
+for (const invalid of [{ requestId: id }, { expectedVersion: 0 }, { requestId: id, expectedVersion: -1 }, { requestId: 'bad', expectedVersion: 0 }]) {
+  assert.throws(() => validate(schemas.ManagementRequest, invalid));
+}
+for (const date of ['2026-10-25T17:30:00+08:00', 'not-a-date', '2026-99-25T09:30:00Z']) {
+  assert.throws(() => validate(schemas.InvitationCreated, { ...invitationCreated, expiresAt: date }));
+}
+for (const secret of ['token', 'tokenHash', 'password', 'passwordHash', 'accountId']) {
+  assert.throws(() => validate(schemas.InvitationList, { ...invitationsView, [secret]: 'secret' }));
+  assert.throws(() => validate(schemas.InvitationList, { ...invitationsView, invitations: [{ ...invitation, [secret]: 'secret' }] }));
+  assert.throws(() => validate(schemas.MemberList, { ...membersView, members: [{ ...membersView.members[0], [secret]: 'secret' }] }));
+  assert.throws(() => validate(schemas.ApiError, { code: 'INVITE_NOT_FOUND', message: 'Unavailable', [secret]: 'secret' }));
+}
+assert.throws(() => validate(schemas.MemberList, membersView.members));
+assert.throws(() => validate(schemas.InvitationList, invitationsView.invitations));
+assert.throws(() => validate(schemas.InvitationList, { ...invitationsView, invitations: [{ ...invitation, status: 'UNKNOWN' }] }));
+assert.throws(() => validate(schemas.InvitationRegisterRequest, { ...registration, role: 'DM' }));
+console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; CSRF/session, P01 credentials/version/secret-free views/one-time invitation token/fragment links, movement/idempotency, snapshot and token-free STOMP event constraints. This is a focused contract checker, not a general OpenAPI validator.`);

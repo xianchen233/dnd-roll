@@ -1,13 +1,25 @@
 {
   "openapi": "3.1.0",
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
-  "info": { "title": "D&D Roll first playable slice", "version": "0.1.0" },
-  "servers": [{ "url": "/" }],
-  "security": [{ "sessionCookie": [] }],
+  "info": {
+    "title": "D&D Roll HTTP contract",
+    "version": "0.2.0"
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "security": [
+    {
+      "sessionCookie": []
+    }
+  ],
   "x-session-policy": {
     "transport": "same-origin HTTPS in production; include cookies on requests",
     "actor": "Derived from the authenticated session; never supplied by the client",
-    "csrfRefresh": "Obtain a fresh CSRF token after login or logout"
+    "csrfRefresh": "Obtain a fresh CSRF token after login or logout",
+    "forbiddenSnapshot": "Client clears scene snapshot on 401/403 and offers campaign refresh"
   },
   "paths": {
     "/api/auth/csrf": {
@@ -15,7 +27,16 @@
         "operationId": "getCsrf",
         "security": [],
         "responses": {
-          "200": { "description": "Current session CSRF token", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CsrfToken" } } } }
+          "200": {
+            "description": "Current session CSRF token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CsrfToken"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -23,13 +44,41 @@
       "post": {
         "operationId": "login",
         "security": [],
-        "parameters": [{ "$ref": "#/components/parameters/CsrfHeader" }],
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginRequest" } } } },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
         "responses": {
-          "200": { "description": "Authenticated session; refresh CSRF token before next POST", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Identity" } } } },
-          "400": { "$ref": "#/components/responses/InvalidInput" },
-          "401": { "$ref": "#/components/responses/Unauthenticated" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
+          "200": {
+            "description": "Authenticated session; refresh CSRF token before next POST",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Identity"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
         }
       }
     },
@@ -37,19 +86,40 @@
       "get": {
         "operationId": "getIdentity",
         "responses": {
-          "200": { "description": "Current authenticated identity", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Identity" } } } },
-          "401": { "$ref": "#/components/responses/Unauthenticated" }
+          "200": {
+            "description": "Current authenticated identity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Identity"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          }
         }
       }
     },
     "/api/auth/logout": {
       "post": {
         "operationId": "logout",
-        "parameters": [{ "$ref": "#/components/parameters/CsrfHeader" }],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
         "responses": {
-          "204": { "description": "Session invalidated; obtain a new CSRF token before subsequent login" },
-          "401": { "$ref": "#/components/responses/Unauthenticated" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
+          "204": {
+            "description": "Session invalidated; obtain a new CSRF token before subsequent login"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
         }
       }
     },
@@ -57,103 +127,1290 @@
       "get": {
         "operationId": "listCampaigns",
         "responses": {
-          "200": { "description": "Only campaigns of which the actor is a member", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Campaign" } } } } },
-          "401": { "$ref": "#/components/responses/Unauthenticated" }
+          "200": {
+            "description": "Only campaigns of which the actor is a member",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Campaign"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createCampaign",
+        "description": "Authenticated account creates a campaign as its DM, with one empty 24x16 scene and gridSize 48 in the same transaction. Serialize creation per actor; no demo units or additional members.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CampaignCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Original campaign on identical retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Campaign"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created campaign",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Campaign"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "description": "409 VERSION_CONFLICT or IDEMPOTENCY_CONFLICT; refresh management lists before retrying stale commands",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "key": [
+            "sessionActor",
+            "requestId"
+          ],
+          "payload": [
+            "name"
+          ],
+          "samePayload": "Return original campaign without creating another",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT"
         }
       }
     },
     "/api/campaigns/{campaignId}/scene": {
-      "parameters": [{ "$ref": "#/components/parameters/CampaignId" }],
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/CampaignId"
+        }
+      ],
       "get": {
         "operationId": "getScene",
         "description": "Permission-filtered authoritative snapshot. Hidden tokens are absent from player snapshots. Refresh after a successful move, scene-change hint, reconnect and periodically.",
         "responses": {
-          "200": { "description": "Visible scene snapshot", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SceneSnapshot" } } } },
-          "400": { "$ref": "#/components/responses/InvalidInput" },
-          "401": { "$ref": "#/components/responses/Unauthenticated" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "404": { "$ref": "#/components/responses/NotFound" }
+          "200": {
+            "description": "Visible scene snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SceneSnapshot"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
         }
       }
     },
     "/api/campaigns/{campaignId}/tokens/{tokenId}/moves": {
-      "parameters": [{ "$ref": "#/components/parameters/CampaignId" }, { "$ref": "#/components/parameters/TokenId" }],
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/CampaignId"
+        },
+        {
+          "$ref": "#/components/parameters/TokenId"
+        }
+      ],
       "post": {
         "operationId": "moveToken",
         "description": "Exploration movement only. Server enforces membership, visibility, control, grid bounds and object version. Invisible token: 404; visible uncontrolled token: 403. DM may move any token in their own campaign. Persist state and idempotency receipt atomically. Read a fresh scene snapshot after success.",
         "x-idempotency": {
-          "key": ["campaignId", "sessionActor", "requestId"],
-          "payload": ["tokenId", "expectedVersion", "x", "y"],
+          "key": [
+            "campaignId",
+            "sessionActor",
+            "requestId"
+          ],
+          "payload": [
+            "tokenId",
+            "expectedVersion",
+            "x",
+            "y"
+          ],
           "samePayload": "Return original response, including when expectedVersion is now stale; do not apply twice",
           "differentPayload": "409 IDEMPOTENCY_CONFLICT",
           "versionConflict": "409 VERSION_CONFLICT; refresh authoritative snapshot"
         },
-        "x-grid-bounds": { "x": "0 <= x < scene.width", "y": "0 <= y < scene.height" },
-        "parameters": [{ "$ref": "#/components/parameters/CsrfHeader" }],
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MoveRequest" } } } },
+        "x-grid-bounds": {
+          "x": "0 <= x < scene.width",
+          "y": "0 <= y < scene.height"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveRequest"
+              }
+            }
+          }
+        },
         "responses": {
-          "200": { "description": "Updated visible token or original idempotent response", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TokenView" } } } },
-          "400": { "$ref": "#/components/responses/InvalidInput" },
-          "401": { "$ref": "#/components/responses/Unauthenticated" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "409": { "description": "VERSION_CONFLICT or IDEMPOTENCY_CONFLICT", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiError" } } } }
+          "200": {
+            "description": "Updated visible token or original idempotent response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenView"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "VERSION_CONFLICT or IDEMPOTENCY_CONFLICT",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
         }
+      }
+    },
+    "/api/campaigns/{campaignId}/members": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/CampaignId"
+        }
+      ],
+      "get": {
+        "operationId": "listMembers",
+        "description": "Current campaign members only; no global account directory, account IDs, passwords or hashes.",
+        "responses": {
+          "200": {
+            "description": "Members and current campaignVersion",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/invitations": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/CampaignId"
+        }
+      ],
+      "get": {
+        "operationId": "listInvitations",
+        "description": "DM only. Status reflects current expiry. No plaintext tokens or token hashes.",
+        "responses": {
+          "200": {
+            "description": "Invitation metadata and current campaignVersion",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createInvitation",
+        "description": "DM only. Generate a seven-day invitation using injectable Clock. Persist only SHA-256(token). Plaintext token is returned exactly once; retry never regenerates it or recreates used/revoked invitations.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManagementRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Original invitation metadata with token:null",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationCreated"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "New invitation with one-time plaintext token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationCreated"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "409 VERSION_CONFLICT or IDEMPOTENCY_CONFLICT; refresh management lists before retrying stale commands",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "key": [
+            "sessionActor",
+            "requestId"
+          ],
+          "payload": [
+            "commandKind",
+            "campaignId",
+            "expectedVersion"
+          ],
+          "authorization": "Recheck current DM authorization before receipt replay",
+          "samePayload": "Return original metadata/no-op; never increment campaignVersion twice",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT",
+          "versionConflict": "409 VERSION_CONFLICT; refresh management lists"
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/invitations/{invitationId}/revoke": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/CampaignId"
+        },
+        {
+          "$ref": "#/components/parameters/InvitationId"
+        }
+      ],
+      "post": {
+        "operationId": "revokeInvitation",
+        "description": "DM only; invitation is scoped to campaign. Revoked/used invitation is a no-op. Never remove joined members; revocation and receipt are atomic.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManagementRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Revoked or already unavailable; no-op/replay does not increment version"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "409 VERSION_CONFLICT or IDEMPOTENCY_CONFLICT; refresh management lists before retrying stale commands",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "key": [
+            "sessionActor",
+            "requestId"
+          ],
+          "payload": [
+            "commandKind",
+            "campaignId",
+            "invitationId",
+            "expectedVersion"
+          ],
+          "authorization": "Recheck current DM authorization before receipt replay",
+          "samePayload": "Return original metadata/no-op; never increment campaignVersion twice",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT",
+          "versionConflict": "409 VERSION_CONFLICT; refresh management lists"
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/members/{username}/remove": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/CampaignId"
+        },
+        {
+          "$ref": "#/components/parameters/Username"
+        }
+      ],
+      "post": {
+        "operationId": "removeMember",
+        "description": "DM only. Atomically remove PLAYER membership and every account token-control grant within this campaign. Preserve other campaigns, account and history. DM removal is 409 DM_REMOVAL_DENIED. Already absent is a no-op. Receipt replay must not remove later regranted membership. After commit close removed user sockets; HTTP rechecks membership.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManagementRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Removed, already absent or original receipt replay"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "409 VERSION_CONFLICT, IDEMPOTENCY_CONFLICT or DM_REMOVAL_DENIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "key": [
+            "sessionActor",
+            "requestId"
+          ],
+          "payload": [
+            "commandKind",
+            "campaignId",
+            "username",
+            "expectedVersion"
+          ],
+          "authorization": "Recheck current DM authorization before receipt replay",
+          "samePayload": "Return original metadata/no-op; never increment campaignVersion twice",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT",
+          "versionConflict": "409 VERSION_CONFLICT; refresh management lists"
+        }
+      }
+    },
+    "/api/invitations/preview": {
+      "post": {
+        "operationId": "previewInvitation",
+        "description": "Anonymous allowed, CSRF required. Active invitation preview only; no members, units or private campaign data. Token travels only in JSON body.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationTokenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Active invitation summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationPreview"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/InviteNotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/InviteUnavailable"
+          },
+          "410": {
+            "$ref": "#/components/responses/InviteExpired"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/invitations/accept": {
+      "post": {
+        "operationId": "acceptInvitation",
+        "description": "Authenticated existing account, CSRF required. Atomically claim invitation and join as PLAYER. Preserve existing DM role. Same actor consuming an invite again succeeds only while still a member; removed members cannot regain access. Concurrent acceptance has one winner.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationTokenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Joined campaign or original same-member acceptance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationAccepted"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/InviteNotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/InviteUnavailable"
+          },
+          "410": {
+            "$ref": "#/components/responses/InviteExpired"
+          }
+        }
+      }
+    },
+    "/api/invitations/register": {
+      "post": {
+        "operationId": "registerFromInvitation",
+        "description": "Anonymous allowed, CSRF required; authenticated actor receives 400. Validate active invitation and strict credentials, create account, claim invitation and add PLAYER membership in one transaction. Username conflict rolls everything back; never overwrite existing password. No authenticated session is created: explicitly login, then clear fragment and load campaigns. Lost response can be recovered via login and same-actor accept.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationRegisterRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Registered and joined; login explicitly afterward",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationRegistered"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/InviteNotFound"
+          },
+          "409": {
+            "description": "409 USERNAME_TAKEN or INVITE_UNAVAILABLE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "410": {
+            "$ref": "#/components/responses/InviteExpired"
+          }
+        },
+        "security": []
       }
     }
   },
   "components": {
     "securitySchemes": {
-      "sessionCookie": { "type": "apiKey", "in": "cookie", "name": "JSESSIONID", "description": "Server-managed authenticated session cookie; send using credentials: include" }
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "JSESSIONID",
+        "description": "Server-managed authenticated session cookie; send using credentials: include"
+      }
     },
     "parameters": {
-      "CampaignId": { "name": "campaignId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/Uuid" } },
-      "TokenId": { "name": "tokenId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/Uuid" } },
-      "CsrfHeader": { "name": "X-CSRF-TOKEN", "in": "header", "required": true, "description": "Current CSRF token obtained from GET /api/auth/csrf; use returned headerName", "schema": { "type": "string", "minLength": 1 } }
+      "CampaignId": {
+        "name": "campaignId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "$ref": "#/components/schemas/Uuid"
+        }
+      },
+      "TokenId": {
+        "name": "tokenId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "$ref": "#/components/schemas/Uuid"
+        }
+      },
+      "CsrfHeader": {
+        "name": "X-CSRF-TOKEN",
+        "in": "header",
+        "required": true,
+        "description": "Current CSRF token obtained from GET /api/auth/csrf; use returned headerName",
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "InvitationId": {
+        "name": "invitationId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "$ref": "#/components/schemas/Uuid"
+        }
+      },
+      "Username": {
+        "name": "username",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Existing campaign member username; legacy demo usernames remain supported"
+      }
     },
     "responses": {
-      "InvalidInput": { "description": "400 INVALID_INPUT: malformed input or invalid coordinates", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiError" } } } },
-      "Unauthenticated": { "description": "401 UNAUTHENTICATED: authenticated session required or credentials invalid", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiError" } } } },
-      "Forbidden": { "description": "403 FORBIDDEN: CSRF, campaign membership or token control denied", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiError" } } } },
-      "NotFound": { "description": "404 NOT_FOUND: unavailable resource; never reveal hidden token data", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiError" } } } }
+      "InvalidInput": {
+        "description": "400 INVALID_INPUT: malformed input or invalid coordinates",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
+          }
+        }
+      },
+      "Unauthenticated": {
+        "description": "401 UNAUTHENTICATED: authenticated session required or credentials invalid",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "403 FORBIDDEN: CSRF, campaign membership or token control denied",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "404 NOT_FOUND: unavailable resource; never reveal hidden token data",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
+          }
+        }
+      },
+      "InviteNotFound": {
+        "description": "404 INVITE_NOT_FOUND: invitation token is unknown",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
+          }
+        }
+      },
+      "InviteExpired": {
+        "description": "410 INVITE_EXPIRED: invitation has expired",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
+          }
+        }
+      },
+      "InviteUnavailable": {
+        "description": "409 INVITE_UNAVAILABLE: invitation revoked or used by another actor",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
+          }
+        }
+      }
     },
     "schemas": {
-      "Uuid": { "type": "string", "format": "uuid" },
-      "Version": { "type": "integer", "minimum": 0, "description": "Non-negative optimistic concurrency version" },
-      "GridCoordinate": { "type": "integer", "minimum": 0, "description": "Integer grid cell; server additionally enforces x < width and y < height" },
+      "Uuid": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "Version": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Non-negative optimistic concurrency version"
+      },
+      "GridCoordinate": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Integer grid cell; server additionally enforces x < width and y < height"
+      },
       "CsrfToken": {
-        "type": "object", "additionalProperties": false, "required": ["token", "headerName"],
-        "properties": { "token": { "type": "string", "minLength": 1 }, "headerName": { "const": "X-CSRF-TOKEN" } }
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "token",
+          "headerName"
+        ],
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 1
+          },
+          "headerName": {
+            "const": "X-CSRF-TOKEN"
+          }
+        }
       },
       "LoginRequest": {
-        "type": "object", "additionalProperties": false, "required": ["username", "password"],
-        "properties": { "username": { "type": "string", "minLength": 1 }, "password": { "type": "string", "minLength": 1, "writeOnly": true } }
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "username",
+          "password"
+        ],
+        "properties": {
+          "username": {
+            "type": "string",
+            "minLength": 1
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1,
+            "writeOnly": true
+          }
+        }
       },
       "Identity": {
-        "type": "object", "additionalProperties": false, "required": ["username"],
-        "properties": { "username": { "type": "string" } }
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "username"
+        ],
+        "properties": {
+          "username": {
+            "type": "string"
+          }
+        }
       },
       "Campaign": {
-        "type": "object", "additionalProperties": false, "required": ["id", "name", "role"],
-        "properties": { "id": { "$ref": "#/components/schemas/Uuid" }, "name": { "type": "string" }, "role": { "type": "string", "enum": ["DM", "PLAYER"] } }
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "role"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "DM",
+              "PLAYER"
+            ]
+          }
+        }
       },
       "TokenView": {
-        "type": "object", "additionalProperties": false, "required": ["id", "name", "x", "y", "version", "canMove"],
-        "properties": { "id": { "$ref": "#/components/schemas/Uuid" }, "name": { "type": "string" }, "x": { "$ref": "#/components/schemas/GridCoordinate" }, "y": { "$ref": "#/components/schemas/GridCoordinate" }, "version": { "$ref": "#/components/schemas/Version" }, "canMove": { "type": "boolean" } }
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "x",
+          "y",
+          "version",
+          "canMove"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "x": {
+            "$ref": "#/components/schemas/GridCoordinate"
+          },
+          "y": {
+            "$ref": "#/components/schemas/GridCoordinate"
+          },
+          "version": {
+            "$ref": "#/components/schemas/Version"
+          },
+          "canMove": {
+            "type": "boolean"
+          }
+        }
       },
       "SceneSnapshot": {
-        "type": "object", "additionalProperties": false, "required": ["id", "campaignId", "name", "width", "height", "gridSize", "version", "tokens"],
-        "properties": { "id": { "$ref": "#/components/schemas/Uuid" }, "campaignId": { "$ref": "#/components/schemas/Uuid" }, "name": { "type": "string" }, "width": { "type": "integer", "minimum": 1 }, "height": { "type": "integer", "minimum": 1 }, "gridSize": { "type": "integer", "minimum": 1 }, "version": { "$ref": "#/components/schemas/Version" }, "tokens": { "type": "array", "items": { "$ref": "#/components/schemas/TokenView" } } }
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "campaignId",
+          "name",
+          "width",
+          "height",
+          "gridSize",
+          "version",
+          "tokens"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "campaignId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "gridSize": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "version": {
+            "$ref": "#/components/schemas/Version"
+          },
+          "tokens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenView"
+            }
+          }
+        }
       },
       "MoveRequest": {
-        "type": "object", "additionalProperties": false, "required": ["requestId", "expectedVersion", "x", "y"],
-        "properties": { "requestId": { "$ref": "#/components/schemas/Uuid" }, "expectedVersion": { "$ref": "#/components/schemas/Version" }, "x": { "$ref": "#/components/schemas/GridCoordinate" }, "y": { "$ref": "#/components/schemas/GridCoordinate" } }
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "x",
+          "y"
+        ],
+        "properties": {
+          "requestId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "expectedVersion": {
+            "$ref": "#/components/schemas/Version"
+          },
+          "x": {
+            "$ref": "#/components/schemas/GridCoordinate"
+          },
+          "y": {
+            "$ref": "#/components/schemas/GridCoordinate"
+          }
+        }
       },
       "ApiError": {
-        "type": "object", "additionalProperties": false, "required": ["code", "message"],
-        "description": "HTTP status is authoritative. Clients must also tolerate non-JSON transport errors. Messages must never include hidden token data.",
-        "properties": { "code": { "type": "string", "enum": ["UNAUTHENTICATED", "FORBIDDEN", "NOT_FOUND", "VERSION_CONFLICT", "IDEMPOTENCY_CONFLICT", "INVALID_INPUT"] }, "message": { "type": "string" } }
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "message"
+        ],
+        "description": "HTTP status is authoritative. Clients must also tolerate non-JSON transport errors. Messages must never include hidden token data. Never include invite tokens, hashes, passwords or private campaign data.",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "UNAUTHENTICATED",
+              "FORBIDDEN",
+              "NOT_FOUND",
+              "VERSION_CONFLICT",
+              "IDEMPOTENCY_CONFLICT",
+              "INVALID_INPUT",
+              "INVITE_NOT_FOUND",
+              "INVITE_EXPIRED",
+              "INVITE_UNAVAILABLE",
+              "USERNAME_TAKEN",
+              "DM_REMOVAL_DENIED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "NewUsername": {
+        "type": "string",
+        "minLength": 3,
+        "maxLength": 32,
+        "pattern": "^[a-z][a-z0-9_-]{2,31}$"
+      },
+      "NewPassword": {
+        "type": "string",
+        "minLength": 12,
+        "x-maxUtf8Bytes": 72,
+        "writeOnly": true,
+        "description": "At least 12 characters and at most 72 UTF-8 bytes; never trim or truncate"
+      },
+      "InvitationToken": {
+        "type": "string",
+        "minLength": 43,
+        "maxLength": 43,
+        "pattern": "^[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]$",
+        "writeOnly": true,
+        "description": "32 cryptographically random bytes in unpadded Base64URL"
+      },
+      "UtcInstant": {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$",
+        "description": "ISO-8601 UTC instant ending in Z"
+      },
+      "CampaignCreateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "name"
+        ],
+        "properties": {
+          "requestId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Trim before validating length; stored name has 1-100 characters"
+          }
+        }
+      },
+      "ManagementRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion"
+        ],
+        "properties": {
+          "requestId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "expectedVersion": {
+            "$ref": "#/components/schemas/Version"
+          }
+        }
+      },
+      "Member": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "username",
+          "role"
+        ],
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "DM",
+              "PLAYER"
+            ]
+          }
+        }
+      },
+      "MemberList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "campaignVersion",
+          "members"
+        ],
+        "properties": {
+          "campaignVersion": {
+            "$ref": "#/components/schemas/Version"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Member"
+            }
+          }
+        }
+      },
+      "Invitation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "createdBy",
+          "expiresAt",
+          "status",
+          "usedBy"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "$ref": "#/components/schemas/UtcInstant"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "EXPIRED",
+              "REVOKED",
+              "USED"
+            ]
+          },
+          "usedBy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "InvitationList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "campaignVersion",
+          "invitations"
+        ],
+        "properties": {
+          "campaignVersion": {
+            "$ref": "#/components/schemas/Version"
+          },
+          "invitations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Invitation"
+            }
+          }
+        }
+      },
+      "InvitationCreated": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "token",
+          "expiresAt",
+          "campaignVersion"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "token": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 43,
+            "maxLength": 43,
+            "pattern": "^[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]$",
+            "description": "Plaintext returned only for first 201; 200 retry always returns null"
+          },
+          "expiresAt": {
+            "$ref": "#/components/schemas/UtcInstant"
+          },
+          "campaignVersion": {
+            "$ref": "#/components/schemas/Version"
+          }
+        }
+      },
+      "InvitationTokenRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "token"
+        ],
+        "properties": {
+          "token": {
+            "$ref": "#/components/schemas/InvitationToken"
+          }
+        }
+      },
+      "InvitationRegisterRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "token",
+          "username",
+          "password"
+        ],
+        "properties": {
+          "token": {
+            "$ref": "#/components/schemas/InvitationToken"
+          },
+          "username": {
+            "$ref": "#/components/schemas/NewUsername"
+          },
+          "password": {
+            "$ref": "#/components/schemas/NewPassword"
+          }
+        }
+      },
+      "InvitationPreview": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "campaignId",
+          "campaignName",
+          "expiresAt"
+        ],
+        "properties": {
+          "campaignId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "campaignName": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "$ref": "#/components/schemas/UtcInstant"
+          }
+        }
+      },
+      "InvitationAccepted": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "campaignId"
+        ],
+        "properties": {
+          "campaignId": {
+            "$ref": "#/components/schemas/Uuid"
+          }
+        }
+      },
+      "InvitationRegistered": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "username",
+          "campaignId"
+        ],
+        "properties": {
+          "username": {
+            "$ref": "#/components/schemas/NewUsername"
+          },
+          "campaignId": {
+            "$ref": "#/components/schemas/Uuid"
+          }
+        }
       }
     }
+  },
+  "x-invitation-policy": {
+    "shareUrl": "${location.origin}/#invite=TOKEN",
+    "backendTokenTransport": "POST JSON body only; never URL paths or query strings",
+    "fragmentLifecycle": "Clear fragment after success; never log the fragment or invitation token",
+    "tokenLifetimeSeconds": 604800,
+    "tokenGeneration": "32 cryptographically random bytes encoded as unpadded Base64URL",
+    "persistence": "Store only SHA-256(token); never persist plaintext token in receipts or logs, or expose it in list responses or errors",
+    "oneTimeResponse": "201 returns plaintext token once; identical retry is 200 with token:null even if invitation was later used or revoked",
+    "managementVersion": "campaign.version is independent of scene/token versions; membership/invitation mutations increment once, no-op/replay does not",
+    "locking": "Serialize invitation/member changes using campaign row lock; claim invitation and membership atomically",
+    "replayAfterRemoval": "Consumed-token replay succeeds only for its original actor while still a current member; never restore removed access",
+    "bootstrap": "Operator-only optional BOOTSTRAP_USERNAME and BOOTSTRAP_PASSWORD; supply both or neither, validate strictly, never reset existing account/password/permissions"
   }
 }

@@ -2,6 +2,18 @@
 
 日期：2026-10-18（Asia/Shanghai）。测试运行环境：Windows、Node 24.21.0、npm 11.19.0。
 
+## P01 固定账号、战役与邀请
+
+基线为 c57c35a 的 14 项前端测试；只扩展 frontend，契约见 `../contracts/accounts.md`。
+
+1. 先写 API 请求体/匿名 CSRF、空账号创建战役、PLAYER 隐藏管理、一次性 fragment 邀请、注册后显式登录、已有账号接受、409 刷新以及 401/403 清场景/待重试命令测试。**19:59:40 RED**：`npm test -- src/api.test.ts src/scene-store.test.ts src/accounts.test.tsx`，3 文件 **9 失败、11 通过**。API 方法尚不存在、找不到创建/邀请入口，撤权仍保留旧场景，均为实际行为断言失败。
+2. 按契约实现 API 和中文组件，拆分 LoginForm、InvitationPage、CampaignCreate、CampaignManagement、Tabletop；保留 M1 地图/移动行为和原生 fetch receiver。**20:04:00 GREEN**：`npm test`，**23 通过**。原测试的 403 后保留场景断言随 P01 撤权契约改为清空；原匿名会话替身改用真实客户端相同的 ApiError(401)。此时首次类型构建发现新测试的泛型和查询选项类型错误，修复后才标记构建成功，编译错误不算业务 RED。
+3. 补充撤销邀请版本、网络失败同 requestId 重试、注册成功但自动登录失败恢复、已登录账号接受失败显示测试；这批首次通过，属于回归。**20:05:10**：`npm test` **27 通过**；`npm run build` TypeScript/Vite 通过。`npm run test:e2e -- --list` 发现 **2 条**真实服务流程，未实际运行浏览器。
+4. 协调者/只读 QA 指出恢复与并发边界，先补测试。**20:05:47 RED**：`npm test -- src/accounts.test.tsx src/scene-store.test.ts`，**4 失败、19 通过**：注册响应丢失后邀请已消费，preview 失败导致登录/接受入口消失；已移除用户无恢复接受入口；11 个 emoji 被 UTF-16 长度误认满足 12 字符；较早 refresh 的 403 被忽略后，另一在途旧授权快照恢复到地图。
+5. 让 preview 失败仍能登录/接受，只有有效 preview 显示新注册；接受结果使用后端返回 campaignId。密码按 Unicode code points 计数并检查 UTF-8 字节。当前战役 epoch 内任一 401/403 立即清空场景/命令并推进 epoch，阻止全部在途旧响应。**20:06:21 GREEN**：`npm test` **5 文件、31 通过**；`npm run build` TypeScript/Vite 通过。
+
+P01 浏览器脚本 `e2e/accounts.spec.ts` 使用现有 DM/PLAYER 环境账号作 setup，创建空战役、生成 fragment 链接、第三个独立 context 注册固定账号、DM 刷新/移除、真实 socket 关闭与重连/周期 HTTP 后地图清空、403、账号仍可登录。没有 mock API/STOMP。**代理仅运行了 `--list`；协调者随后于20:11启动真实打包后端、PG和Vite，运行 `npm run test:e2e`，2条均通过（13.6秒），含本流程与原M1双会话回归。** Vitest 仍仅匹配 src，Playwright 仅匹配 e2e。构建仍提示约 550 kB 主 chunk，尚未做首屏拆包优化。
+
 ## 框架 → 最小行为 RED → GREEN
 
 1. 建立 React/TypeScript/Vite 框架、Vitest/jsdom 测试运行器及空 API/SceneStore 实现。先写会话 CSRF、失败保留位置、幂等重试、409 刷新与旧响应测试。

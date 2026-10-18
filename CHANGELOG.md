@@ -20,6 +20,15 @@ and successful CI runs do not by themselves constitute a release.
   invalidations, authoritative snapshots and reconnect refreshes.
 - Add unit, real PostgreSQL/HTTP/WebSocket and two-browser tests, build workflows,
   TDD evidence, an implementation backlog and resumable handoff records.
+- Add an insert-only bootstrap account, campaign creation with an empty grid,
+  invitation-only account registration, existing-account acceptance and DM member
+  and invitation management. Add a V2 migration for campaign management versions,
+  hashed invitations and durable management command receipts.
+
+### Changed
+
+- Default Compose setup to a fixed bootstrap account. Keep sample accounts and
+  the original playable campaign available through the optional demo profile.
 
 ### Fixed
 
@@ -31,6 +40,10 @@ and successful CI runs do not by themselves constitute a release.
   matching its pinned SHA-256 instead of silently selecting a tar archive.
 - Retry transient connection resets while waiting for the Compose application to
   become ready, with a bounded timeout before running browser tests.
+- Match invitation expiry precision to PostgreSQL so retry metadata remains stable.
+- Keep login and invitation acceptance available when a consumed invitation can no
+  longer be previewed, allowing recovery after a lost registration response.
+- Count Unicode password characters consistently in the browser and backend.
 
 ### Security
 
@@ -40,5 +53,14 @@ and successful CI runs do not by themselves constitute a release.
 - Materialize the WebSocket CSRF token during the HTTP handshake and close existing
   sockets when their HTTP session is invalidated.
 - Preserve revoked membership and token control when demo initialization runs again.
+- Expire single-use invitations after seven days, return their secret only once,
+  store only SHA-256 hashes and share links through URL fragments.
+- Validate new credentials before hashing and create invited accounts, membership
+  and invitation claims atomically. Preserve existing passwords and DM roles.
+- Scope member removal and control revocation to its campaign, close the removed
+  user's realtime connections after commit and prevent old invitation or command
+  replays from granting access or removing a subsequently rejoined member.
+- Clear scene data and pending commands after access denial and invalidate all
+  in-flight snapshots so a delayed response cannot restore a revoked map.
 
 [Unreleased]: https://github.com/xianchen233/dnd-roll/commits/main/

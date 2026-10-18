@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { App } from './App';
-import { Api } from './api';
+import { Api, ApiError } from './api';
 vi.mock('./MapCanvas', () => ({ MapCanvas: () => <div data-testid="pixi-mock">地图渲染替身</div> }));
 vi.mock('./realtime', () => ({ connectRealtime: () => () => {} }));
 describe('tabletop interface', () => {
@@ -16,7 +16,7 @@ describe('tabletop interface', () => {
     expect(screen.getByText('玩家')).toBeInTheDocument();
   });
   it('shows a login error and does not enter a fake local campaign', async () => {
-    const api = { getCsrf: vi.fn().mockResolvedValue({}), me: vi.fn().mockRejectedValue(new Error('401')), login: vi.fn().mockRejectedValue(new Error('账号或密码错误')) };
+    const api = { getCsrf: vi.fn().mockResolvedValue({}), me: vi.fn().mockRejectedValue(new ApiError(401, '未登录')), login: vi.fn().mockRejectedValue(new Error('账号或密码错误')) };
     render(<App api={api as unknown as Api} />);
     await screen.findByLabelText('账号');
     fireEvent.change(screen.getByLabelText('账号'), { target: { value: 'player' } });
