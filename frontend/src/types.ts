@@ -11,3 +11,6 @@ export interface Invitation { id: string; createdBy: string; expiresAt: string; 
 export interface Invitations { campaignVersion: number; invitations: Invitation[] }
 export interface CreatedInvitation { id: string; token: string | null; expiresAt: string; campaignVersion: number }
 export interface InvitePreview { campaignId: string; campaignName: string; expiresAt: string }
+export interface SceneSummary { id: string; name: string }
+export interface Scenes { campaignVersion: number; currentSceneId: string; scenes: SceneSummary[] }
+export interface SceneReceipt extends SceneSummary { campaignVersion: number }

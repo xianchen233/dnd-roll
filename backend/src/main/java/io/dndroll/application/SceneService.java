@@ -37,18 +37,18 @@ public final class SceneService {
         return store.locked(campaignId, () -> {
             var role = requireMember(campaignId, actor);
             var scene = store.scene(campaignId);
+            // Current scene visibility is checked before disclosing any receipt state.
+            var token = findToken(scene, tokenId);
+            var visible = Movement.view(token, role, actor);
+            if (visible == null) throw new DomainException("NOT_FOUND", 404, "Token not found");
+            if (!visible.canMove()) throw new DomainException("FORBIDDEN", 403, "You cannot move this token");
             var existing = store.receipt(campaignId, actor, command.requestId());
             if (existing != null) {
                 if (!existing.tokenId().equals(tokenId) || !existing.command().equals(command))
                     throw new DomainException("IDEMPOTENCY_CONFLICT", 409, "Request ID was already used with different parameters");
-                // Recheck current visibility/control even when replaying an earlier response.
-                var token = findToken(scene, tokenId);
-                var visible = Movement.view(token, role, actor);
-                if (visible == null) throw new DomainException("NOT_FOUND", 404, "Token not found");
-                if (!visible.canMove()) throw new DomainException("FORBIDDEN", 403, "You cannot move this token");
                 return existing.response();
             }
-            var moved = Movement.move(findToken(scene, tokenId), role, actor, command, scene.width(), scene.height());
+            var moved = Movement.move(token, role, actor, command, scene.width(), scene.height());
             var response = Movement.view(moved, role, actor);
             store.save(campaignId, actor, moved, command, response);
             events.changed(campaignId);

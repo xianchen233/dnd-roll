@@ -72,6 +72,7 @@ class AccountsIT {
     @AfterEach void cleanup() {
         // Dedicated P01 users/campaigns never share the demo fixture used by M1 tests.
         for (var id : campaigns) {
+            jdbc.update("update campaign set current_scene_id=null where id=?", id);
             jdbc.update("delete from token_controller where token_id in (select t.id from token t join scene s on s.id=t.scene_id where s.campaign_id=?)", id);
             jdbc.update("delete from movement_receipt where campaign_id=?", id);
             jdbc.update("delete from token where scene_id in (select id from scene where campaign_id=?)", id);

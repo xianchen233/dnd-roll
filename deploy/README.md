@@ -11,7 +11,7 @@ docker compose --env-file .env -f deploy/compose.yaml up --build -d
 docker compose --env-file .env -f deploy/compose.yaml logs -f
 ```
 
-访问 `http://localhost:8080`（可在 .env 中调整 APP_PORT）。默认初始账号为 `owner`，密码使用 `.env` 中的 `BOOTSTRAP_PASSWORD`。登录后创建战役，再生成邀请链接；受邀者可以注册固定账号或用已有账号加入。新战役提供空网格，场景与素材编辑属于 P02。
+访问 `http://localhost:8080`（可在 .env 中调整 APP_PORT）。默认初始账号为 `owner`，密码使用 `.env` 中的 `BOOTSTRAP_PASSWORD`。登录后创建战役，再生成邀请链接；受邀者可以注册固定账号或用已有账号加入。DM 可创建多个空场景并切换全团当前场景；图片素材、地图配置及棋子编辑仍为后续 P02 工作。
 
 `BOOTSTRAP_USERNAME` 与 `BOOTSTRAP_PASSWORD` 必须同时有效或同时留空；新账号名为 `[a-z][a-z0-9_-]{2,31}`，密码至少 12 个字符且不超过 72 个 UTF-8 字节。初始化仅插入不存在的账号；重启不会重设已有密码，也不会授予其他战役访问权。需要演示数据时显式设置 `SPRING_PROFILES_ACTIVE=demo` 并设置两个 `DEMO_*_PASSWORD`；这会创建原有 dm/player 样例战役，关闭 profile 不会删除已有数据。
 
@@ -24,3 +24,5 @@ HTTPS 入口应由可信的本机反向代理终止TLS，再转发到 `127.0.0.1
 数据库使用命名卷 `postgres_data`，挂载在 PostgreSQL 18 官方镜像要求的 `/var/lib/postgresql`，重建容器保留数据。`docker compose down` 保留卷；不要使用 `down -v` 清理需要保留的战役。卷本身不能替代异机备份。产品级每日自动备份/恢复是 M2 工作，本轮只建立持久化基础。
 
 当前固定 PostgreSQL 补丁、前端锁文件与 Maven 版本；基础镜像中 Java/NGINX 使用维护标签，发布阶段再固定经验证的镜像摘要并建立安全更新流程。该配置不代表已经完成容量测试、TLS 运维或备份恢复验收。
+
+V3 Flyway 迁移移除单场景限制，为既有战役回填原场景指针，保留原场景、棋子、控制权与回执；同团复合外键限制当前场景归属。应用创建战役时在同一事务中设置初始指针，重启 demo 不重置已有选择。升级前按部署流程保留数据库备份；多场景仍仅使用 PostgreSQL，无新增素材目录或服务。素材持久目录属于 P02b，完整备份恢复属于 P09。

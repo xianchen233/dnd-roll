@@ -1,13 +1,14 @@
 import type { Move, Scene } from './types';
 import { ApiError } from './api';
 interface SceneApi { scene(campaignId: string): Promise<Scene>; move(campaignId: string, tokenId: string, move: Move): Promise<unknown> }
-export interface SceneState { scene?: Scene; status: 'idle' | 'loading' | 'confirmed' | 'pending' | 'failed' | 'conflict'; message: string }
+export interface SceneState { scene?: Scene; accessDenied?: boolean; status: 'idle' | 'loading' | 'confirmed' | 'pending' | 'failed' | 'conflict'; message: string }
 export class SceneStore {
   private state: SceneState = { status: 'idle', message: '' };
   private listeners = new Set<() => void>();
   private campaignId?: string;
   private epoch = 0;
   private refreshId = 0;
+  private sceneGeneration = 0;
   private acceptedMoveAfterRefresh?: number;
   private command?: { tokenId: string; body: Move };
   constructor(private api: SceneApi) {}
@@ -15,18 +16,23 @@ export class SceneStore {
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
   private update(patch: Partial<SceneState>) { this.state = { ...this.state, ...patch }; this.listeners.forEach(listener => listener()); }
   reset() { this.epoch++; this.refreshId++; this.campaignId = undefined; this.command = undefined; this.acceptedMoveAfterRefresh = undefined; this.state = { status: 'idle', message: '' }; this.listeners.forEach(listener => listener()); }
-  private denyAccess() {
+  denyAccess = () => {
     this.epoch++; this.refreshId++; this.command = undefined; this.acceptedMoveAfterRefresh = undefined;
-    this.update({ scene: undefined, status: 'failed', message: '已失去战役访问权限或会话已失效，地图已清空。请刷新战役列表。' });
-  }
+    this.update({ scene: undefined, accessDenied: true, status: 'failed', message: '已失去战役访问权限或会话已失效，地图已清空。请刷新战役列表。' });
+  };
   async open(campaignId: string) { this.reset(); this.campaignId = campaignId; this.update({ status: 'loading', message: '读取场景…' }); await this.refresh(); }
   async refresh(): Promise<boolean> {
-    if (!this.campaignId) return false;
+    if (!this.campaignId || this.state.accessDenied) return false;
     const campaignId = this.campaignId, epoch = this.epoch, refreshId = ++this.refreshId;
     try {
       const scene = await this.api.scene(campaignId);
       if (epoch !== this.epoch || refreshId !== this.refreshId) return false;
       if (scene.campaignId !== campaignId || (this.state.scene?.id === scene.id && scene.version < this.state.scene.version)) return false;
+      if (this.state.scene && scene.id !== this.state.scene.id) {
+        this.sceneGeneration++; this.command = undefined; this.acceptedMoveAfterRefresh = undefined;
+        this.update({ scene, status: 'confirmed', message: '已同步全团当前场景，旧场景的选择与重试已清除' });
+        return true;
+      }
       // A post-acknowledgment read may come from the move, realtime or the timer.
       // Reads started before the POST acknowledgment cannot confirm that move.
       const confirmsMove = this.acceptedMoveAfterRefresh !== undefined && refreshId > this.acceptedMoveAfterRefresh;
@@ -49,12 +55,12 @@ export class SceneStore {
   }
   async retry() { if (this.command && this.state.status !== 'pending') await this.send(); }
   private async send() {
-    const command = this.command, campaignId = this.campaignId, epoch = this.epoch;
+    const command = this.command, campaignId = this.campaignId, epoch = this.epoch, generation = this.sceneGeneration;
     if (!command || !campaignId) return;
     this.update({ status: 'pending', message: '等待服务器确认；地图仍显示已确认位置…' });
     try {
       await this.api.move(campaignId, command.tokenId, command.body);
-      if (epoch !== this.epoch) return;
+      if (epoch !== this.epoch || generation !== this.sceneGeneration) return;
       this.command = undefined;
       this.acceptedMoveAfterRefresh = this.refreshId;
       const moveRefreshId = this.refreshId + 1;
@@ -65,9 +71,10 @@ export class SceneStore {
     } catch (error) {
       if (epoch !== this.epoch) return;
       if (error instanceof ApiError && (error.status === 401 || error.status === 403)) { this.denyAccess(); return; }
+      if (generation !== this.sceneGeneration) return;
       if (error instanceof ApiError && error.status === 409) {
         this.command = undefined; const refreshed = await this.refresh();
-        if (epoch !== this.epoch) return;
+        if (epoch !== this.epoch || generation !== this.sceneGeneration) return;
         this.update({ status: 'conflict', message: refreshed ? '操作冲突，已读取最新位置，请重新选择目标' : '操作冲突；最新场景读取失败，请刷新后重试' });
       } else {
         if (error instanceof ApiError && error.status < 500) this.command = undefined;

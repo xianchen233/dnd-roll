@@ -28,6 +28,30 @@ describe('membership loss', () => {
 const snapshot = (version = 0, x = 2): Scene => ({ id: 'scene', campaignId: 'c', name: '营地', width: 24, height: 16, gridSize: 48, version, tokens: [{ id: 'hero', name: '游侠', x, y: 3, version, canMove: true }, { id: 'ally', name: '队友', x: 6, y: 3, version, canMove: false }] });
 const deferred = <T,>() => { let resolve!: (v: T) => void; const promise = new Promise<T>(r => { resolve = r; }); return { resolve, promise }; };
 describe('authoritative scene state', () => {
+  it('does not label a newly switched scene as conflict from an old move 409', async () => {
+    const api = { scene: vi.fn().mockResolvedValueOnce(snapshot()).mockResolvedValueOnce({ ...snapshot(), id: 'next', tokens: [] }), move: vi.fn().mockRejectedValue(new ApiError(409, 'version')) };
+    const store = new SceneStore(api); await store.open('c'); await store.move('hero', 4, 5);
+    expect(store.getSnapshot()).toMatchObject({ status: 'confirmed', scene: { id: 'next' } });
+  });
+  it('drops a failed move retry when the shared scene changes', async () => {
+    const api = { scene: vi.fn().mockResolvedValueOnce(snapshot()).mockResolvedValueOnce({ ...snapshot(), id: 'next', tokens: [] }), move: vi.fn().mockRejectedValue(new Error('offline')) };
+    const store = new SceneStore(api); await store.open('c'); await store.move('hero', 4, 5);
+    expect(store.canRetry()).toBe(true); await store.refresh(); await store.retry();
+    expect(store.canRetry()).toBe(false); expect(api.move).toHaveBeenCalledTimes(1);
+    expect(store.getSnapshot()).toMatchObject({ status: 'confirmed', scene: { id: 'next' } });
+  });
+  it.each(['success', 'failure'] as const)('isolates old in-flight move %s after switching away and returning', async result => {
+    let reject!: (e: Error) => void, resolve!: (v: unknown) => void;
+    const post = new Promise((yes, no) => { resolve = yes; reject = no; });
+    const api = { scene: vi.fn().mockResolvedValueOnce(snapshot()).mockResolvedValueOnce({ ...snapshot(), id: 'next', tokens: [] }).mockResolvedValueOnce(snapshot(1, 7)), move: vi.fn().mockReturnValue(post) };
+    const store = new SceneStore(api); await store.open('c'); const moving = store.move('hero', 4, 5);
+    await store.refresh(); await store.refresh();
+    if (result === 'success') resolve({}); else reject(new Error('offline'));
+    await moving;
+    expect(api.scene).toHaveBeenCalledTimes(3); expect(store.canRetry()).toBe(false);
+    expect(store.getSnapshot()).toMatchObject({ status: 'confirmed', scene: { id: 'scene', version: 1 } });
+    expect(store.getSnapshot().message).not.toContain('移动已保存');
+  });
   it.each(['move-first', 'realtime-first'] as const)('confirms a saved move when realtime supersedes its refresh (%s)', async order => {
     const direct = deferred<Scene>(), realtime = deferred<Scene>();
     const api = { scene: vi.fn().mockResolvedValueOnce(snapshot()).mockReturnValueOnce(direct.promise).mockReturnValueOnce(realtime.promise), move: vi.fn().mockResolvedValue({}) };

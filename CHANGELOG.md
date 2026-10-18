@@ -24,6 +24,11 @@ and successful CI runs do not by themselves constitute a release.
   invitation-only account registration, existing-account acceptance and DM member
   and invitation management. Add a V2 migration for campaign management versions,
   hashed invitations and durable management command receipts.
+- Add DM creation and activation of multiple empty scenes, with one shared current
+  scene for the whole campaign. Preserve inactive scene positions, versions and
+  control grants, and persist scene command receipts with the campaign version.
+- Add a V3 migration that preserves existing scenes and backfills each campaign's
+  current scene, with a foreign key enforcing campaign ownership.
 
 ### Changed
 
@@ -47,6 +52,9 @@ and successful CI runs do not by themselves constitute a release.
 - Confirm a saved move when its direct refresh is superseded by a successful
   realtime refresh. Keep pre-acknowledgment and revoked snapshots from confirming
   the move, and recover confirmation after a transient refresh failure.
+- Clear selected units and obsolete movement retries on a scene switch; ignore
+  delayed movement results from the previous scene while retaining access-denial
+  handling. Increment only the moved token's scene version.
 
 ### Security
 
@@ -65,5 +73,10 @@ and successful CI runs do not by themselves constitute a release.
   replays from granting access or removing a subsequently rejoined member.
 - Clear scene data and pending commands after access denial and invalidate all
   in-flight snapshots so a delayed response cannot restore a revoked map.
+- Restrict inactive scene metadata and scene management to current DMs, recheck
+  authorization before scene receipt replay, and reject movement or movement
+  replay for tokens outside the current scene. Clear DM panels on access denial.
+- Observe authorization errors from each concurrent management read so an earlier
+  network failure cannot conceal a later access denial or leave old maps visible.
 
 [Unreleased]: https://github.com/xianchen233/dnd-roll/commits/main/

@@ -1,4 +1,4 @@
-import type { Campaign, CreatedInvitation, Csrf, Identity, Invitations, InvitePreview, Members, Move, Scene, Token, VersionedCommand } from './types';
+import type { Campaign, CreatedInvitation, Csrf, Identity, Invitations, InvitePreview, Members, Move, Scene, Scenes, SceneReceipt, Token, VersionedCommand } from './types';
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
 export class Api {
   private csrf?: Csrf;
@@ -37,6 +37,9 @@ export class Api {
   acceptInvitation(token: string): Promise<{ campaignId: string }> { return this.post('/invitations/accept', { token }); }
   registerInvitation(token: string, username: string, password: string): Promise<{ username: string; campaignId: string }> { return this.post('/invitations/register', { token, username, password }); }
   scene(campaignId: string): Promise<Scene> { return this.call(`/campaigns/${encodeURIComponent(campaignId)}/scene`); }
+  scenes(id: string): Promise<Scenes> { return this.call(`/campaigns/${encodeURIComponent(id)}/scenes`); }
+  createScene(id: string, body: VersionedCommand & { name: string }): Promise<SceneReceipt> { return this.post(`/campaigns/${encodeURIComponent(id)}/scenes`, body); }
+  activateScene(id: string, sceneId: string, body: VersionedCommand): Promise<SceneReceipt> { return this.post(`/campaigns/${encodeURIComponent(id)}/scenes/${encodeURIComponent(sceneId)}/activate`, body); }
   async move(campaignId: string, tokenId: string, move: Move): Promise<Token> {
     if (!this.csrf) await this.getCsrf();
     return this.call(`/campaigns/${encodeURIComponent(campaignId)}/tokens/${encodeURIComponent(tokenId)}/moves`, 'POST', move);

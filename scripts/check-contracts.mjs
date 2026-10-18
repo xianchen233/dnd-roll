@@ -2,11 +2,12 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const read = (path) => readFile(new URL(path, import.meta.url), 'utf8');
-const [apiText, eventText, readme, accounts] = await Promise.all([
+const [apiText, eventText, readme, accounts, scenes] = await Promise.all([
   read('../contracts/openapi.json'),
   read('../contracts/scene-events.schema.json'),
   read('../contracts/README.md'),
   read('../contracts/accounts.md'),
+  read('../contracts/scenes.md'),
 ]);
 const api = JSON.parse(apiText);
 const event = JSON.parse(eventText);
@@ -44,6 +45,7 @@ function validate(schema, value) {
     if (schema.minimum !== undefined) assert.ok(value >= schema.minimum);
   } else if (schema.type === 'string') {
     assert.equal(typeof value, 'string');
+    if (schema['x-trimBeforeValidation']) value = value.trim();
     if (schema.minLength !== undefined) assert.ok([...value].length >= schema.minLength);
     if (schema.maxLength !== undefined) assert.ok([...value].length <= schema.maxLength);
     if (schema.pattern !== undefined) assert.match(value, new RegExp(schema.pattern));
@@ -69,7 +71,7 @@ assert.equal(api.openapi, '3.1.0');
 assert.equal(api.jsonSchemaDialect, 'https://json-schema.org/draft/2020-12/schema');
 assert.equal(event.$schema, api.jsonSchemaDialect);
 checkRefs(api);
-const documentedOperations = [...`${readme}\n${accounts}`.matchAll(/(?:`|### )(GET|POST) (\/api[^` \r\n]*)/g)]
+const documentedOperations = [...`${readme}\n${accounts}\n${scenes}`.matchAll(/(?:`|### )(GET|POST) (\/api[^` \r\n]*)/g)]
   .map(([, method, path]) => `${method} ${path}`);
 const actualOperations = Object.entries(api.paths).flatMap(([path, item]) =>
   Object.keys(item).filter((method) => ['get', 'post'].includes(method))
@@ -156,6 +158,48 @@ assert.match(api['x-invitation-policy'].fragmentLifecycle, /clear.*success.*neve
 assert.equal(api.paths[revoke].post.responses['204'].content, undefined);
 assert.equal(api.paths[remove].post.responses['204'].content, undefined);
 
+const sceneList = '/api/campaigns/{campaignId}/scenes';
+const activateScene = `${sceneList}/{sceneId}/activate`;
+for (const [path, method] of [[sceneList, 'get'], [sceneList, 'post'], [activateScene, 'post']]) {
+  const operation = api.paths[path][method];
+  assert.equal(operation['x-required-role'], 'DM');
+  assert.match(operation.description, /inactive.*metadata.*never.*player/i);
+  for (const status of ['401', '403']) assert.ok(operation.responses[status]);
+}
+assert.deepEqual(requestSchema(sceneList).required, ['requestId', 'expectedVersion', 'name']);
+assert.deepEqual(requestSchema(activateScene).required, ['requestId', 'expectedVersion']);
+assert.deepEqual(responseSchema(sceneList, 'get', '200').required, ['campaignVersion', 'currentSceneId', 'scenes']);
+for (const path of [sceneList, activateScene]) {
+  const operation = api.paths[path].post;
+  assert.equal(requestSchema(path).additionalProperties, false);
+  assert.deepEqual(responseSchema(path, 'post', '200').required, ['id', 'name', 'campaignVersion']);
+  for (const status of ['400', '409']) assert.ok(operation.responses[status]);
+  assert.match(resolve(operation.responses['409']).description, /VERSION_CONFLICT.*IDEMPOTENCY_CONFLICT/);
+  assert.equal(operation['x-idempotency'].namespace, 'scene-commands');
+  assert.deepEqual(operation['x-idempotency'].key, ['sessionActor', 'requestId']);
+  assert.ok(operation['x-idempotency'].payload.includes('commandKind'));
+  assert.ok(operation['x-idempotency'].payload.includes('campaignId'));
+  assert.ok(operation['x-idempotency'].payload.includes('expectedVersion'));
+  assert.match(operation['x-idempotency'].authorization, /current.*DM.*before.*replay/i);
+  assert.match(operation['x-idempotency'].samePayload, /original.*before.*stale.*no.*event/i);
+  assert.match(operation['x-idempotency'].differentPayload, /409 IDEMPOTENCY_CONFLICT/);
+}
+assert.ok(api.paths[sceneList].post['x-idempotency'].payload.includes('trimmedName'));
+assert.ok(api.paths[activateScene].post['x-idempotency'].payload.includes('sceneId'));
+assert.ok(api.paths[activateScene].post.responses['404']);
+assert.match(api.paths[activateScene].post.description, /already current.*advance/i);
+const scenePolicy = api['x-scene-policy'];
+assert.match(scenePolicy.managementVersion, /shared.*P01.*independent.*scene.*token/i);
+assert.match(scenePolicy.receiptNamespace, /create.*activate.*separate.*account.*movement/i);
+assert.match(scenePolicy.atomicity, /command.*version.*receipt.*atomically/i);
+assert.match(scenePolicy.visibility, /inactive.*IDs.*names.*never.*player/i);
+assert.match(scenePolicy.historicalReplay, /historical.*refresh.*snapshot.*list/i);
+assert.match(scenePolicy.movement, /current scene.*including.*replay.*404/i);
+assert.match(scenePolicy.realtime, /after.commit.*SCENE_CHANGED.*type.*campaignId/i);
+assert.match(api.paths['/api/campaigns/{campaignId}/scene'].get.description, /DM.selected current scene/i);
+assert.match(move.description, /current scene.*including.*replay/i);
+assert.ok(!api.paths['/api/campaigns/{campaignId}/scenes/{sceneId}'], 'No inactive scene-by-ID read route');
+
 const id = '12345678-1234-1234-1234-123456789abc';
 const token = { id, name: 'Adventurer', x: 2, y: 3, version: 0, canMove: true };
 const snapshot = { id, campaignId: id, name: 'First scene', width: 24, height: 16, gridSize: 48, version: 0, tokens: [token] };
@@ -224,4 +268,40 @@ assert.throws(() => validate(schemas.MemberList, membersView.members));
 assert.throws(() => validate(schemas.InvitationList, invitationsView.invitations));
 assert.throws(() => validate(schemas.InvitationList, { ...invitationsView, invitations: [{ ...invitation, status: 'UNKNOWN' }] }));
 assert.throws(() => validate(schemas.InvitationRegisterRequest, { ...registration, role: 'DM' }));
-console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; CSRF/session, P01 credentials/version/secret-free views/one-time invitation token/fragment links, movement/idempotency, snapshot and token-free STOMP event constraints. This is a focused contract checker, not a general OpenAPI validator.`);
+const sceneCreate = { requestId: id, expectedVersion: 0, name: 'Next scene' };
+const sceneActivate = { requestId: id, expectedVersion: 0 };
+const sceneResult = { id, name: 'Next scene', campaignVersion: 1 };
+const sceneListView = { campaignVersion: 1, currentSceneId: id, scenes: [{ id, name: 'Next scene' }] };
+for (const [schema, value] of [
+  [schemas.SceneCreateRequest, sceneCreate], [schemas.SceneActivateRequest, sceneActivate],
+  [schemas.SceneCommandResult, sceneResult], [schemas.SceneList, sceneListView],
+  [schemas.SceneCreateRequest, { ...sceneCreate, name: ` ${'😀'.repeat(100)} ` }],
+]) validate(schema, value);
+for (const invalid of [
+  { ...sceneCreate, name: '' }, { ...sceneCreate, name: ' \t\n ' },
+  { ...sceneCreate, name: '😀'.repeat(101) }, { requestId: id, name: 'Name' },
+  { ...sceneCreate, expectedVersion: -1 }, { ...sceneCreate, expectedVersion: 0.5 },
+  { ...sceneCreate, requestId: 'bad' }, { ...sceneCreate, actor: 'dm' },
+  { ...sceneCreate, sceneId: id },
+]) assert.throws(() => validate(schemas.SceneCreateRequest, invalid));
+for (const invalid of [
+  { requestId: id }, { expectedVersion: 0 }, { ...sceneActivate, name: 'Name' },
+  { ...sceneActivate, expectedVersion: -1 }, { ...sceneActivate, expectedVersion: 0.5 },
+  { ...sceneActivate, requestId: 'bad' }, { ...sceneActivate, actor: 'dm' },
+]) assert.throws(() => validate(schemas.SceneActivateRequest, invalid));
+for (const secret of ['inactiveSceneIds', 'inactiveSceneNames', 'scenes', 'currentSceneId', 'campaignVersion']) {
+  assert.throws(() => validate(schemas.SceneSnapshot, { ...snapshot, [secret]: [] }));
+  assert.throws(() => validate(event, { type: 'SCENE_CHANGED', campaignId: id, [secret]: [] }));
+}
+for (const secret of ['tokens', 'hidden', 'controllers', 'assetId', 'tokenHash']) {
+  assert.throws(() => validate(schemas.SceneCommandResult, { ...sceneResult, [secret]: 'secret' }));
+  assert.throws(() => validate(schemas.SceneList, { ...sceneListView, scenes: [{ ...sceneListView.scenes[0], [secret]: 'secret' }] }));
+}
+for (const invalid of [
+  { ...sceneResult, campaignVersion: -1 }, { id, name: 'Name' }, { ...sceneResult, id: 'bad' },
+]) assert.throws(() => validate(schemas.SceneCommandResult, invalid));
+for (const invalid of [
+  { ...sceneListView, campaignVersion: -1 }, { campaignVersion: 1, scenes: [] },
+  { ...sceneListView, currentSceneId: 'bad' }, { ...sceneListView, scenes: [{ id }] },
+]) assert.throws(() => validate(schemas.SceneList, invalid));
+console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; CSRF/session, P01 credentials/version/secret-free views/one-time invitation token/fragment links, P02a DM-only scenes/shared management version/scene receipt namespace, movement/idempotency, snapshot and token-free STOMP event constraints. This is a focused contract checker, not a general OpenAPI validator.`);

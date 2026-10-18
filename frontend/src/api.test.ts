@@ -2,6 +2,18 @@ import { describe, expect, it, vi } from 'vitest';
 import { Api, ApiError } from './api';
 
 describe('session HTTP client', () => {
+  it('encodes scene identifiers and sends session CSRF with versioned scene commands', async () => {
+    const request = vi.fn().mockResolvedValueOnce(Response.json({ campaignVersion: 2, currentSceneId: 's', scenes: [] }))
+      .mockResolvedValueOnce(Response.json({ token: 'csrf', headerName: 'X-CSRF-TOKEN' }))
+      .mockResolvedValueOnce(Response.json({ id: 'next', name: '密室', campaignVersion: 3 }))
+      .mockResolvedValueOnce(Response.json({ id: 'next', name: '密室', campaignVersion: 4 }));
+    const api = new Api(request);
+    await api.scenes('c/id');
+    await api.createScene('c/id', { requestId: 'r1', expectedVersion: 2, name: '密室' });
+    await api.activateScene('c/id', 'next/id', { requestId: 'r2', expectedVersion: 3 });
+    expect(request.mock.calls.map(call => call[0])).toEqual(['/api/campaigns/c%2Fid/scenes', '/api/auth/csrf', '/api/campaigns/c%2Fid/scenes', '/api/campaigns/c%2Fid/scenes/next%2Fid/activate']);
+    expect(request.mock.calls[2][1]).toMatchObject({ credentials: 'include', headers: { 'X-CSRF-TOKEN': 'csrf' }, body: JSON.stringify({ requestId: 'r1', expectedVersion: 2, name: '密室' }) });
+  });
   it('uses POST body secrets and CSRF for anonymous invite preview and registration', async () => {
     const request = vi.fn().mockResolvedValueOnce(Response.json({ token: 'csrf', headerName: 'X-CSRF-TOKEN' }))
       .mockResolvedValueOnce(Response.json({ campaignId: 'c', campaignName: '营地', expiresAt: '2026-10-25T00:00:00Z' }))

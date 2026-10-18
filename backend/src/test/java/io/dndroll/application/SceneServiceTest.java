@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 class SceneServiceTest {
     final UUID campaign = UUID.randomUUID();
     final UUID tokenId = UUID.randomUUID();
+    final UUID otherTokenId = UUID.randomUUID();
     final MemoryStore store = new MemoryStore();
     int events;
     final SceneService service = new SceneService(store, id -> events++);
@@ -18,9 +19,10 @@ class SceneServiceTest {
     class MemoryStore implements Store {
         Token token = new Token(tokenId, "Hero", 2, 3, 0, false, Set.of("player"));
         Map<String, Receipt> receipts = new HashMap<>();
+        boolean inactive;
         public List<CampaignView> campaigns(String actor) { return List.of(); }
         public Role role(UUID id, String actor) { return actor.equals("outsider") ? null : Role.PLAYER; }
-        public Scene scene(UUID id) { return new Scene(UUID.randomUUID(), campaign, "Scene", 24, 16, 48, 0, List.of(token)); }
+        public Scene scene(UUID id) { return new Scene(UUID.randomUUID(), campaign, "Scene", 24, 16, 48, 0, inactive ? List.of() : List.of(token, new Token(otherTokenId, "Other", 1, 1, 0, false, Set.of("player")))); }
         public Receipt receipt(UUID id, String actor, UUID requestId) { return receipts.get(actor + requestId); }
         public void save(UUID id, String actor, Token token, Command command, TokenView response) {
             this.token = token; receipts.put(actor + command.requestId(), new Receipt(token.id(), command, response));
@@ -40,11 +42,18 @@ class SceneServiceTest {
     }
     @Test void requestKeyCannotBeReusedForAnotherToken() {
         service.move(campaign, tokenId, "player", first);
-        assertEquals("IDEMPOTENCY_CONFLICT", assertThrows(DomainException.class, () -> service.move(campaign, UUID.randomUUID(), "player", first)).code());
+        assertEquals("IDEMPOTENCY_CONFLICT", assertThrows(DomainException.class, () -> service.move(campaign, otherTokenId, "player", first)).code());
     }
     @Test void membershipIsCheckedBeforeSnapshotOrMutation() {
         assertEquals("FORBIDDEN", assertThrows(DomainException.class, () -> service.snapshot(campaign, "outsider")).code());
         assertEquals("FORBIDDEN", assertThrows(DomainException.class, () -> service.move(campaign, tokenId, "outsider", first)).code());
         assertEquals(0, store.token.version()); assertEquals(0, events);
+    }
+    @Test void inactiveTokenDoesNotDiscloseReceiptEvenWhenRetryFingerprintChanged() {
+        service.move(campaign, tokenId, "player", first);
+        store.inactive = true;
+        var error = assertThrows(DomainException.class, () -> service.move(campaign, tokenId, "player", new Command(first.requestId(), 0, 9, 9)));
+        assertEquals("NOT_FOUND", error.code());
+        assertEquals(1, store.token.version()); assertEquals(1, events);
     }
 }

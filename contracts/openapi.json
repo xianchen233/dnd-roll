@@ -3,7 +3,7 @@
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "info": {
     "title": "D&D Roll HTTP contract",
-    "version": "0.2.0"
+    "version": "0.3.0"
   },
   "servers": [
     {
@@ -225,7 +225,7 @@
       ],
       "get": {
         "operationId": "getScene",
-        "description": "Permission-filtered authoritative snapshot. Hidden tokens are absent from player snapshots. Refresh after a successful move, scene-change hint, reconnect and periodically.",
+        "description": "Permission-filtered authoritative snapshot. Hidden tokens are absent from player snapshots. Refresh after a successful move, scene-change hint, reconnect and periodically. Always return the DM-selected current scene, never inactive scene IDs or names.",
         "responses": {
           "200": {
             "description": "Visible scene snapshot",
@@ -263,7 +263,7 @@
       ],
       "post": {
         "operationId": "moveToken",
-        "description": "Exploration movement only. Server enforces membership, visibility, control, grid bounds and object version. Invisible token: 404; visible uncontrolled token: 403. DM may move any token in their own campaign. Persist state and idempotency receipt atomically. Read a fresh scene snapshot after success.",
+        "description": "Exploration movement only. Server enforces membership, visibility, control, grid bounds and object version. Invisible token: 404; visible uncontrolled token: 403. DM may move any token in their own campaign. Persist state and idempotency receipt atomically. Read a fresh scene snapshot after success. Token must belong to the current scene, including receipt replay; inactive or foreign tokens return 404. Switching away and back preserves token positions, versions, controls and receipts.",
         "x-idempotency": {
           "key": [
             "campaignId",
@@ -782,6 +782,188 @@
         },
         "security": []
       }
+    },
+    "/api/campaigns/{campaignId}/scenes": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/CampaignId"
+        }
+      ],
+      "get": {
+        "operationId": "listScenes",
+        "description": "DM only; requires current authenticated campaign DM membership, including on receipt replay. Inactive scene metadata must never enter player payloads.",
+        "x-required-role": "DM",
+        "responses": {
+          "200": {
+            "description": "DM preparation metadata and shared campaign management version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SceneList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createScene",
+        "description": "DM only; requires current authenticated campaign DM membership, including on receipt replay. Inactive scene metadata must never enter player payloads. Creates an empty 24 by 16 scene, gridSize 48, version 0; does not switch the current scene. Trim name before validating 1-100 Unicode code points.",
+        "x-required-role": "DM",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SceneCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created scene or original result on an identical authorized retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SceneCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "description": "409 VERSION_CONFLICT for stale campaignVersion or IDEMPOTENCY_CONFLICT for a changed fingerprint; refresh list/version before a new command.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "namespace": "scene-commands",
+          "key": [
+            "sessionActor",
+            "requestId"
+          ],
+          "payload": [
+            "commandKind",
+            "campaignId",
+            "trimmedName",
+            "expectedVersion"
+          ],
+          "authorization": "Validate current campaign DM authorization before receipt replay",
+          "samePayload": "Return original result before stale version checks; no repeated mutation or event",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT",
+          "versionConflict": "409 VERSION_CONFLICT when expectedVersion differs from the shared campaign management version"
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/scenes/{sceneId}/activate": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/CampaignId"
+        },
+        {
+          "$ref": "#/components/parameters/SceneId"
+        }
+      ],
+      "post": {
+        "operationId": "activateScene",
+        "description": "DM only; requires current authenticated campaign DM membership, including on receipt replay. Inactive scene metadata must never enter player payloads. Selects the whole group's current scene without modifying scene or token state. Activating the already current scene succeeds and advances campaignVersion once. An unknown or other-campaign target returns 404.",
+        "x-required-role": "DM",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SceneActivateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Activated scene or historical original result; refresh current snapshot/list after replay",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SceneCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "409 VERSION_CONFLICT for stale campaignVersion or IDEMPOTENCY_CONFLICT for a changed fingerprint; refresh list/version before a new command.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "namespace": "scene-commands",
+          "key": [
+            "sessionActor",
+            "requestId"
+          ],
+          "payload": [
+            "commandKind",
+            "campaignId",
+            "sceneId",
+            "expectedVersion"
+          ],
+          "authorization": "Validate current campaign DM authorization before receipt replay",
+          "samePayload": "Return original result before stale version checks; no repeated mutation or event",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT",
+          "versionConflict": "409 VERSION_CONFLICT when expectedVersion differs from the shared campaign management version"
+        }
+      }
     }
   },
   "components": {
@@ -837,6 +1019,14 @@
           "minLength": 1
         },
         "description": "Existing campaign member username; legacy demo usernames remain supported"
+      },
+      "SceneId": {
+        "name": "sceneId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "$ref": "#/components/schemas/Uuid"
+        }
       }
     },
     "responses": {
@@ -1397,6 +1587,105 @@
             "$ref": "#/components/schemas/Uuid"
           }
         }
+      },
+      "SceneCreateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "name"
+        ],
+        "properties": {
+          "requestId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "expectedVersion": {
+            "$ref": "#/components/schemas/Version"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "x-trimBeforeValidation": true,
+            "description": "Trim before validating 1-100 Unicode code points; stored name is trimmed"
+          }
+        }
+      },
+      "SceneActivateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion"
+        ],
+        "properties": {
+          "requestId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "expectedVersion": {
+            "$ref": "#/components/schemas/Version"
+          }
+        }
+      },
+      "SceneSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "SceneList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "campaignVersion",
+          "currentSceneId",
+          "scenes"
+        ],
+        "properties": {
+          "campaignVersion": {
+            "$ref": "#/components/schemas/Version"
+          },
+          "currentSceneId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "scenes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SceneSummary"
+            }
+          }
+        }
+      },
+      "SceneCommandResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "campaignVersion"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "campaignVersion": {
+            "$ref": "#/components/schemas/Version"
+          }
+        }
       }
     }
   },
@@ -1412,5 +1701,16 @@
     "locking": "Serialize invitation/member changes using campaign row lock; claim invitation and membership atomically",
     "replayAfterRemoval": "Consumed-token replay succeeds only for its original actor while still a current member; never restore removed access",
     "bootstrap": "Operator-only optional BOOTSTRAP_USERNAME and BOOTSTRAP_PASSWORD; supply both or neither, validate strictly, never reset existing account/password/permissions"
+  },
+  "x-scene-policy": {
+    "managementVersion": "campaign.version is shared with P01; independent of scene and token versions. Successful create/activate increments once, including already-current activation; replay never increments.",
+    "receiptNamespace": "One durable namespace shared by create and activate, separate from account and movement receipts; fingerprint contains command kind, campaignId, target sceneId or trimmed name, and expectedVersion.",
+    "atomicity": "Scene command, campaign version and receipt commit atomically; parallel commands using the same expectedVersion have one winner, identical concurrent retries have one effect.",
+    "visibility": "Inactive scene IDs and names are DM preparation metadata and never enter player snapshots, errors or events; no scene-by-ID read endpoint.",
+    "historicalReplay": "Activation receipt is historical confirmation; refresh the current snapshot and list instead of treating the returned scene ID as current.",
+    "movement": "Only tokens in the current scene can move, including receipt replay; inactive and foreign tokens return 404. Returning preserves positions, token/scene versions, controls and durable movement receipts.",
+    "realtime": "After commit send private SCENE_CHANGED invalidation containing only type and campaignId. Reconnect and periodic reads recover missed switches.",
+    "clientLifecycle": "On scene change clear old selection and failed movement retry; ignore old in-flight movement responses. Retain scene command requestId/body for explicit retry after ambiguous transport/5xx; refresh version on 409; clear map and management data on 401/403, including delayed successes.",
+    "migration": "V3 preserves V1/V2 checksums and scene/token/receipt data, removes single-scene uniqueness and backfills a current-scene pointer constrained to the same campaign; initialization sets pointer transactionally and never resets an existing one."
   }
 }

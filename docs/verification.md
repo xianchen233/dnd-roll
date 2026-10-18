@@ -1,6 +1,6 @@
 # 阶段验收记录
 
-日期：2026-10-18（Asia/Shanghai）。状态：M0/M1本地与远端CI通过；P01正在实现，结果单独列于文末。
+日期：2026-10-18（Asia/Shanghai）。状态：M0/M1、P01 本地与远端 CI 通过；P02a 契约先行，实际结果另记于文末。
 
 ## 测试与构建
 
@@ -81,3 +81,35 @@ dbe61cf的push run39126867019三个job通过，但[PR run39126870907](https://gi
 20:25:19先补deferred RED（两种响应顺序2失败），20:26:32补恢复边界再RED；最小修复记录POST成功时refresh序号，只让其后最新有效快照完成同步确认，旧/撤权响应继续隔离。20:26:50 `npm test`最终**36通过**，TypeScript/Vite构建通过，原M1/P01测试保留。
 
 本机复验中，P01所有邀请/移除/403断言先通过，但退出后脚本立即导航导致重新登录表单超时；trace定位于8.34秒开始的账号fill。补上等待退出完成后的“进入冒险”按钮可见再导航。20:29再次 `npm run test:e2e`：**2通过（11.8秒）**，E2E业务断言未放宽、未配置retry。后端源码未改，不重复冒称执行新的Java检查。最新提交的远端结果以[PR Checks](https://github.com/xianchen233/dnd-roll/pull/1/checks)为准，交付必须检查当前SHA。
+
+## P02a 开工核对
+
+2026-10-18：HEAD `d9a03935920a1e75013e3de24a31370e33a87849`，Git clean，与 origin 一致。通过已认证 GitHub API 核对 PR #1 open/draft/base main，当前 SHA 的 [push run39127654306](https://github.com/xianchen233/dnd-roll/actions/runs/39127654306) 和 [pull_request run39127657531](https://github.com/xianchen233/dnd-roll/actions/runs/39127657531) 均 completed/success。P01 门槛满足后才开始 P02a 契约与 RED。P02a 检查尚未执行，不复用 P01 绿灯标记新功能通过。
+
+### P02a 契约 TDD
+
+先完成 `contracts/scenes.md` 后扩展检查器，实际 `node scripts/check-contracts.mjs` exit 1：documented/actual 操作比较缺少 GET scenes、POST scenes、POST activate（check-contracts.mjs:79）。随后补 OpenAPI，实际同命令 exit 0：19 个 HTTP 操作通过，保留全部 16 个旧操作。覆盖 DM-only、共享 campaignVersion、独立持久 scene-command 回执命名空间、授权先于回放、历史切换回执、严格字段及 Unicode 名称边界、无秘密元数据事件/玩家快照。此检查仍是聚焦契约检查器，不冒充通用 OpenAPI validator。
+
+### P02a 本地最终验收
+
+2026-10-18（Asia/Shanghai），所有旧 M1/P01 测试保留；未开始 P02b。
+
+| 检查 | 实际结果 |
+| --- | --- |
+| 后端 | 20:55:38 `mvn '-Dmaven.repo.local=D:/workspace/dnd/.tools/m2' -Pintegration verify`：37 无数据库 unit + 28 真实 PG/HTTP/WS，0 失败/错误/跳过；AccountsIT9、FirstSliceIT6、RealtimeIT4、ScenesIT8、SceneMigrationIT1 |
+| 前端 | 协调者20:56:49 `npm test`：6 文件53通过；`npm run build` TypeScript/Vite通过，主chunk约556kB提示仍保留 |
+| 契约 | `node scripts/check-contracts.mjs`：19 HTTP 操作，保留全部旧16操作；命令/快照字段兼容、DM-only、共享版本/幂等与秘密边界检查通过 |
+| 真实浏览器 | 20:56–57 `npm run test:e2e`：本机 Chrome、真实后端/PG/Vite，3通过（14.8秒），原 M1/P01 两流程原样保留，无 HTTP/STOMP mock、0 retry |
+| V2→V3 实际升级 | 20:56 打包服务对旧 browser 库自然升级，Flyway验证1/2/3；升级前后5个campaign/scene、2个token、所有controls及旧receipt数量逐项相同；自动迁移IT另逐行验证原表及同团FK |
+| 真实进程重启 | 20:58 外置 smoke-p02a-restart.ps1 实际停止Java、同库重启、新会话：当前scene、创建/激活回执、旧scene/token位置与版本、move回执保持；旧activate回放不再切图、inactive move回放404、demo不复位 |
+| 视觉与静态检查 | 已人工查看真实DM/player PNG，画布完整、DM场景/成员管理正常、玩家无管理区和隐藏单位；`git diff --check`通过 |
+
+第三条真实浏览器流程：玩家移动原demo棋子 → DM创建空备团场景而双端仍在旧场景 → 玩家不请求备团列表、直接列表/activate均403 → DM切图并观察真实私有STOMP frame（无场景名或秘密单位）→ 玩家新空场景/清选择 → DM切回 → 完整玩家快照与原保存位置、token/scene版本一致，DM仍可见隐藏敌人。finally只在需要时恢复旧current，避免破坏原M1复跑。截图在忽略目录 `frontend/test-results/scenes-DM-creates-a-prepar-f5e8f-o-the-preserved-moved-scene/`。
+
+前端 TDD 包含初始11项预期失败，追加409刷新跨scene和POST成功但快照503的实际RED；采用独立scene generation，保留campaign epoch与任一当前epoch401/403全局清除，原P01实时刷新竞争修复保留。切换命令回执仅提示已确认，地图是否同步取决于真实新快照，不以历史回执宣称同步完成。
+
+本地没有执行Docker/Compose或公网TLS；本轮新提交的远端CI尚待核实。迁移与重启检查只针对测试数据库，不等于P09完整备份/异机恢复。
+
+### P02a 最终审查修复与复验
+
+最终只读 QA 发现 `CampaignManagement.load()` 的 `Promise.all` 先网络/503、后另一请求401/403时，后到撤权未被观察。21:01:40 focused RED 实际4失败/14通过；每个请求独立观察授权失败再聚合，不等待另一挂起请求。新增6项deferred回归，晚到地图/备团/管理成功均不得恢复数据。21:02:04 全量前端最终 **59通过**，构建通过。21:03协调者再运行真实 Chrome `npm run test:e2e`，**3通过**，含原两流程与P02a，没有mock/retry或放宽断言。后端生产代码未改，沿用本轮37unit/28IT及真实重启证据，不声称重跑了新的Java检查。

@@ -160,5 +160,19 @@ class FirstSliceIT {
             jdbc.update("insert into token_controller(token_id,username) values (?,'it-player') on conflict do nothing", token);
         }
     }
+    @Test void restartingDemoPreservesDmSelectedCurrentScene() throws Exception {
+        UUID campaign = UUID.fromString("84b37902-114a-4a26-9f66-4041022a2024");
+        UUID before = jdbc.queryForObject("select current_scene_id from campaign where id=?", UUID.class, campaign);
+        UUID selected = UUID.randomUUID();
+        jdbc.update("insert into scene(id,campaign_id,name,width,height,grid_size) values (?,?,'Restart selection',24,16,48)", selected, campaign);
+        try {
+            jdbc.update("update campaign set current_scene_id=? where id=?", selected, campaign);
+            bootstrap.run(new DefaultApplicationArguments());
+            assertEquals(selected, service.snapshot(campaign, "it-dm").id());
+        } finally {
+            jdbc.update("update campaign set current_scene_id=? where id=?", before, campaign);
+            jdbc.update("delete from scene where id=?", selected);
+        }
+    }
     String command(String requestId, long version, int x, int y) { return "{\"requestId\":\"" + requestId + "\",\"expectedVersion\":" + version + ",\"x\":" + x + ",\"y\":" + y + "}"; }
 }

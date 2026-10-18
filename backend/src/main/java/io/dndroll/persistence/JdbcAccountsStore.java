@@ -65,7 +65,9 @@ public class JdbcAccountsStore implements Store {
     public void create(Campaign c, String actor) {
         jdbc.update("insert into campaign(id,name) values (?,?)", c.id(), c.name());
         jdbc.update("insert into campaign_member(campaign_id,username,role) values (?,?,'DM')", c.id(), actor);
-        jdbc.update("insert into scene(id,campaign_id,name,width,height,grid_size) values (?,?,'First scene',24,16,48)", UUID.randomUUID(), c.id());
+        UUID scene = UUID.randomUUID();
+        jdbc.update("insert into scene(id,campaign_id,name,width,height,grid_size) values (?,?,'First scene',24,16,48)", scene, c.id());
+        jdbc.update("update campaign set current_scene_id=? where id=?", scene, c.id());
     }
     public void invitation(Invite i) {
         jdbc.update("insert into campaign_invitation(id,campaign_id,token_hash,created_by,expires_at) values (?,?,?,?,?)", i.id(), i.campaignId(), i.tokenHash(), i.createdBy(), Timestamp.from(i.expiresAt()));

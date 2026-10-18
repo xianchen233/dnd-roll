@@ -68,3 +68,24 @@ P01 浏览器脚本 `e2e/accounts.spec.ts` 使用现有 DM/PLAYER 环境账号�
 新增 `@playwright/test` 精确版本依赖、`playwright.config.ts` 和 `e2e/tabletop.spec.ts`，使用真实服务与两套独立 cookie 会话，无 API/STOMP mock。四项账号环境变量为必填；本机 Chrome 由 `E2E_CHROME_PATH` 指定，CI 默认采用 Playwright Chromium。产物存入已忽略的 `test-results/`、`playwright-report/`。
 
 **18:49:32** 再次运行 `npm test`：13 测试通过；`npm run build`：通过。`npm run test:e2e -- --list` 成功发现 1 条完整双会话验收测试；发现测试不等于运行通过，真实执行结果由协调者在服务启动后记录。
+
+## P02a 多场景（2026-10-18，Asia/Shanghai）
+
+- **20:49:03 RED**：先添加 `scenes.test.tsx` 与 SceneStore 的切图回归，再执行 `npm test -- --run src/scenes.test.tsx src/scene-store.test.ts`：28 项中 **11 失败、17 通过**。缺少 DM 场景入口的 7 项断言失败、同 token ID 的新场景未清选择失败，以及失败移动重试/旧在途成功/失败跨场景的 3 项断言失败。玩家不请求备团信息的边界当次即通过。
+- 实现仅 DM 的创建空场景与显式切换、场景 API/types、共享 campaignVersion 的新命令前重读、409 刷新、transport/5xx 同 requestId/body 显式重试。回执只作命令确认，列表与地图以重新读取为准；创建不本地激活。双方管理面板彼此失效刷新。地图或管理 401/403 清空地图和全部管理数据，卸载后的迟到成功不得恢复。
+- SceneStore 引入独立的 scene generation；切图清除旧移动重试/待确认，隔离旧响应，即使随后又回原场景也不能确认旧移动。campaign epoch 未因切图改变，保留 P01 对同团迟到 401/403 的全局清除和 realtime 替代刷新竞态修复。
+- **20:52:17 RED**：补旧移动 409 的冲突读取恰好切图场景，`npm test -- --run src/scene-store.test.ts`：**1 失败、19 通过**，实际新场景误标 `conflict`。在冲突读取后增加 generation 检查，保留新场景 `confirmed`。
+- **20:52:41 GREEN**：全量 **50 项通过**，TypeScript/Vite 构建通过。P01 的全部 36 项保留；账号测试只补新的场景列表 API fixture，既有行为断言未放宽。
+- **20:53:34 RED**：补“切换 POST 成功而地图快照 503”的组件测试，12 项中 **1 失败、11 通过**；旧文案错误宣称已重新读取当前场景。改为“切换请求已确认；全团当前场景以最新服务器快照为准”，地图另行明确刷新失败；已确认命令不再提供原 POST 重试。补管理命令 401/403 的清空回归，当次即通过。
+- **20:54:22 GREEN**：`npm test` 全量 **6 文件、53 项通过**；`npm run build` 通过，入口约 556 kB 的既有优化提示仍保留。工具环境中 Python 命令不可用及中间测试参数/TypeScript 错误均已修正，不计业务 RED。
+- 新增第三条真实服务 E2E `e2e/scenes.spec.ts`，保留原 M1/P01 两条原样；无 HTTP/STOMP mock。验收包括移动、创建不激活、玩家列表/激活 403、真实 frame 双端切图、返回后完整快照与版本保持，finally 恢复原 demo current。**本代理未运行真实浏览器**，由协调者统一启动后端/PG 并记录实际结果，不能把源码或 discovery 当作通过。
+
+### 最终 QA：并发管理读取的晚到撤权
+
+- **21:01:40 RED**：针对 `CampaignManagement.load()` 的 `Promise.all` 先拒绝边界新增 6 项 deferred 回归，运行 `npm test -- --run src/scenes.test.tsx`：**4 失败、14 通过**。四种真实失败顺序包括 members/invitations 先网络错误或 503、另一请求随后 401/403；实际断言确认地图仍在，两个管理区未及时清空。另两项验证一个请求 403、另一请求一直 pending 时必须立即清空，这两项初次即通过，不冒称 RED。
+- 每个管理请求分别附加授权错误观察后再 `Promise.all` 聚合。后到 401/403 不再被较早 transport/503 的 aggregate rejection 吞掉；不等待其他挂起请求。active 守卫保留，晚到地图/备团列表成功和另一管理请求成功均不能复活撤权后的页面。
+- **21:02:04 GREEN**：`npm test` 全量 **6 文件、59 项通过**，`npm run build` TypeScript/Vite 通过，`git diff --check -- .` 通过。既有 53 项与 3 条 E2E 均保留；真实 3 E2E 在本次修复后仍由协调者统一重跑。
+
+协调者补充：20:56–57 已实际运行 `npm run test:e2e`，全部3条通过（14.8秒），原M1/P01加P02a双端切图；人工查看DM/player截图。20:58真实Java进程重启也通过，详细证据见 `docs/verification.md`。本机未运行Compose，新提交远端CI另记。
+
+21:03协调者在最终晚到撤权修复后重新实际执行全部3条Chrome E2E，全部通过；无mock、无retry，原M1/P01断言保留。最终59前端测试/构建与本轮37unit/28IT、真实Java重启证据见verification.md。
