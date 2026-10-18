@@ -143,3 +143,11 @@ PR #1 标题/说明已按最终 P01+P02a 范围更新，仍为 open draft、base
 实现安全与故障验收：原图只由同团当前DM访问；玩家快照/事件不增加asset/map字段；上传真实PNG/JPEG解码、完整容器/CRC、字节/尺寸/像素限额；忽略客户端文件名，独立UUID存储键不出接口。asset-commands按actor→campaign锁，上传共享campaignVersion，map与move共享sceneVersion；回执前重验DM。同request并发单效、双DM单版本单胜、跨团全局request竞争、撤权/退出、缺文件503均有实际测试。即时receipt插入及延迟commit触发器故障验证DB引用/版本/回执原子回滚，只清新文件、旧素材保持。前端独立观察并发401/403，切场景/团/撤权清理objectURL与pending并隔离晚到成功；不确定重试保留原File/body。
 
 Compose新增asset_data私有卷及运行用户目录权限，NGINX允许10MiB文件加multipart开销；CI新增真实浏览器后seed→重启db/backend→verify同套HTTP脚本。**本轮新SHA远端CI尚待推送核实**，不复用旧P02a容器绿灯。崩溃可遗留无元数据的不可下载孤立文件，无自动删除；完整一致备份/保留/异机恢复仍P09。玩家派生图和Pixi交互/遮盖仍P02d，P02c/d/e、P03–P10/A未完成。
+
+### P02b 首次远端 CI 暴露同步确认竞态
+
+代码 `cfdfccfc3fb5dd777c997a4cd5488057b882988a` 的 [push run39132905104](https://github.com/xianchen233/dnd-roll/actions/runs/39132905104) 与 [PR run39132907662](https://github.com/xianchen233/dnd-roll/actions/runs/39132907662) frontend/backend均success，标准Compose构建/启动和原M1/P01/P02a三条浏览器均通过；新增assets流程在保存后等不到“地图请求已确认；当前配置已从服务器刷新。”而失败。故browser未通过、容器重启step尚未执行。正在用deferred测试重现POST确认后的主动刷新被revision/实时刷新抢占；不能用本地绿灯、重试或改断言关闭。新修复另记录RED/GREEN并推送检查。
+
+21:51:02 先补两种deferred响应顺序，实际2断言失败，21:51:39同测试GREEN。修复POST确认时记录读序号，让其后启动且最新有效的权威读取（含revision/实时刷新）统一完成同步提示；确认前的读、旧成功/旧失败均不能确认或覆盖，新读失败明确未同步，之后成功可恢复而不重复POST。新增6项边界后21:52:45前端全量90项/构建通过。后端源码未改；首次远端backend实际日志确认49unit+41IT全部通过，0失败/错误/跳过。
+
+协调者随后复验中，原三条再次通过，新增assets因登录后立即inputValue读取尚为空的campaign selector而提前失败，未进入地图操作；补与既有scenes测试相同的自动等待 `expect(combobox).not.toHaveValue('')`，未改变业务断言/timeout/retry。21:54–55再实际运行全部E2E：**4通过（16.6秒）**，保存后的同步提示及全部素材/权限/切图断言通过。修复的新SHA须再次检查完整push/PR CI；不复用cfdfccf失败结果，也不将新提交重启step尚未执行记为通过。

@@ -50,6 +50,7 @@ test('DM uploads, downloads and calibrates a durable private map; players cannot
   for (const page of [dm, player]) page.on('pageerror', e => errors.push(e.message));
   player.on('request', r => playerPaths.push(new URL(r.url()).pathname));
   await login(dm, required('E2E_DM_USERNAME'), required('E2E_DM_PASSWORD')); await login(player, required('E2E_PLAYER_USERNAME'), required('E2E_PLAYER_PASSWORD'));
+  await expect(player.getByRole('combobox', { name: '选择战役' })).not.toHaveValue('');
   const campaignId = await player.getByRole('combobox', { name: '选择战役' }).inputValue(); sessions.campaignId = campaignId; expect(campaignId).not.toBe('');
   await dm.getByRole('combobox', { name: '选择战役' }).selectOption(campaignId);
   const endpoint = `/api/campaigns/${encodeURIComponent(campaignId)}`;

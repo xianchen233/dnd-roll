@@ -109,4 +109,14 @@ P01 浏览器脚本 `e2e/accounts.spec.ts` 使用现有 DM/PLAYER 环境账号�
 - select 增加明确 aria-label，E2E 按精确角色/accessible name 定位，补名称回归。单步 action timeout 限为 10 秒；恢复原场景与关闭 context 移到自带 20 秒 teardown 预算的 fixture，防止测试 timeout 取消清理。所有业务断言保持；不增加 retry 或放宽总 timeout。
 - **21:38:11** 全量 `npm test` **7 文件、84 项通过**；随后修正测试中的 Testing Library 类型参数并重跑 `npm run build` 通过。`npx playwright test --list` 继续识别四条；本代理没有运行真实 E2E，修复后实际重跑仍由协调者执行。
 
+### PR CI：地图保存与并发权威读取的确认竞争
+
+- 协调者报告 `cfdfccf` 的 PR run `39132907662` 中 frontend/backend 通过，标准 Compose 启动成功；browser 的原三条通过，assets 在保存后等待“地图请求已确认；当前配置已从服务器刷新。”失败。这次不修改 E2E 等待、断言、timeout 或 retry。
+- **21:51:02 RED**：新增两个实际 deferred 回归，`npm test -- --run src/assets.test.tsx -t 'refreshes overlap'` **2 失败**。POST 成功后 run 自己的读与 scene.version revision 触发的读交错，无论 command-read 先返回还是 revision-read 先返回，较新的有效配置已读回，但旧 load 返回 undefined 使 run 永不显示同步确认。断言复现文案缺失，非环境/编译失败。
+- POST 确认时保存当前 read 序号；同步确认由其后启动且仍为最新的有效权威读取统一完成，包含 revision/realtime/manual read。历史回执只确认命令，不覆盖地图；POST 确认前启动的读取不能确认同步。较旧读取的成功和失败都不能覆盖新状态；最新读失败显示已确认但未同步，之后成功读可恢复同步，无须重复 POST。并发授权观察及卸载/团/场景隔离保持。
+- **21:51:39 GREEN**：相同两项聚焦测试通过。新增边界还覆盖最新读失败后的旧成功/旧失败、最新成功后的晚到旧失败、失败后手动权威恢复和确认前读晚到；实际值使用不同校准与 sceneVersion 验证旧状态未覆盖。
+- **21:52:45 GREEN**：`npm test` 全量 **7 文件、90 项通过**；`npm run build` TypeScript/Vite 通过，约 564 kB chunk 提示保持。既有全部 84 项和四条真实 E2E 业务断言保留；本代理未执行真实 E2E，由协调者统一复验和核对新 SHA 的 push/PR CI。
+
 协调者实际验收补充：21:39–40 修正精确可访问名称后，统一 `npm run test:e2e` 全部4条通过（16.8秒），包含原M1/P01/P02a和新素材流程；实际查看DM/player截图。21:36–37同库同素材根真正停止/重启Java与PostgreSQL，SHA/引用/版本/回执及下载隔离验证通过。详见docs/verification.md；新SHA远端CI另核。
+
+协调者复验：修复确认竞态后的首次运行，原三条通过，assets刚登录即inputValue读取尚为空而失败；补与旧scenes流程相同的自动等待选团非空，不改变业务断言。21:54–55再次统一 `npm run test:e2e`：4通过（16.6秒），包含保存确认及原三条；0 retry。新的push/PR CI继续按SHA核对。

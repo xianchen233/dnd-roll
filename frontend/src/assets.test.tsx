@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
 import { Api, ApiError } from './api';
+import { AssetManagement } from './AssetManagement';
 vi.mock('./MapCanvas', () => ({ MapCanvas: () => <div>地图替身</div> }));
 vi.mock('./realtime', () => ({ connectRealtime: () => () => {} }));
 const asset = { id: 'a', mediaType: 'image/png', width: 2, height: 2, byteSize: 70 };
@@ -14,6 +15,76 @@ function mount(api: ReturnType<typeof setup>) { render(<App api={api as unknown 
 async function upload() { const file = new File(['png'], 'private-name.png', { type: 'image/png' }); fireEvent.change(await screen.findByLabelText('上传地图文件'), { target: { files: [file] } }); fireEvent.click(screen.getByRole('button', { name: '上传素材' })); return file; }
 beforeEach(() => { Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: vi.fn().mockReturnValue('blob:private') }); Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() }); });
 describe('private DM asset preparation', () => {
+  it.each(['command-first', 'revision-first'] as const)('confirms from the latest post-acknowledgment read when refreshes overlap: %s', async order => {
+    const posted = deferred<unknown>(), commandRead = deferred<unknown>(), revisionRead = deferred<unknown>();
+    const api = setup({ sceneMap: vi.fn().mockResolvedValue({ sceneId: 's', sceneVersion: 3, map }), saveSceneMap: vi.fn().mockReturnValue(posted.promise) });
+    const props = { api: api as unknown as Api, campaignId: 'c', sceneId: 's', revision: 3, onChanged: vi.fn(), onDenied: vi.fn() };
+    const view = render(<AssetManagement {...props} />);
+    await waitFor(() => expect(screen.getByLabelText('图片每格像素')).toHaveValue(64));
+    fireEvent.change(screen.getByLabelText('图片每格像素'), { target: { value: '80' } }); fireEvent.click(screen.getByRole('button', { name: '保存地图配置' }));
+    await waitFor(() => expect(api.saveSceneMap).toHaveBeenCalledTimes(1));
+    api.sceneMap.mockReturnValueOnce(commandRead.promise).mockReturnValueOnce(revisionRead.promise);
+    await act(async () => { posted.resolve({ sceneId: 's', sceneVersion: 4, map: { ...map, gridSize: 80 } }); });
+    await waitFor(() => expect(api.sceneMap).toHaveBeenCalledTimes(3));
+    view.rerender(<AssetManagement {...props} revision={4} />);
+    await waitFor(() => expect(api.sceneMap).toHaveBeenCalledTimes(4));
+    expect(screen.queryByText('地图请求已确认；当前配置已从服务器刷新。')).not.toBeInTheDocument();
+    if (order === 'command-first') {
+      await act(async () => { commandRead.resolve({ sceneId: 's', sceneVersion: 4, map: { ...map, gridSize: 80 } }); });
+      expect(screen.queryByText('地图请求已确认；当前配置已从服务器刷新。')).not.toBeInTheDocument();
+    }
+    // A later edit is authoritative even when the receipt/earlier refresh differs.
+    await act(async () => { revisionRead.resolve({ sceneId: 's', sceneVersion: 5, map: { ...map, gridSize: 96 } }); });
+    await screen.findByText('地图请求已确认；当前配置已从服务器刷新。');
+    expect(screen.getByLabelText('图片每格像素')).toHaveValue(96);
+    if (order === 'revision-first') await act(async () => { commandRead.resolve({ sceneId: 's', sceneVersion: 4, map: { ...map, gridSize: 80 } }); });
+    expect(screen.getByLabelText('图片每格像素')).toHaveValue(96); expect(api.saveSceneMap).toHaveBeenCalledTimes(1);
+  });
+  it.each(['success', 'failure'] as const)('keeps a newer failed refresh unsynchronized after older %s and recovers without another POST', async olderOutcome => {
+    const posted = deferred<unknown>(), commandRead = deferred<unknown>(), revisionRead = deferred<unknown>();
+    const api = setup({ sceneMap: vi.fn().mockResolvedValue({ sceneId: 's', sceneVersion: 3, map }), saveSceneMap: vi.fn().mockReturnValue(posted.promise) });
+    const props = { api: api as unknown as Api, campaignId: 'c', sceneId: 's', revision: 3, onChanged: vi.fn(), onDenied: vi.fn() };
+    const view = render(<AssetManagement {...props} />);
+    await waitFor(() => expect(screen.getByLabelText('图片每格像素')).toHaveValue(64)); fireEvent.click(screen.getByRole('button', { name: '保存地图配置' }));
+    await waitFor(() => expect(api.saveSceneMap).toHaveBeenCalledTimes(1)); api.sceneMap.mockReturnValueOnce(commandRead.promise).mockReturnValueOnce(revisionRead.promise);
+    await act(async () => { posted.resolve({ sceneId: 's', sceneVersion: 4, map }); }); view.rerender(<AssetManagement {...props} revision={4} />);
+    await act(async () => { revisionRead.reject(new ApiError(503, 'newest unavailable')); });
+    await screen.findByText('请求已确认；刷新失败，当前配置尚未同步。请刷新素材与地图。');
+    await act(async () => { if (olderOutcome === 'success') commandRead.resolve({ sceneId: 's', sceneVersion: 4, map }); else commandRead.reject(new Error('older offline')); });
+    expect(screen.queryByText('地图请求已确认；当前配置已从服务器刷新。')).not.toBeInTheDocument();
+    expect(screen.getByText('请求已确认；刷新失败，当前配置尚未同步。请刷新素材与地图。')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '重试同一素材操作' })).not.toBeInTheDocument();
+    api.sceneMap.mockResolvedValue({ sceneId: 's', sceneVersion: 5, map: { ...map, gridSize: 96 } });
+    fireEvent.click(screen.getByRole('button', { name: '刷新素材与地图' })); await screen.findByText('地图请求已确认；当前配置已从服务器刷新。');
+    expect(screen.queryByText('请求已确认；刷新失败，当前配置尚未同步。请刷新素材与地图。')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('图片每格像素')).toHaveValue(96); expect(api.saveSceneMap).toHaveBeenCalledTimes(1);
+  });
+  it('ignores an older failed read after a newer authoritative read confirms the map', async () => {
+    const posted = deferred<unknown>(), commandRead = deferred<unknown>(), revisionRead = deferred<unknown>();
+    const api = setup({ sceneMap: vi.fn().mockResolvedValue({ sceneId: 's', sceneVersion: 3, map }), saveSceneMap: vi.fn().mockReturnValue(posted.promise) });
+    const props = { api: api as unknown as Api, campaignId: 'c', sceneId: 's', revision: 3, onChanged: vi.fn(), onDenied: vi.fn() };
+    const view = render(<AssetManagement {...props} />);
+    await waitFor(() => expect(screen.getByLabelText('图片每格像素')).toHaveValue(64)); fireEvent.click(screen.getByRole('button', { name: '保存地图配置' }));
+    await waitFor(() => expect(api.saveSceneMap).toHaveBeenCalledTimes(1)); api.sceneMap.mockReturnValueOnce(commandRead.promise).mockReturnValueOnce(revisionRead.promise);
+    await act(async () => { posted.resolve({ sceneId: 's', sceneVersion: 4, map }); }); view.rerender(<AssetManagement {...props} revision={4} />);
+    await act(async () => { revisionRead.resolve({ sceneId: 's', sceneVersion: 5, map: { ...map, gridSize: 96 } }); });
+    await screen.findByText('地图请求已确认；当前配置已从服务器刷新。'); await act(async () => { commandRead.reject(new ApiError(503, 'older unavailable')); });
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument(); expect(screen.getByLabelText('图片每格像素')).toHaveValue(96);
+    expect(screen.getByText('地图请求已确认；当前配置已从服务器刷新。')).toBeInTheDocument(); expect(api.saveSceneMap).toHaveBeenCalledTimes(1);
+  });
+  it('does not let a pre-acknowledgment read confirm a map even if it resolves after the POST', async () => {
+    const posted = deferred<unknown>(), beforeAck = deferred<unknown>(), afterAck = deferred<unknown>();
+    const api = setup({ sceneMap: vi.fn().mockResolvedValue({ sceneId: 's', sceneVersion: 3, map }), saveSceneMap: vi.fn().mockReturnValue(posted.promise) });
+    const props = { api: api as unknown as Api, campaignId: 'c', sceneId: 's', revision: 3, onChanged: vi.fn(), onDenied: vi.fn() };
+    const view = render(<AssetManagement {...props} />);
+    await waitFor(() => expect(screen.getByLabelText('图片每格像素')).toHaveValue(64)); fireEvent.click(screen.getByRole('button', { name: '保存地图配置' }));
+    await waitFor(() => expect(api.saveSceneMap).toHaveBeenCalledTimes(1)); api.sceneMap.mockReturnValueOnce(beforeAck.promise).mockReturnValueOnce(afterAck.promise);
+    view.rerender(<AssetManagement {...props} revision={4} />);
+    await act(async () => { posted.resolve({ sceneId: 's', sceneVersion: 4, map }); beforeAck.resolve({ sceneId: 's', sceneVersion: 3, map }); });
+    expect(screen.queryByText('地图请求已确认；当前配置已从服务器刷新。')).not.toBeInTheDocument();
+    await act(async () => { afterAck.resolve({ sceneId: 's', sceneVersion: 4, map: null }); }); await screen.findByText('地图请求已确认；当前配置已从服务器刷新。');
+    expect(screen.getByLabelText('当前场景地图素材')).toHaveValue(''); expect(api.saveSceneMap).toHaveBeenCalledTimes(1);
+  });
   it('gives the asset chooser an exact accessible name independent of its option text', async () => {
     const api = setup(); mount(api); await screen.findByRole('button', { name: '预览 a' });
     expect(screen.getByRole('combobox', { name: '当前场景地图素材' })).toHaveAccessibleName('当前场景地图素材');

@@ -62,6 +62,9 @@ and successful CI runs do not by themselves constitute a release.
 - Clear selected units and obsolete movement retries on a scene switch; ignore
   delayed movement results from the previous scene while retaining access-denial
   handling. Increment only the moved token's scene version.
+- Confirm saved asset/map commands through the newest valid read started after
+  acknowledgment, including superseding realtime refreshes. Ignore older errors
+  and recover synchronization after a temporary read failure without reposting.
 
 ### Security
 

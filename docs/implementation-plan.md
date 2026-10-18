@@ -43,4 +43,4 @@
 - 当前分支feat/accounts-and-invitations，P01正式账号/邀请/成员管理已实现。30后端unit、18真实PG/HTTP/WS、最终36前端测试、2真实Chrome流程与实际Java重启检查通过；初始代码3c12f8d的[远端CI](https://github.com/xianchen233/dnd-roll/actions/runs/39126498540)三个job全部success。后续PR暴露的刷新竞态已通过RED/GREEN修复并推送dabef40，当前交付门槛为[PR #1 Checks](https://github.com/xianchen233/dnd-roll/pull/1/checks)中最新SHA全通过；草稿供审阅，尚未合并或发布。
 - P02a 已按 contracts/scenes.md 契约与实际 RED/GREEN 实现 DM 空场景创建、共享当前场景切换、持久回执/版本、旧场景保存、V3 数据保留及前端跨场景响应隔离。37 后端 unit、28 真实 PG/HTTP/WS、前端测试/构建、3 真实浏览器和实际 Java 重启通过；最终审查已修复晚到撤权边界，59 前端测试/构建通过；代码 8836abb 的 push 与 PR CI 三个 job 全部 success，证据见 verification.md。P02b 为下一子包，P02 整体仍未完成。
 - 后续任务不能以“预留接口”为由标记完成。规则相关实现开始前使用工作区 `dnd-rule-lookup` 核对 5R 依据；当前移动仅为探索网格操作，不承诺战斗移动规则。
-- P02b 私有素材/地图配置已按 contracts/assets.md 完成本地契约RED/GREEN、49unit、全量40IT及新增multipart第41项聚焦验收、84前端测试/构建、4真实Chrome流程、V3→V4数据比较及Java+PG实际重启。Compose增加私有素材卷、运行用户写权限与HTTP重启验收；本轮远端新SHA CI待核实，过门槛后下一步P02c。玩家图像/遮盖仍P02d，P02整体尚未完成。
+- P02b 私有素材/地图配置已按 contracts/assets.md 完成本地契约RED/GREEN、49unit、全量40IT及新增multipart第41项聚焦验收、90前端测试/构建、4真实Chrome流程、V3→V4数据比较及Java+PG实际重启。Compose增加私有素材卷、运行用户写权限与HTTP重启验收；本轮远端新SHA CI待核实，过门槛后下一步P02c。玩家图像/遮盖仍P02d，P02整体尚未完成。

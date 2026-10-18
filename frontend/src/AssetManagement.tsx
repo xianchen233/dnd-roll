@@ -7,28 +7,44 @@ export function AssetManagement({ api, campaignId, sceneId, revision, onChanged,
   const [assets, setAssets] = useState<Assets>(), [configuration, setConfiguration] = useState<SceneMap>(), [fields, setFields] = useState(defaults), [file, setFile] = useState<File>();
   const [busy, setBusy] = useState(false), [preview, setPreview] = useState(''), [error, setError] = useState(''), [message, setMessage] = useState('');
   const active = useRef(true), readId = useRef(0), contentId = useRef(0), previewUrl = useRef(''), pending = useRef<Command | undefined>(undefined);
+  const confirmation = useRef<{ kind: Command['kind']; afterRead: number } | undefined>(undefined);
   function clearPreview() { contentId.current++; if (previewUrl.current) URL.revokeObjectURL(previewUrl.current); previewUrl.current = ''; setPreview(''); }
   function denial(e: unknown) {
     if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
-      active.current = false; readId.current++; pending.current = undefined; setFile(undefined); setAssets(undefined); setConfiguration(undefined); setFields(defaults); clearPreview(); onDenied(); return true;
+      active.current = false; readId.current++; pending.current = undefined; confirmation.current = undefined; setFile(undefined); setAssets(undefined); setConfiguration(undefined); setFields(defaults); clearPreview(); onDenied(); return true;
     }
     return false;
   }
   async function observe<T>(request: Promise<T>): Promise<T> { try { return await request; } catch (e) { if (active.current) denial(e); throw e; } }
   async function load() {
     const read = ++readId.current;
-    const [nextAssets, nextMap] = await Promise.all([observe(api.assets(campaignId)), observe(api.sceneMap(campaignId, sceneId))]);
-    if (!active.current || read !== readId.current) return;
-    setAssets(nextAssets); setConfiguration(nextMap);
-    const map = nextMap.map;
-    setFields(map ? { assetId: map.assetId, gridSize: String(map.gridSize), offsetX: String(map.offsetX), offsetY: String(map.offsetY), distancePerCell: String(map.distancePerCell) } : defaults);
-    return { assets: nextAssets, configuration: nextMap };
+    try {
+      const [nextAssets, nextMap] = await Promise.all([observe(api.assets(campaignId)), observe(api.sceneMap(campaignId, sceneId))]);
+      if (!active.current || read !== readId.current) return;
+      setAssets(nextAssets); setConfiguration(nextMap);
+      const map = nextMap.map;
+      setFields(map ? { assetId: map.assetId, gridSize: String(map.gridSize), offsetX: String(map.offsetX), offsetY: String(map.offsetY), distancePerCell: String(map.distancePerCell) } : defaults);
+      // Any newest read begun after acknowledgment can synchronize the command,
+      // including a revision/realtime refresh that supersedes run()'s own read.
+      // Reads begun before acknowledgment and historical receipts cannot do so.
+      if (confirmation.current && read > confirmation.current.afterRead) {
+        setError('');
+        setMessage(confirmation.current.kind === 'upload' ? '上传请求已确认；素材列表已刷新。' : '地图请求已确认；当前配置已从服务器刷新。');
+      }
+      return { assets: nextAssets, configuration: nextMap };
+    } catch (e) {
+      if (active.current && read === readId.current) {
+        if (confirmation.current && read > confirmation.current.afterRead) { setMessage(''); setError('请求已确认；刷新失败，当前配置尚未同步。请刷新素材与地图。'); }
+        else setError(e instanceof Error ? e.message : '读取素材失败');
+      }
+      throw e;
+    }
   }
   useEffect(() => {
     active.current = true;
-    return () => { active.current = false; readId.current++; contentId.current++; pending.current = undefined; if (previewUrl.current) URL.revokeObjectURL(previewUrl.current); previewUrl.current = ''; };
+    return () => { active.current = false; readId.current++; contentId.current++; pending.current = undefined; confirmation.current = undefined; if (previewUrl.current) URL.revokeObjectURL(previewUrl.current); previewUrl.current = ''; };
   }, []);
-  useEffect(() => { void load().catch(e => { if (active.current) setError(e instanceof Error ? e.message : '读取素材失败'); }); }, [revision]);
+  useEffect(() => { void load().catch(() => { /* load observes each authorization error and reports only the newest read. */ }); }, [revision]);
   async function content(assetId: string, download = false) {
     if (!active.current) return;
     const read = ++contentId.current;
@@ -45,7 +61,7 @@ export function AssetManagement({ api, campaignId, sceneId, revision, onChanged,
   }
   async function run(kind: 'upload' | 'map' | 'detach') {
     if (busy || !active.current) return;
-    setBusy(true); setError(''); setMessage(''); let acknowledged = false;
+    setBusy(true); setError(''); setMessage(''); confirmation.current = undefined; let acknowledged = false;
     try {
       if (!pending.current) {
         if (kind === 'upload' && (!file || !['image/png', 'image/jpeg'].includes(file.type) || file.size === 0 || file.size > 10485760)) throw new Error('请选择不超过 10 MiB 的 PNG 或 JPEG；服务器还会校验真实图片。');
@@ -61,13 +77,14 @@ export function AssetManagement({ api, campaignId, sceneId, revision, onChanged,
       if (command.kind === 'upload') await observe(api.uploadAsset(campaignId, command.body, command.file));
       else await observe(api.saveSceneMap(campaignId, sceneId, command.body));
       if (!active.current) return;
-      acknowledged = true; pending.current = undefined; onChanged();
+      acknowledged = true; pending.current = undefined;
+      confirmation.current = { kind: command.kind, afterRead: readId.current };
+      onChanged();
       // The receipt can be historical. Its map must never overwrite current state.
-      const current = await load(); if (!current || !active.current) return;
-      setMessage(command.kind === 'upload' ? '上传请求已确认；素材列表已刷新。' : '地图请求已确认；当前配置已从服务器刷新。');
+      await load();
     } catch (e) {
       if (!active.current || denial(e)) return;
-      if (acknowledged) { setError('请求已确认；刷新失败，当前配置尚未同步。请刷新素材与地图。'); return; }
+      if (acknowledged) return; // The newest read owns synchronization, even if this read was superseded.
       if (e instanceof ApiError && e.status === 409) {
         pending.current = undefined;
         try { await load(); if (active.current) setError('操作冲突，已刷新素材与地图配置。请检查后重新操作。'); }
@@ -79,5 +96,5 @@ export function AssetManagement({ api, campaignId, sceneId, revision, onChanged,
     } finally { if (active.current) setBusy(false); }
   }
   const disabled = busy || !!pending.current;
-  return <section className="campaign-management asset-management" aria-label="地图备团"><div className="management-title"><h2>地图备团</h2><button className="quiet" disabled={busy} onClick={() => { setError(''); void load().catch(e => { if (active.current) setError(e instanceof Error ? e.message : '刷新素材失败'); }); }}>刷新素材与地图</button></div><p className="hint">仅 DM 可查看原图和配置，用于备团。此阶段共享探索网格保持不变；玩家地图展示与遮盖将在后续阶段提供。</p>{error && <p role="alert" className="error">{error}</p>}{message && <p role="status" className="hint">{message}</p>}<form className="asset-upload" onSubmit={e => { e.preventDefault(); void run('upload'); }}><label>上传地图文件<input type="file" accept="image/png,image/jpeg" disabled={disabled} onChange={e => setFile(e.target.files?.[0])} /></label><button disabled={disabled || !assets || !file}>上传素材</button></form><p className="hint">PNG / JPEG，最大 10 MiB；原始文件名不会保存。</p><ul>{assets?.assets.map(a => <li key={a.id}><span>{a.id}<small>{a.width} × {a.height} · {a.mediaType} · {a.byteSize} 字节</small></span><div className="asset-actions"><button aria-label={`预览 ${a.id}`} onClick={() => void content(a.id)}>预览</button><button aria-label={`下载 ${a.id}`} onClick={() => void content(a.id, true)}>下载</button></div></li>)}</ul>{preview && <div className="asset-preview"><img src={preview} alt="DM 私密地图预览" /><button className="quiet" onClick={clearPreview}>关闭预览</button></div>}<form onSubmit={e => { e.preventDefault(); void run('map'); }}><label>当前场景地图素材<select aria-label="当前场景地图素材" value={fields.assetId} disabled={disabled || !configuration} onChange={e => setFields(v => ({ ...v, assetId: e.target.value }))}><option value="">请选择素材</option>{assets?.assets.map(a => <option value={a.id} key={a.id}>{a.id} · {a.width} × {a.height}</option>)}</select></label><div className="asset-calibration">{([{ key: 'gridSize', label: '图片每格像素', min: 8, max: 512, step: 1 }, { key: 'offsetX', label: '图片偏移 X', min: -8192, max: 8192, step: 1 }, { key: 'offsetY', label: '图片偏移 Y', min: -8192, max: 8192, step: 1 }, { key: 'distancePerCell', label: '每格距离', min: .01, max: 10000, step: 'any' }] as const).map(f => <label key={f.key}>{f.label}<input type="number" min={f.min} max={f.max} step={f.step} required disabled={disabled} value={fields[f.key]} onChange={e => setFields(v => ({ ...v, [f.key]: e.target.value }))} /></label>)}</div><div className="asset-actions"><button disabled={disabled || !configuration || !fields.assetId}>保存地图配置</button><button type="button" disabled={disabled || !configuration?.map} onClick={() => void run('detach')}>移除地图配置</button></div></form>{pending.current && <button disabled={busy} onClick={() => void run(pending.current!.kind)}>重试同一素材操作</button>}</section>;
+  return <section className="campaign-management asset-management" aria-label="地图备团"><div className="management-title"><h2>地图备团</h2><button className="quiet" disabled={busy} onClick={() => { setError(''); void load().catch(() => { /* load reports only the newest read. */ }); }}>刷新素材与地图</button></div><p className="hint">仅 DM 可查看原图和配置，用于备团。此阶段共享探索网格保持不变；玩家地图展示与遮盖将在后续阶段提供。</p>{error && <p role="alert" className="error">{error}</p>}{message && <p role="status" className="hint">{message}</p>}<form className="asset-upload" onSubmit={e => { e.preventDefault(); void run('upload'); }}><label>上传地图文件<input type="file" accept="image/png,image/jpeg" disabled={disabled} onChange={e => setFile(e.target.files?.[0])} /></label><button disabled={disabled || !assets || !file}>上传素材</button></form><p className="hint">PNG / JPEG，最大 10 MiB；原始文件名不会保存。</p><ul>{assets?.assets.map(a => <li key={a.id}><span>{a.id}<small>{a.width} × {a.height} · {a.mediaType} · {a.byteSize} 字节</small></span><div className="asset-actions"><button aria-label={`预览 ${a.id}`} onClick={() => void content(a.id)}>预览</button><button aria-label={`下载 ${a.id}`} onClick={() => void content(a.id, true)}>下载</button></div></li>)}</ul>{preview && <div className="asset-preview"><img src={preview} alt="DM 私密地图预览" /><button className="quiet" onClick={clearPreview}>关闭预览</button></div>}<form onSubmit={e => { e.preventDefault(); void run('map'); }}><label>当前场景地图素材<select aria-label="当前场景地图素材" value={fields.assetId} disabled={disabled || !configuration} onChange={e => setFields(v => ({ ...v, assetId: e.target.value }))}><option value="">请选择素材</option>{assets?.assets.map(a => <option value={a.id} key={a.id}>{a.id} · {a.width} × {a.height}</option>)}</select></label><div className="asset-calibration">{([{ key: 'gridSize', label: '图片每格像素', min: 8, max: 512, step: 1 }, { key: 'offsetX', label: '图片偏移 X', min: -8192, max: 8192, step: 1 }, { key: 'offsetY', label: '图片偏移 Y', min: -8192, max: 8192, step: 1 }, { key: 'distancePerCell', label: '每格距离', min: .01, max: 10000, step: 'any' }] as const).map(f => <label key={f.key}>{f.label}<input type="number" min={f.min} max={f.max} step={f.step} required disabled={disabled} value={fields[f.key]} onChange={e => setFields(v => ({ ...v, [f.key]: e.target.value }))} /></label>)}</div><div className="asset-actions"><button disabled={disabled || !configuration || !fields.assetId}>保存地图配置</button><button type="button" disabled={disabled || !configuration?.map} onClick={() => void run('detach')}>移除地图配置</button></div></form>{pending.current && <button disabled={busy} onClick={() => void run(pending.current!.kind)}>重试同一素材操作</button>}</section>;
 }
