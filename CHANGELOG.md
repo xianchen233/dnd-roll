@@ -11,6 +11,14 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Added
 
+- Add DM token creation and complete configuration of names, grid positions,
+  visibility and multiple current-member controllers, with a dedicated authoring
+  panel, API and durable token command receipts. Keep shared movement payloads
+  and secret-free scene invalidations compatible.
+- Add a V5 migration that backfills token/control campaign ownership, enforces
+  same-campaign membership foreign keys and preserves earlier data and receipts.
+- Add real HTTP acceptance for token configuration, control revocation and
+  historical receipts across backend/PostgreSQL restart, alongside asset checks.
 - Establish the React/TypeScript/PixiJS frontend and Java/Spring Boot backend with
   PostgreSQL/Flyway migrations, versioned HTTP/WebSocket contracts and Docker Compose.
 - Add session login/logout, campaign membership filtering, a demo campaign and
@@ -71,6 +79,14 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Security
 
+- Recheck current DM and target ownership before token receipt replay; historical
+  authoring receipts never restore old configuration or control grants. Keep
+  hidden flags and controller lists confined to DM authoring endpoints.
+- Advance affected token and scene versions when removing a controller's campaign
+  membership, preventing stale authoring forms from regranting control after
+  rejoin. Current visibility and control still gate historical movement receipts.
+- Clear obsolete movement selection/retries when control or visibility changes;
+  isolate late private authoring results after scope changes or access denial.
 - Enforce CSRF, membership, visibility and token control on the server; exclude
   hidden token data from player snapshots and realtime invalidations.
 - Reject fractional and string-coerced movement coordinates and versions.

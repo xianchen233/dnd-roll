@@ -1,4 +1,5 @@
 import type { Asset, Assets, Campaign, CreatedInvitation, Csrf, Identity, Invitations, InvitePreview, MapConfiguration, Members, Move, Scene, SceneMap, Scenes, SceneReceipt, Token, VersionedCommand } from './types';
+import type { AuthoredTokens, TokenCommand, TokenReceipt } from './types';
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
 export class Api {
   private csrf?: Csrf;
@@ -60,4 +61,7 @@ export class Api {
     if (!this.csrf) await this.getCsrf();
     return this.call(`/campaigns/${encodeURIComponent(campaignId)}/tokens/${encodeURIComponent(tokenId)}/moves`, 'POST', move);
   }
+  tokens(id: string, sceneId: string): Promise<AuthoredTokens> { return this.call(`/campaigns/${encodeURIComponent(id)}/scenes/${encodeURIComponent(sceneId)}/tokens`); }
+  createToken(id: string, sceneId: string, body: TokenCommand): Promise<TokenReceipt> { return this.post(`/campaigns/${encodeURIComponent(id)}/scenes/${encodeURIComponent(sceneId)}/tokens`, body); }
+  updateToken(id: string, sceneId: string, tokenId: string, body: TokenCommand): Promise<TokenReceipt> { return this.post(`/campaigns/${encodeURIComponent(id)}/scenes/${encodeURIComponent(sceneId)}/tokens/${encodeURIComponent(tokenId)}`, body); }
 }

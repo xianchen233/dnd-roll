@@ -11,7 +11,7 @@ docker compose --env-file .env -f deploy/compose.yaml up --build -d
 docker compose --env-file .env -f deploy/compose.yaml logs -f
 ```
 
-访问 `http://localhost:8080`（可在 .env 中调整 APP_PORT）。默认初始账号为 `owner`，密码使用 `.env` 中的 `BOOTSTRAP_PASSWORD`。登录后创建战役，再生成邀请链接；受邀者可以注册固定账号或用已有账号加入。DM 可创建多个空场景并切换全团当前场景，也可上传私有 PNG/JPEG 素材并保存地图引用与校准；玩家图像揭露、Pixi 地图交互及棋子编辑仍按后续 P02 工作包推进。
+访问 `http://localhost:8080`（可在 .env 中调整 APP_PORT）。默认初始账号为 `owner`，密码使用 `.env` 中的 `BOOTSTRAP_PASSWORD`。登录后创建战役，再生成邀请链接；受邀者可以注册固定账号或用已有账号加入。DM 可创建多个空场景并切换全团当前场景，上传私有 PNG/JPEG 素材并保存地图引用与校准，以及创建/编辑棋子名称、位置、隐藏和共享控制；玩家图像揭露、Pixi 地图交互仍按 P02d 工作包推进。
 
 `BOOTSTRAP_USERNAME` 与 `BOOTSTRAP_PASSWORD` 必须同时有效或同时留空；新账号名为 `[a-z][a-z0-9_-]{2,31}`，密码至少 12 个字符且不超过 72 个 UTF-8 字节。初始化仅插入不存在的账号；重启不会重设已有密码，也不会授予其他战役访问权。需要演示数据时显式设置 `SPRING_PROFILES_ACTIVE=demo` 并设置两个 `DEMO_*_PASSWORD`；这会创建原有 dm/player 样例战役，关闭 profile 不会删除已有数据。
 
@@ -30,5 +30,9 @@ HTTPS 入口应由可信的本机反向代理终止TLS，再转发到 `127.0.0.1
 V3 Flyway 迁移移除单场景限制，为既有战役回填原场景指针，保留原场景、棋子、控制权与回执；同团复合外键限制当前场景归属。应用创建战役时在同一事务中设置初始指针，重启 demo 不重置已有选择。V4 增加素材、地图引用和独立素材命令回执，保留 V1–V3 数据；同团外键限制地图不能引用其他战役素材。升级前按上述流程保留数据库和素材。完整备份恢复仍属于 P09。
 
 本机开发可通过 `ASSET_STORAGE_ROOT` 指向仓库外专用目录；默认 `.runtime/assets` 已被 Git 忽略。不要把素材根目录设为源码、前端 public 或 NGINX 静态目录。权限应只允许应用运行用户读写。内容下载禁用缓存；已被 DM 下载到本机的文件不受后续会话撤销影响。
+
+V5 保留原数据与回执，回填棋子/控制关系的战役键并增加同团成员外键及棋子命令回执。成员移除同时撤回本团全部控制，并推进相关棋子和场景版本；重新邀请不会恢复旧控制。升级不会创建新的角色资源。
+
+棋子重启验收使用同套环境变量：`node scripts/check-token-restart.mjs seed <仓库外新证据文件.json>` → 实际重启 PostgreSQL/后端 → `verify`。它创建独立验收战役，验证共享移动、隐藏/撤控、移除再加入、旧编辑版本冲突，以及新会话中名称/位置/隐藏/控制/版本/原回执保持。历史作者和移除回执不能恢复或再次删除新权限。CI 与素材脚本共用一次真实服务重启；该检查不等于 P09 异机恢复。
 
 专用验收环境可复现文件与数据库重启检查：环境注入 `E2E_BASE_URL`、`E2E_DM_USERNAME`、`E2E_DM_PASSWORD`、`E2E_PLAYER_USERNAME`、`E2E_PLAYER_PASSWORD`（均不提供生产凭据），先运行 `node scripts/check-asset-restart.mjs seed <仓库外新证据文件.json>`，实际重启 PostgreSQL 和后端并等就绪，再以同一文件运行 `verify`。脚本会创建独立验收战役与素材，校验原始文件 SHA-256、地图引用、版本、重试回执、历史回放不重挂图以及其他战役/玩家/退出后下载拒绝；不会清理已提交测试素材。CI 在标准 Compose 的真实浏览器流程后执行这一检查。该检查不等于 P09 异机恢复。

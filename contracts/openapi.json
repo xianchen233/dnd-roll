@@ -1378,6 +1378,221 @@
           "versionConflict": "409 VERSION_CONFLICT for stale expectedVersion"
         }
       }
+    },
+    "/api/campaigns/{campaignId}/scenes/{sceneId}/tokens": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/CampaignId"
+        },
+        {
+          "$ref": "#/components/parameters/SceneId"
+        }
+      ],
+      "get": {
+        "operationId": "listAuthoredTokens",
+        "description": "Requires authenticated current DM membership before target access or receipt replay; PLAYER and nonmembers receive 403, then unknown or foreign scene/token targets receive generic 404. The token must belong to the specified scene. Configure inactive scenes without activating them.",
+        "x-required-role": "DM",
+        "responses": {
+          "200": {
+            "description": "DM-private authoring state; command receipts are historical, reread authoritative state after success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenAuthoringList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createToken",
+        "description": "Requires authenticated current DM membership before target access or receipt replay; PLAYER and nonmembers receive 403, then unknown or foreign scene/token targets receive generic 404. The token must belong to the specified scene. Configure inactive scenes without activating them. Creates a stable UUID token at version 0 and advances target scene version once. Coordinates must be within target scene grid bounds.",
+        "x-required-role": "DM",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenCommandRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "DM-private authoring state; command receipts are historical, reread authoritative state after success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "409 VERSION_CONFLICT for stale object version or IDEMPOTENCY_CONFLICT for changed command fingerprint",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "x-version": "target scene version shared with maps/movement",
+        "x-grid-bounds": {
+          "x": "0 <= x < scene.width",
+          "y": "0 <= y < scene.height"
+        },
+        "x-idempotency": {
+          "namespace": "token-commands",
+          "key": [
+            "sessionActor",
+            "requestId"
+          ],
+          "payload": [
+            "commandKind",
+            "campaignId",
+            "sceneId",
+            "expectedVersion",
+            "strippedName",
+            "x",
+            "y",
+            "hidden",
+            "canonicalControllers"
+          ],
+          "authorization": "Validate current DM authorization and target ownership before receipt replay under the campaign lock",
+          "samePayload": "Return original result before stale version or controller-membership checks; no repeated mutation or event",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT",
+          "versionConflict": "409 VERSION_CONFLICT for stale expectedVersion"
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/scenes/{sceneId}/tokens/{tokenId}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/CampaignId"
+        },
+        {
+          "$ref": "#/components/parameters/SceneId"
+        },
+        {
+          "$ref": "#/components/parameters/TokenId"
+        }
+      ],
+      "post": {
+        "operationId": "configureToken",
+        "description": "Requires authenticated current DM membership before target access or receipt replay; PLAYER and nonmembers receive 403, then unknown or foreign scene/token targets receive generic 404. The token must belong to the specified scene. Configure inactive scenes without activating them. Replaces the complete configuration and control set; advances token and scene versions once even for unchanged values. Coordinates must be within target scene grid bounds.",
+        "x-required-role": "DM",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenCommandRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "DM-private authoring state; command receipts are historical, reread authoritative state after success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "409 VERSION_CONFLICT for stale object version or IDEMPOTENCY_CONFLICT for changed command fingerprint",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "x-version": "target token version shared with movement",
+        "x-grid-bounds": {
+          "x": "0 <= x < scene.width",
+          "y": "0 <= y < scene.height"
+        },
+        "x-idempotency": {
+          "namespace": "token-commands",
+          "key": [
+            "sessionActor",
+            "requestId"
+          ],
+          "payload": [
+            "commandKind",
+            "campaignId",
+            "sceneId",
+            "tokenId",
+            "expectedVersion",
+            "strippedName",
+            "x",
+            "y",
+            "hidden",
+            "canonicalControllers"
+          ],
+          "authorization": "Validate current DM authorization and target ownership before receipt replay under the campaign lock",
+          "samePayload": "Return original result before stale version or controller-membership checks; no repeated mutation or event",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT",
+          "versionConflict": "409 VERSION_CONFLICT for stale expectedVersion"
+        }
+      }
     }
   },
   "components": {
@@ -2308,6 +2523,147 @@
             ]
           }
         }
+      },
+      "TokenCommandRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "name",
+          "x",
+          "y",
+          "hidden",
+          "controllers"
+        ],
+        "properties": {
+          "requestId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "expectedVersion": {
+            "$ref": "#/components/schemas/Version"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "x-trimBeforeValidation": true,
+            "description": "Strip before validating 1-100 Unicode code points; store the stripped name"
+          },
+          "x": {
+            "$ref": "#/components/schemas/GridCoordinate"
+          },
+          "y": {
+            "$ref": "#/components/schemas/GridCoordinate"
+          },
+          "hidden": {
+            "type": "boolean"
+          },
+          "controllers": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 100,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "description": "Distinct exact usernames of current campaign members (DM or PLAYER); responses and fingerprints use a sorted canonical set. Empty revokes explicit control; current DMs retain implicit control."
+          }
+        }
+      },
+      "TokenAuthoringView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "x",
+          "y",
+          "version",
+          "hidden",
+          "controllers"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "x-trimBeforeValidation": true,
+            "description": "Strip before validating 1-100 Unicode code points; store the stripped name"
+          },
+          "x": {
+            "$ref": "#/components/schemas/GridCoordinate"
+          },
+          "y": {
+            "$ref": "#/components/schemas/GridCoordinate"
+          },
+          "version": {
+            "$ref": "#/components/schemas/Version"
+          },
+          "hidden": {
+            "type": "boolean"
+          },
+          "controllers": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 100,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "description": "Distinct exact usernames of current campaign members (DM or PLAYER); responses and fingerprints use a sorted canonical set. Empty revokes explicit control; current DMs retain implicit control."
+          }
+        }
+      },
+      "TokenAuthoringList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sceneId",
+          "sceneVersion",
+          "tokens"
+        ],
+        "properties": {
+          "sceneId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "sceneVersion": {
+            "$ref": "#/components/schemas/Version"
+          },
+          "tokens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenAuthoringView"
+            }
+          }
+        }
+      },
+      "TokenCommandResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sceneId",
+          "sceneVersion",
+          "token"
+        ],
+        "properties": {
+          "sceneId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "sceneVersion": {
+            "$ref": "#/components/schemas/Version"
+          },
+          "token": {
+            "$ref": "#/components/schemas/TokenAuthoringView"
+          }
+        }
       }
     }
   },
@@ -2346,5 +2702,19 @@
     "migration": "V4 preserves V1 through V3 data and checksums; database constraint enforces same-campaign asset references.",
     "clientLifecycle": "Retain requestId and exact file/body on transport or 5xx uncertainty for explicit retry; clear on deterministic 4xx, refresh versions/state on 409. Revoke object URLs and clear private previews/pending commands on unmount, scene/campaign switch and 401/403. Late successes cannot restore cleared private data; handle concurrent authorization failures independently. Successful command with failed refresh must not claim synchronized current map.",
     "deployment": "ASSET_STORAGE_ROOT uses a dedicated persistent Compose volume; local default is outside source files and git-ignored. DB plus asset backup/retention is P09; player-safe derived images and Pixi interaction are P02d."
+  },
+  "x-token-policy": {
+    "versions": "Create advances the target scene version shared with maps/movement once and starts token version at 0. Update shares token version with movement, advances token and scene versions once even for unchanged values. Campaign management version is independent.",
+    "locking": "Acquire actor then campaign locks consistently with account/scene/asset commands. Same-request concurrent retries have one effect; concurrent commands using the same version have one winner.",
+    "atomicity": "Persist token configuration, controllers, scene version and receipt atomically; failures roll back all state and no event is sent.",
+    "receiptNamespace": "The token-commands namespace covers create and update across campaigns; it is separate from account, scene, asset and movement receipts. Key is session actor plus requestId, actor never comes from request data.",
+    "historicalReplay": "Historical receipts never recreate tokens, restore earlier names/positions/visibility/controls or regrant removed members; clients reread authoritative tokens and shared scene after success.",
+    "membership": "Fresh commands require every controller to be a current campaign member; invalid membership returns generic 400 without account identity. Validate membership before expected version. Identical retries bypass controller membership and stale version checks after current DM authorization and target ownership checks. Controllers are exact usernames sorted for canonical responses and fingerprints.",
+    "revocation": "Member removal deletes controls campaign-wide and advances affected token and scene versions; rejoin and replay never restore those controls. Version advancement prevents stale authoring forms from silently regranting control after rejoin. Empty controllers revoke all explicit control; current DMs retain implicit control.",
+    "movement": "Check current membership, current-scene visibility and current control before any historical movement receipt. Revoked control returns 403; hidden, inactive or foreign tokens return generic 404 for players. Existing movement versions and durable receipts are retained.",
+    "visibility": "Hidden tokens are omitted entirely from player snapshots. Shared snapshots and token views remain unchanged: no hidden flag, controller list, hidden identity/name/position/count enters shared payloads, errors or events. Private authoring routes require current DM membership.",
+    "realtime": "Publish after-commit SCENE_CHANGED invalidation containing only type and campaignId to current members; historical replay sends no event.",
+    "migration": "V5 preserves all V1 through V4 rows and checksums, adds durable token receipts and same-campaign membership integrity for controls, with backfill of existing controls.",
+    "clientLifecycle": "Enable submission only after authoritative tokens and members load. On 409 discard the command and refresh versions. On transport/5xx uncertainty preserve the exact body and requestId for explicit retry and disable conflicting edits. Campaign/scene change or 401/403 clears private state and pending operations; delayed successes cannot restore cleared state. Same-scope authorization denial invalidates concurrent success. Refresh shared scene after revocation/hidden changes so selected or pending movement cannot restore old token visibility or control."
   }
 }

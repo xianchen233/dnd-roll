@@ -9,7 +9,7 @@ vi.mock('./realtime', () => ({ connectRealtime: () => () => {} }));
 const asset = { id: 'a', mediaType: 'image/png', width: 2, height: 2, byteSize: 70 };
 const map = { assetId: 'a', gridSize: 64, offsetX: -2, offsetY: 3, distancePerCell: 5 };
 const scene = { id: 's', campaignId: 'c', name: '营地', width: 24, height: 16, gridSize: 48, version: 3, tokens: [] };
-function setup(extra: object = {}) { return { getCsrf: vi.fn().mockResolvedValue({}), me: vi.fn().mockResolvedValue({ username: 'dm' }), campaigns: vi.fn().mockResolvedValue([{ id: 'c', name: '长夜', role: 'DM' }]), scene: vi.fn().mockResolvedValue(scene), scenes: vi.fn().mockResolvedValue({ campaignVersion: 2, currentSceneId: 's', scenes: [{ id: 's', name: '营地' }] }), members: vi.fn().mockResolvedValue({ campaignVersion: 2, members: [] }), invitations: vi.fn().mockResolvedValue({ campaignVersion: 2, invitations: [] }), assets: vi.fn().mockResolvedValue({ campaignVersion: 2, assets: [asset] }), sceneMap: vi.fn().mockResolvedValue({ sceneId: 's', sceneVersion: 3, map: null }), assetContent: vi.fn().mockResolvedValue(new Blob(['png'], { type: 'image/png' })), uploadAsset: vi.fn().mockResolvedValue({ asset, campaignVersion: 3 }), saveSceneMap: vi.fn().mockResolvedValue({ sceneId: 's', sceneVersion: 4, map }), ...extra }; }
+function setup(extra: object = {}) { return { tokens: vi.fn().mockResolvedValue({ sceneId: 's', sceneVersion: 3, tokens: [] }), getCsrf: vi.fn().mockResolvedValue({}), me: vi.fn().mockResolvedValue({ username: 'dm' }), campaigns: vi.fn().mockResolvedValue([{ id: 'c', name: '长夜', role: 'DM' }]), scene: vi.fn().mockResolvedValue(scene), scenes: vi.fn().mockResolvedValue({ campaignVersion: 2, currentSceneId: 's', scenes: [{ id: 's', name: '营地' }] }), members: vi.fn().mockResolvedValue({ campaignVersion: 2, members: [] }), invitations: vi.fn().mockResolvedValue({ campaignVersion: 2, invitations: [] }), assets: vi.fn().mockResolvedValue({ campaignVersion: 2, assets: [asset] }), sceneMap: vi.fn().mockResolvedValue({ sceneId: 's', sceneVersion: 3, map: null }), assetContent: vi.fn().mockResolvedValue(new Blob(['png'], { type: 'image/png' })), uploadAsset: vi.fn().mockResolvedValue({ asset, campaignVersion: 3 }), saveSceneMap: vi.fn().mockResolvedValue({ sceneId: 's', sceneVersion: 4, map }), ...extra }; }
 function deferred<T>() { let resolve!: (value: T) => void, reject!: (error: Error) => void; const promise = new Promise<T>((yes, no) => { resolve = yes; reject = no; }); return { promise, resolve, reject }; }
 function mount(api: ReturnType<typeof setup>) { render(<App api={api as unknown as Api} />); }
 async function upload() { const file = new File(['png'], 'private-name.png', { type: 'image/png' }), input = await screen.findByLabelText('上传地图文件'); await waitFor(() => expect(input).toBeEnabled()); fireEvent.change(input, { target: { files: [file] } }); await clickReady('上传素材'); return file; }
@@ -100,8 +100,8 @@ describe('private DM asset preparation', () => {
   });
   it('refreshes shared campaign management versions after an asset upload', async () => {
     const api = setup(); mount(api); await screen.findByLabelText('上传地图文件');
-    await waitFor(() => expect(api.members).toHaveBeenCalledTimes(1)); await upload(); await screen.findByText('上传请求已确认；素材列表已刷新。');
-    await waitFor(() => expect(api.members.mock.calls.length).toBeGreaterThan(1));
+    await waitFor(() => expect(api.members).toHaveBeenCalledTimes(2)); const beforeUpload = api.members.mock.calls.length; await upload(); await screen.findByText('上传请求已确认；素材列表已刷新。');
+    await waitFor(() => expect(api.members.mock.calls.length).toBeGreaterThan(beforeUpload));
     expect(api.scenes.mock.calls.length).toBeGreaterThan(1);
   });
   it('reads authoritative map after a historical receipt, preserving logical grid', async () => {

@@ -14,7 +14,7 @@
 | M3 模组与自动化 | 模组包、独立定制与战役实例、选择性更新、手动触发操作、限定支持矩阵内的自动结算、移动预算 | 模板与进行中状态隔离；自动化可解释、可确认、可更正，重试不重复消耗 |
 | M4 发布验收 | 权限回归、真实浏览器/双客户端测试、断网与重启、备份恢复、容量测量、部署运维说明 | 自动检查与人工验收有证据，已知限制明确，达到相应发布阶段的范围 |
 
-**M0/M1及M2的P01账号/邀请、P02a多场景、P02b私有素材与地图配置均已通过本地与远端完整CI。** M1的demo链路保留为回归，P01提供正式固定账号入口；下一步P02c棋子作者，玩家地图揭露、角色卡及整个M2尚未完成。每项能力继续遵循“契约与测试 → 最小实现 → 集成验收”的循环。
+**M0/M1及M2的P01账号/邀请、P02a多场景、P02b私有素材与地图配置均已通过本地与远端完整CI；P02c棋子作者已通过本地完整验收，新SHA远端CI待核实。** M1的demo链路保留为回归，P01提供正式固定账号入口。P02c详情见verification及两端TDD；新SHA远端通过后继续P02d玩家地图揭露/Pixi/遮盖，角色卡及整个M2尚未完成。每项能力继续遵循“契约与测试 → 最小实现 → 集成验收”的循环。
 
 ## 当前分工
 
@@ -43,4 +43,4 @@
 - 当前分支feat/accounts-and-invitations，P01正式账号/邀请/成员管理已实现。30后端unit、18真实PG/HTTP/WS、最终36前端测试、2真实Chrome流程与实际Java重启检查通过；初始代码3c12f8d的[远端CI](https://github.com/xianchen233/dnd-roll/actions/runs/39126498540)三个job全部success。后续PR暴露的刷新竞态已通过RED/GREEN修复并推送dabef40，当前交付门槛为[PR #1 Checks](https://github.com/xianchen233/dnd-roll/pull/1/checks)中最新SHA全通过；草稿供审阅，尚未合并或发布。
 - P02a 已按 contracts/scenes.md 契约与实际 RED/GREEN 实现 DM 空场景创建、共享当前场景切换、持久回执/版本、旧场景保存、V3 数据保留及前端跨场景响应隔离。37 后端 unit、28 真实 PG/HTTP/WS、前端测试/构建、3 真实浏览器和实际 Java 重启通过；最终审查已修复晚到撤权边界，59 前端测试/构建通过；代码 8836abb 的 push 与 PR CI 三个 job 全部 success，证据见 verification.md。P02b 为下一子包，P02 整体仍未完成。
 - 后续任务不能以“预留接口”为由标记完成。规则相关实现开始前使用工作区 `dnd-rule-lookup` 核对 5R 依据；当前移动仅为探索网格操作，不承诺战斗移动规则。
-- P02b私有素材/地图配置已按contracts/assets.md完成实际RED/GREEN、52unit+41真实PG/HTTP/WS全量、90前端测试/构建、24HTTP契约、4真实Chrome、V3→V4数据比较及Java+PG实际重启。最终修复素材确认竞态和提交确认丢失文件保护，代码1bfac83的push/PR全部CI success，含标准Compose私有卷与数据库/后端重启。下一步P02c；玩家图像/遮盖仍P02d，P02整体尚未完成。
+- P02b私有素材/地图配置已按contracts/assets.md完成实际RED/GREEN、52unit+41真实PG/HTTP/WS全量、90前端测试/构建、24HTTP契约、4真实Chrome、V3→V4数据比较及Java+PG实际重启。最终修复素材确认竞态和提交确认丢失文件保护，代码1bfac83的push/PR全部CI success，含标准Compose私有卷与数据库/后端重启。P02c接续已完成本地56unit+50IT、110前端测试/构建、27契约、5真实Chrome、V4→V5全旧列/行比较和Java+PG实际重启，当前新SHA远端CI待核实；然后P02d/e，P02整体尚未完成。

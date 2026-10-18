@@ -119,6 +119,9 @@ normal login and same-actor accept; it must not create a second account.
 DM only. Body `{requestId,expectedVersion}`. Return 204. Remove PLAYER membership
 and every token control grant for that account within this campaign, atomically.
 Do not touch another campaign's grants, the account itself, or game history.
+P02c additionally advances each affected token's version and each affected scene's
+version once when deleting controls. This invalidates stale token authoring forms
+after a member rejoins; no-op/removal receipt replay advances neither version.
 Removing a DM is 409 `DM_REMOVAL_DENIED`; DM promotion/transfer is outside P01.
 Already-absent members are a no-op. Receipt replay cannot remove a membership that
 was later newly granted. Reusing requestId for another target conflicts.

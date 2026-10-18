@@ -18,3 +18,7 @@ export interface Asset { id: string; mediaType: string; byteSize: number; width:
 export interface Assets { campaignVersion: number; assets: Asset[] }
 export interface MapConfiguration { assetId: string; gridSize: number; offsetX: number; offsetY: number; distancePerCell: number }
 export interface SceneMap { sceneId: string; sceneVersion: number; map: MapConfiguration | null }
+export interface AuthoredToken { id: string; name: string; x: number; y: number; version: number; hidden: boolean; controllers: string[] }
+export interface AuthoredTokens { sceneId: string; sceneVersion: number; tokens: AuthoredToken[] }
+export interface TokenCommand extends VersionedCommand { name: string; x: number; y: number; hidden: boolean; controllers: string[] }
+export interface TokenReceipt { sceneId: string; sceneVersion: number; token: AuthoredToken }

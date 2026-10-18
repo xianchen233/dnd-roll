@@ -79,7 +79,10 @@ public class JdbcAccountsStore implements Store {
         return jdbc.update("insert into app_user(id,username,password_hash) values (?,?,?) on conflict (username) do nothing", UUID.randomUUID(), username, passwordHash) == 1;
     }
     public void remove(UUID id, String username) {
-        jdbc.update("delete from token_controller tc using token t,scene s where tc.token_id=t.id and t.scene_id=s.id and s.campaign_id=? and tc.username=?", id, username);
+        // Invalidate every affected token form before deleting the membership/control rows.
+        jdbc.update("update scene set version=version+1 where id in (select t.scene_id from token t join token_controller tc on tc.token_id=t.id where tc.campaign_id=? and tc.username=?)", id, username);
+        jdbc.update("update token set version=version+1 where id in (select token_id from token_controller where campaign_id=? and username=?)", id, username);
+        jdbc.update("delete from token_controller where campaign_id=? and username=?", id, username);
         jdbc.update("delete from campaign_member where campaign_id=? and username=? and role='PLAYER'", id, username);
     }
     public long advance(UUID id) {
@@ -87,4 +90,3 @@ public class JdbcAccountsStore implements Store {
         return campaign(id).version();
     }
 }
-

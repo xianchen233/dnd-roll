@@ -26,7 +26,7 @@ class AssetMigrationIT {
             jdbc.update("insert into account_command_receipt(actor,request_id,kind,target,expected_version,name,result_id,result_version) values ('legacy_dm',?,'CREATE','',0,'Legacy',?,0)",UUID.randomUUID(),campaign);
             jdbc.update("insert into scene_command_receipt(actor,request_id,kind,campaign_id,target,name,expected_version,result_id,result_name,result_version) values ('legacy_dm',?,'ACTIVATE',?,?,'',7,?,'Kept',8)",UUID.randomUUID(),campaign,scene,scene);
             var before=preserved(jdbc);var checksums=jdbc.queryForList("select version,checksum from flyway_schema_history where version is not null order by version");
-            Flyway.configure().dataSource(source).schemas(schema).defaultSchema(schema).load().migrate();
+            Flyway.configure().dataSource(source).schemas(schema).defaultSchema(schema).target("4").load().migrate();
             assertEquals(before,preserved(jdbc));assertEquals(checksums,jdbc.queryForList("select version,checksum from flyway_schema_history where version in ('1','2','3') order by version"));
             assertEquals(4,jdbc.queryForObject("select count(*) from flyway_schema_history where success and version is not null",Integer.class));
             jdbc.update("insert into campaign_asset(id,campaign_id,storage_key,sha256,media_type,byte_size,width,height) values (?,?,?,?,'image/png',100,10,10)",asset,campaign,UUID.randomUUID().toString(),"a".repeat(64));

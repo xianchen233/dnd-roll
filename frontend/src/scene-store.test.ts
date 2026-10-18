@@ -3,6 +3,23 @@ import { SceneStore } from './scene-store';
 import { ApiError } from './api';
 import type { Scene } from './types';
 describe('membership loss', () => {
+  it.each(['revoked', 'hidden'] as const)('drops pending movement when a current snapshot shows %s and ignores late success', async reason => {
+    const posted = deferred<unknown>();
+    const removed = { ...snapshot(1), tokens: reason === 'hidden' ? [] : snapshot(1).tokens.map(t => ({ ...t, canMove: false })) };
+    const api = { scene: vi.fn().mockResolvedValueOnce(snapshot()).mockResolvedValueOnce(removed).mockResolvedValue(snapshot(0)), move: vi.fn().mockReturnValue(posted.promise) };
+    const store = new SceneStore(api); await store.open('c'); const moving = store.move('hero', 4, 5);
+    await store.refresh();
+    expect(store.canRetry()).toBe(false); expect(store.getSnapshot().status).toBe('confirmed');
+    posted.resolve({}); await moving;
+    expect(api.scene).toHaveBeenCalledTimes(2); expect(store.getSnapshot().scene).toEqual(removed);
+  });
+  it('does not resurrect a move retry after control is revoked and regranted', async () => {
+    const api = { scene: vi.fn().mockResolvedValue(snapshot()), move: vi.fn().mockRejectedValue(new Error('offline')) };
+    const store = new SceneStore(api); await store.open('c'); await store.move('hero', 4, 5);
+    api.scene.mockResolvedValue({ ...snapshot(1), tokens: snapshot(1).tokens.map(t => ({ ...t, canMove: false })) }); await store.refresh();
+    api.scene.mockResolvedValue(snapshot(2)); await store.refresh(); await store.retry();
+    expect(api.move).toHaveBeenCalledTimes(1); expect(store.canRetry()).toBe(false);
+  });
   it('invalidates every in-flight snapshot when an older refresh reports revoked membership', async () => {
     let rejectDenied!: (error: Error) => void, resolveStale!: (scene: Scene) => void;
     const api = { scene: vi.fn().mockResolvedValueOnce(snapshot()).mockImplementationOnce(() => new Promise<Scene>((_resolve, reject) => { rejectDenied = reject; })).mockImplementationOnce(() => new Promise<Scene>(resolve => { resolveStale = resolve; })), move: vi.fn() };

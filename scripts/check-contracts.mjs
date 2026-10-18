@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const read = (path) => readFile(new URL(path, import.meta.url), 'utf8');
-const [apiText, eventText, readme, accounts, scenes, assets] = await Promise.all([
+const [apiText, eventText, readme, accounts, scenes, assets, tokens] = await Promise.all([
   read('../contracts/openapi.json'),
   read('../contracts/scene-events.schema.json'),
   read('../contracts/README.md'),
   read('../contracts/accounts.md'),
   read('../contracts/scenes.md'),
   read('../contracts/assets.md'),
+  read('../contracts/tokens.md'),
 ]);
 const api = JSON.parse(apiText);
 const event = JSON.parse(eventText);
@@ -46,6 +47,9 @@ function validate(schema, value) {
     }
   } else if (schema.type === 'array') {
     assert.ok(Array.isArray(value));
+    if (schema.minItems !== undefined) assert.ok(value.length >= schema.minItems);
+    if (schema.maxItems !== undefined) assert.ok(value.length <= schema.maxItems);
+    if (schema.uniqueItems) assert.equal(new Set(value.map((item) => JSON.stringify(item))).size, value.length);
     value.forEach((item) => validate(schema.items, item));
   } else if (schema.type === 'integer') {
     assert.ok(Number.isSafeInteger(value));
@@ -83,7 +87,7 @@ assert.equal(api.openapi, '3.1.0');
 assert.equal(api.jsonSchemaDialect, 'https://json-schema.org/draft/2020-12/schema');
 assert.equal(event.$schema, api.jsonSchemaDialect);
 checkRefs(api);
-const documentedOperations = [...`${readme}\n${accounts}\n${scenes}\n${assets}`.matchAll(/(?:`|### )(GET|POST) (\/api[^` \r\n]*)/g)]
+const documentedOperations = [...`${readme}\n${accounts}\n${scenes}\n${assets}\n${tokens}`.matchAll(/(?:`|### )(GET|POST) (\/api[^` \r\n]*)/g)]
   .map(([, method, path]) => `${method} ${path}`);
 const actualOperations = Object.entries(api.paths).flatMap(([path, item]) =>
   Object.keys(item).filter((method) => ['get', 'post'].includes(method))
@@ -422,4 +426,103 @@ for (const secret of ['assetId', 'map', 'storageKey', 'filename', 'originalFilen
 for (const secret of ['storageKey', 'filename', 'originalFilename', 'path', 'sha256', 'campaignId']) {
   assert.throws(() => validate(schemas.AssetView, { ...assetView, [secret]: 'secret' }));
 }
-console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; all M1/P01/P02a assertions retained; P02b DM-only assets/maps, exact multipart parts, image limits, no-store downloads/503, asset receipt namespace/shared versions, nullable strict finite map fields, and unchanged secret-free snapshots/STOMP events. This is a focused contract checker, not a general OpenAPI validator.`);
+const tokenList = '/api/campaigns/{campaignId}/scenes/{sceneId}/tokens';
+const configureToken = `${tokenList}/{tokenId}`;
+for (const [path, method] of [[tokenList, 'get'], [tokenList, 'post'], [configureToken, 'post']]) {
+  const operation = api.paths[path][method];
+  assert.equal(operation['x-required-role'], 'DM');
+  assert.match(operation.description, /current DM.*PLAYER.*403.*foreign.*404/i);
+  assert.match(operation.description, /inactive.*without.*activat/i);
+  for (const status of ['400', '401', '403', '404']) assert.ok(operation.responses[status]);
+}
+assert.deepEqual(responseSchema(tokenList, 'get', '200').required, ['sceneId', 'sceneVersion', 'tokens']);
+for (const [path, version, payload] of [
+  [tokenList, 'target scene version shared with maps/movement', ['commandKind', 'campaignId', 'sceneId', 'expectedVersion', 'strippedName', 'x', 'y', 'hidden', 'canonicalControllers']],
+  [configureToken, 'target token version shared with movement', ['commandKind', 'campaignId', 'sceneId', 'tokenId', 'expectedVersion', 'strippedName', 'x', 'y', 'hidden', 'canonicalControllers']],
+]) {
+  const operation = api.paths[path].post;
+  const command = requestSchema(path);
+  assert.equal(operation['x-version'], version);
+  assert.deepEqual(command.required, ['requestId', 'expectedVersion', 'name', 'x', 'y', 'hidden', 'controllers']);
+  assert.equal(command.additionalProperties, false);
+  assert.deepEqual(operation['x-grid-bounds'], { x: '0 <= x < scene.width', y: '0 <= y < scene.height' });
+  assert.equal(operation['x-idempotency'].namespace, 'token-commands');
+  assert.deepEqual(operation['x-idempotency'].key, ['sessionActor', 'requestId']);
+  assert.deepEqual(operation['x-idempotency'].payload, payload);
+  assert.match(operation['x-idempotency'].authorization, /current DM.*target ownership.*before.*replay/i);
+  assert.match(operation['x-idempotency'].samePayload, /original.*before.*stale.*controller.membership.*no.*event/i);
+  assert.match(operation['x-idempotency'].differentPayload, /409 IDEMPOTENCY_CONFLICT/);
+  assert.match(resolve(operation.responses['409']).description, /VERSION_CONFLICT.*IDEMPOTENCY_CONFLICT/);
+  assert.deepEqual(responseSchema(path, 'post', '200').required, ['sceneId', 'sceneVersion', 'token']);
+}
+assert.deepEqual(responseSchema(tokenList, 'post', '200'), responseSchema(configureToken, 'post', '200'));
+assert.equal(schemas.TokenCommandRequest.properties.name['x-trimBeforeValidation'], true);
+assert.deepEqual(schemas.TokenAuthoringView.required, ['id', 'name', 'x', 'y', 'version', 'hidden', 'controllers']);
+assert.equal(schemas.TokenAuthoringView.additionalProperties, false);
+const controllersSchema = resolve(schemas.TokenCommandRequest.properties.controllers);
+assert.equal(controllersSchema.minItems, 0);
+assert.equal(controllersSchema.maxItems, 100);
+assert.equal(controllersSchema.uniqueItems, true);
+assert.equal(resolve(controllersSchema.items).minLength, 1);
+assert.equal(resolve(controllersSchema.items).maxLength, 80);
+assert.match(controllersSchema.description, /exact.*current.*member.*sorted/i);
+const tokenPolicy = api['x-token-policy'];
+assert.match(tokenPolicy.versions, /create.*scene.*0.*update.*token.*scene.*unchanged/i);
+assert.match(tokenPolicy.locking, /actor.*campaign.*same.request.*one effect.*same version.*one winner/i);
+assert.match(tokenPolicy.atomicity, /token.*controllers.*scene version.*receipt.*atomically/i);
+assert.match(tokenPolicy.receiptNamespace, /token.commands.*create.*update.*separate.*account.*scene.*asset.*movement/i);
+assert.match(tokenPolicy.historicalReplay, /never.*recreate.*restore.*regrant.*reread/i);
+assert.match(tokenPolicy.membership, /current.*member.*generic 400.*before.*expected version/i);
+assert.match(tokenPolicy.revocation, /campaign.wide.*token.*scene versions.*rejoin.*never.*restore/i);
+assert.match(tokenPolicy.movement, /current.*membership.*current.scene.*visibility.*control.*before.*receipt.*403.*404/i);
+assert.match(tokenPolicy.visibility, /hidden.*omitted.*player.*unchanged.*hidden.*controller.*error.*event/i);
+assert.match(tokenPolicy.realtime, /after.commit.*SCENE_CHANGED.*type.*campaignId/i);
+assert.match(tokenPolicy.migration, /V5.*V1.*V4.*checksums.*same.campaign.*backfill/i);
+const tokenCommand = { requestId: id, expectedVersion: 0, name: 'Shared token', x: 2, y: 3, hidden: false, controllers: ['dm', 'player'] };
+const authoredToken = { id, name: 'Shared token', x: 2, y: 3, version: 0, hidden: false, controllers: ['dm', 'player'] };
+const tokenResult = { sceneId: id, sceneVersion: 1, token: authoredToken };
+const tokenAuthoringList = { sceneId: id, sceneVersion: 1, tokens: [authoredToken] };
+for (const [schema, value] of [
+  [schemas.TokenCommandRequest, tokenCommand],
+  [schemas.TokenCommandRequest, { ...tokenCommand, name: ` ${'😀'.repeat(100)} `, controllers: [] }],
+  [schemas.TokenCommandRequest, { ...tokenCommand, controllers: ['a', '界'.repeat(80)] }],
+  [schemas.TokenCommandRequest, { ...tokenCommand, controllers: Array.from({ length: 100 }, (_, n) => `member${n}`) }],
+  [schemas.TokenAuthoringView, authoredToken], [schemas.TokenCommandResult, tokenResult],
+  [schemas.TokenAuthoringList, tokenAuthoringList],
+]) validate(schema, value);
+for (const key of Object.keys(tokenCommand)) {
+  const partial = { ...tokenCommand }; delete partial[key];
+  assert.throws(() => validate(schemas.TokenCommandRequest, partial));
+  assert.throws(() => validate(schemas.TokenCommandRequest, { ...tokenCommand, [key]: null }));
+}
+for (const invalid of [
+  { ...tokenCommand, name: '' }, { ...tokenCommand, name: ' \t\n ' }, { ...tokenCommand, name: '😀'.repeat(101) },
+  { ...tokenCommand, expectedVersion: -1 }, { ...tokenCommand, expectedVersion: 0.5 },
+  { ...tokenCommand, x: -1 }, { ...tokenCommand, x: 1.5 }, { ...tokenCommand, y: -1 },
+  { ...tokenCommand, y: NaN }, { ...tokenCommand, x: Infinity }, { ...tokenCommand, x: '1' },
+  { ...tokenCommand, requestId: 'bad' }, { ...tokenCommand, hidden: 'false' },
+  { ...tokenCommand, controllers: 'player' }, { ...tokenCommand, controllers: [null] },
+  { ...tokenCommand, controllers: [''] }, { ...tokenCommand, controllers: ['x'.repeat(81)] },
+  { ...tokenCommand, controllers: ['player', 'player'] },
+  { ...tokenCommand, controllers: Array.from({ length: 101 }, (_, n) => `member${n}`) },
+  { ...tokenCommand, actor: 'dm' }, { ...tokenCommand, tokenId: id }, { ...tokenCommand, canMove: true },
+]) assert.throws(() => validate(schemas.TokenCommandRequest, invalid));
+for (const schema of [schemas.TokenAuthoringView, schemas.TokenCommandResult, schemas.TokenAuthoringList]) {
+  const value = schema === schemas.TokenAuthoringView ? authoredToken : schema === schemas.TokenCommandResult ? tokenResult : tokenAuthoringList;
+  for (const key of schema.required) {
+    const partial = { ...value }; delete partial[key];
+    assert.throws(() => validate(schema, partial));
+    assert.throws(() => validate(schema, { ...value, [key]: null }));
+  }
+  assert.throws(() => validate(schema, { ...value, unexpected: 'secret' }));
+}
+for (const invalid of [{ ...authoredToken, version: -1 }, { ...authoredToken, id: 'bad' }, { ...authoredToken, controllers: ['dm', 'dm'] }]) {
+  assert.throws(() => validate(schemas.TokenAuthoringView, invalid));
+}
+for (const secret of ['hidden', 'controllers', 'hiddenTokenIds', 'hiddenCount', 'tokenVersion', 'sceneVersion']) {
+  assert.throws(() => validate(schemas.SceneSnapshot, { ...snapshot, [secret]: 'secret' }));
+  assert.throws(() => validate(schemas.TokenView, { ...token, [secret]: 'secret' }));
+  assert.throws(() => validate(event, { type: 'SCENE_CHANGED', campaignId: id, [secret]: 'secret' }));
+  assert.throws(() => validate(schemas.ApiError, { code: 'NOT_FOUND', message: 'Unavailable', [secret]: 'secret' }));
+}
+console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; all M1/P01/P02a/P02b assertions retained; P02c DM-only authoring, strict Unicode/configuration/controller sets, token receipts/shared versions/revocation/migration policies, and unchanged secret-free snapshots/STOMP events. This is a focused contract checker, not a general OpenAPI validator.`);

@@ -2,6 +2,16 @@ import { describe, expect, it, vi } from 'vitest';
 import { Api, ApiError } from './api';
 
 describe('session HTTP client', () => {
+  it('uses the three DM token endpoints with complete versioned bodies and CSRF', async () => {
+    const request = vi.fn().mockResolvedValueOnce(Response.json({ sceneId: 's/x', sceneVersion: 8, tokens: [] }))
+      .mockResolvedValueOnce(Response.json({ token: 'csrf', headerName: 'X-CSRF-TOKEN' }))
+      .mockImplementation(() => Promise.resolve(Response.json({ token: { id: 't' }, sceneVersion: 9 })));
+    const api = new Api(request), body = { requestId: 'r', expectedVersion: 8, name: '棋子', x: 1, y: 2, hidden: true, controllers: ['dm', 'player'] };
+    await api.tokens('c/x', 's/x'); await api.createToken('c/x', 's/x', body); await api.updateToken('c/x', 's/x', 't/x', { ...body, expectedVersion: 0 });
+    expect(request.mock.calls.map(c => c[0])).toEqual(['/api/campaigns/c%2Fx/scenes/s%2Fx/tokens', '/api/auth/csrf', '/api/campaigns/c%2Fx/scenes/s%2Fx/tokens', '/api/campaigns/c%2Fx/scenes/s%2Fx/tokens/t%2Fx']);
+    expect(request.mock.calls[2][1]).toMatchObject({ method: 'POST', credentials: 'include', headers: { 'X-CSRF-TOKEN': 'csrf' }, body: JSON.stringify(body) });
+    expect(JSON.parse(request.mock.calls[3][1].body)).toEqual({ ...body, expectedVersion: 0 });
+  });
   it('uses multipart JSON command Blob, authenticated binary reads and all five asset operations', async () => {
     const map = { assetId: 'a', gridSize: 64, offsetX: 0, offsetY: 0, distancePerCell: 5 };
     const request = vi.fn().mockResolvedValueOnce(Response.json({ campaignVersion: 2, assets: [] }))

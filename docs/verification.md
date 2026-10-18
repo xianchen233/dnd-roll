@@ -1,5 +1,57 @@
 # 阶段验收记录
 
+## P02c 开工核对（2026-10-18）
+
+沿用 `feat/accounts-and-invitations` 和 open/draft PR #1，开工 HEAD
+`2967c37071ccec2f967928a84c1f5bda880b76ed`，工作区干净；fetch 后与 origin
+一致。该 SHA 的 [push run39135956651](https://github.com/xianchen233/dnd-roll/actions/runs/39135956651)
+与 [PR run39135959413](https://github.com/xianchen233/dnd-roll/actions/runs/39135959413)
+均 completed/success，frontend/backend/browser 三个 job 全部 success。
+先写 `contracts/tokens.md` 再开展新测试；P02c 新功能检查不会复用这组旧 SHA 结果。
+
+本轮首先固定 DM 棋子创建/完整编辑、隐藏与多控制者、独立持久回执、scene/token
+版本和撤权边界。契约检查实际 RED：`node scripts/check-contracts.mjs` exit 1，
+documented/actual 比较缺少 GET tokens、POST tokens、POST tokens/{tokenId} 三个操作。
+后端 22:44:36 `TokenServiceTest` 实际 4 项断言失败；环境/路径错误不计行为 RED。
+完整结果随后追加，当前不声明 P02c 已完成。
+
+聚焦检查已实际通过：契约 27 HTTP 操作；前端初次全量 108 项与构建；
+22:52:16 后端聚焦 verify 为 56 unit + 9 新真实 PG/HTTP/WS/迁移测试，0
+失败/错误/跳过。后端在实际 PostgreSQL 上验证创建/完整配置、双玩家控制、
+隐藏/撤控后旧移动拒绝、成员移除/再加入及旧编辑版本冲突、当前DM先于回执、
+跨团/场景归属、严格JSON、幂等指纹、并发单效/版本单胜、事务回滚和秘密不入
+原生STOMP事件。完整结果如下。
+
+### P02c 本地完整验收
+
+- 22:54:39 全量 `mvn '-Dmaven.repo.local=D:/workspace/dnd/.tools/m2' -Pintegration verify -B -ntp`：
+  **56 unit + 50 真实 PG/HTTP/WS/迁移测试全部通过**，零失败/错误/跳过，重新打包。
+  既有52 unit及41 IT保留；新9项IT包含V4→V5逐列数据/checksum/FK、双玩家控制、
+  移除仅撤目标成员且保留其他控制者、Unicode用户名边界及Java统一控制者排序。
+- 22:58:40 协调者最终 `npm test` **110项**通过，随后TypeScript/Vite生产构建通过。
+  旧90项保留，新测试包含在途撤控/隐藏、再授权不恢复选择、作者草稿保留原版本、
+  401/403并发拒绝、作用域隔离、精确重试、最新post-ack权威读确认及失败恢复。
+  约572kB主chunk提示保留。契约检查**27 HTTP操作**通过，全部旧24操作断言保留。
+- 22:55–56 真实Chrome `npm run test:e2e`：**5通过（21.0秒），0 retry**。
+  原M1/P01/P02a/P02b四条保留；新增独立战役DM界面创建、双控制者、玩家移动、
+  隐藏/公开、撤控/再授权、移除/再邀请、旧move/create回执不得恢复控制，真实STOMP
+  不含棋子秘密。新流程等待可用按钮与新邀请链接，不增加timeout或retry。
+- 自然升级：旧V4浏览器库启动新打包Jar后升V5；外置`P02cSnapshot.java`与
+  `compare-p02c-snapshots.mjs`比较**13张V1–V4表全部原列/原行及四个迁移checksum一致**。
+  新增campaign_id只作回填，不纳入原列比较，另由迁移IT验证其FK/归属。
+- 22:57–58 实际核对PID/CommandLine后停止Java和PostgreSQL，以**同库/同素材根**
+  启动，非重建Spring context。`scripts/check-token-restart.mjs`的seed→真实重启→
+  新会话verify通过：名称/位置/隐藏/控制者/token及scene版本/原回执保持，撤控与移除
+  再加入后的旧move仍403，旧author/remove回执无新效果、stale编辑409；
+  `scripts/check-asset-restart.mjs`继续通过SHA-256、地图/版本/回执与下载权限回归。
+  棋子脚本邀请创建明确期待既有201，不改变P01接口。
+- 已人工查看新DM/player截图：画布完整，DM配置与多选控制者可用，重新加入的玩家
+  棋子仅查看且无DM作者/素材区。截图在忽略目录`frontend/test-results/tokens-*`，不提交。
+
+两端实际RED/GREEN见`backend/TDD.md`、`frontend/TDD.md`。本机无Docker，新SHA标准
+Compose/五浏览器/实际容器重启待远端CI确认，不以本地通过宣称远端通过。P02d玩家
+派生地图/Pixi/遮盖、P02e整体验收及P03–P10/A继续保留，整个P02尚未完成。
+
 日期：2026-10-18（Asia/Shanghai）。状态：M0/M1、P01、P02a、P02b均已通过本地与远端完整CI；P02b最终代码1bfac83的push/PR全success，实际结果见文末。
 
 ## 测试与构建

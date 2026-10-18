@@ -137,3 +137,13 @@ P01 浏览器脚本 `e2e/accounts.spec.ts` 使用现有 DM/PLAYER 环境账号�
 - **22:10:38** 聚焦 assets/scenes 2 文件 **46 项通过**；**22:10:46** 全量 **90 项通过**、构建通过。补齐输入/选团就绪条件后，**22:11:16** 再次全量 **7 文件、90 项通过**，TypeScript/Vite 构建通过。只改两份测试及此记录；四条真实 E2E 和容器重启的实际结果由协调者维护，未由本代理重复执行。
 
 最终远端验收：代码1bfac83的push39135326549与PR39135329930均frontend/backend/browser success；90前端测试/构建及原三条加素材共四条真实Compose浏览器通过，随后数据库/后端容器实际重启的SHA/配置/版本/回执验证通过。详见docs/verification.md。后续文档提交按当前HEAD另核Checks。
+
+## P02c 棋子作者与共享控制（2026-10-18）
+
+- 先读 `contracts/tokens.md` 固定契约。**22:43:11 RED**：`npm test -- src/scene-store.test.ts` 23 项中 3 项实际断言失败：撤权/隐藏后 `canRetry()` 仍为 true，撤权再授权后的旧重试多发一次 POST。实现当前权威快照清除命令并推进移动 generation，使旧异步成功不再启动读或恢复待移动状态。
+- **22:45:05 RED**：新作者组件以可编译的空实现运行 `npm test -- src/tokens.test.tsx src/scene-store.test.ts`，作者 8 项因缺少实际名称/编辑/控制者界面断言失败，移动 23 项通过。随后实现 DM 当前场景列表、完整创建/编辑表单与 API；token/member 双读就绪、独立观察任一 401/403、作用域卸载隔离、409 放弃命令刷新、transport/5xx 同一 body/requestId 显式重试、回执只确认历史并重读权威。**22:46:10 GREEN**：同命令 31 项通过。
+- **22:47:47 RED**：追加未保存草稿/旧版本测试，实际读回字段 `另一位 DM`，而应保留 `未保存名称`。实现后台刷新保留 dirty 草稿和最初 token version，剔除已退出成员的 controllers，显式提示版本变化；成功/409 才重置为服务器当前配置。**22:48:21 GREEN**：作者 9 项通过。
+- 补充后最终覆盖：重叠 post-ack 读两种完成顺序、旧读失败不覆盖新确认、新读失败后无额外 POST 恢复、peer transport 失败后迟到 401/403 清私有状态并隔离 unresolved POST、token/member 任一旧拒绝压过新成功、跨场景旧 POST 隔离、完整 CSRF/路径/body 契约。Tabletop 在同场景隐藏/撤权清空选中与坐标，成员变动也刷新共享场景与作者列表；实时/15秒补偿读更新管理区。
+- **22:50:44 GREEN**：全量 `npm test` **8 文件 108 项通过**，保留既有 90 项。唯一旧测试调整为适配作者新增独立成员读：素材上传前记录成员读调用基线，上传后仍断言有新刷新；旧功能断言未删除或放宽。新增 API 测试初次复用同一 Response 触发 body 已读，改为每次生成 Response；初次 build 的 Testing Library ByRoleOptions 不支持 exact 已修复，均属于测试/类型接入问题，未记业务 RED。
+- **22:50:58 GREEN**：`npm run build` TypeScript/Vite 通过，约 572 kB 主 chunk 提示保留。`npx playwright test --list` 正确发现 **5 条**真实流程（既有 4 条保留，新增 tokens.spec.ts）；本代理尚未启动真实服务或运行 E2E，由协调者统一执行并记录结果。
+- **22:53:09 / 22:53:21**：补充实际 App 层同场景隐藏/撤权→再授权→旧移动成功的两项回归，验证 selection/坐标清空、确认按钮仍 disabled、没有多发权威读，玩家不取 DM tokens/members；聚焦 18 项通过，全量最终 **110 项通过**，构建通过。新 E2E 首次动作显式等待 enabled，第二次生成邀请等待新 POST 成功且链接变更，避免读取旧已消费链接；业务断言和全局 timeout/retry 未放宽。

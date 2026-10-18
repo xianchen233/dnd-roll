@@ -33,6 +33,12 @@ export class SceneStore {
         this.update({ scene, status: 'confirmed', message: '已同步全团当前场景，旧场景的选择与重试已清除' });
         return true;
       }
+      if (this.command && !scene.tokens.some(t => t.id === this.command!.tokenId && t.canMove)) {
+        // Current control/visibility supersedes even an unresolved move POST.
+        this.sceneGeneration++; this.command = undefined; this.acceptedMoveAfterRefresh = undefined;
+        this.update({ scene, status: 'confirmed', message: '单位控制或可见性已变化，旧移动已清除' });
+        return true;
+      }
       // A post-acknowledgment read may come from the move, realtime or the timer.
       // Reads started before the POST acknowledgment cannot confirm that move.
       const confirmsMove = this.acceptedMoveAfterRefresh !== undefined && refreshId > this.acceptedMoveAfterRefresh;
