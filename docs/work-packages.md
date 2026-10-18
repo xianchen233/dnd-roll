@@ -17,7 +17,7 @@
 
 ## M2：完整首版业务
 
-当前：**P01/P02a 已完成，本轮起点 be96f2c 的 push/PR CI 均 success。P02b 已完成本地验收，等待新SHA远端完整CI**。契约见 contracts/scenes.md、contracts/assets.md，沿用分支 feat/accounts-and-invitations 及草稿 PR #1，未合并/发布。P02c 及之后仍未开工；不得以 P02b 完成关闭整个 P02。
+当前：**P01/P02a/P02b 已完成。P02b代码1bfac83的push/PR CI均frontend/backend/browser success，含标准Compose素材卷与数据库/后端重启**。契约见contracts/scenes.md、contracts/assets.md，沿用分支feat/accounts-and-invitations及草稿PR #1，未合并/发布。下一步P02c；不得以P02b完成关闭整个P02。
 
 | 工作包 | 前置 | 首先测试的行为 / 交付边界 |
 | --- | --- | --- |
@@ -36,10 +36,10 @@ P02 和 P03 可在契约协调后并行；P07 附件存储依赖 P02，记录语
 
 ### P02接手顺序与分工
 
-先在既有审阅分支上续接，保留既有M1/P01/P02a测试。开工先写对应契约，再分别派发backend、frontend、contracts/QA；协调者负责docs/deploy、持久目录、实际双客户端与重启验收和Git。以下为有序子包；P02a 已完成本地及远端 CI 验收，P02b 本地通过、远端待核，其余尚未实现：
+先在既有审阅分支上续接，保留既有M1/P01/P02a/P02b测试。开工先写对应契约，再分别派发backend、frontend、contracts/QA；协调者负责docs/deploy、持久目录、实际双客户端与重启验收和Git。以下为有序子包；P02a/P02b已完成本地及远端CI验收，其余尚未实现：
 
 1. P02a 多场景与团当前场景（已完成，8836abb 本地及 push/PR CI 通过）：先RED验证DM创建/切换、玩家不可切换、过期版本、同requestId重试以及切换后旧场景保存；统一`GET .../scene`始终返回DM指定的全团当前场景。V3保留V1/V2数据与当前地图，安全失效事件沿用无秘密消息。先完成此最小切片再引入图片。
-2. P02b 持久素材与地图配置（本地验收通过，远端新SHA CI待核实）：稳定素材ID与独立存储键、PNG/JPEG真实解码与限额、V4同团引用FK、DM下载授权、Compose私有持久卷。契约先行与实际RED/GREEN，其他战役/玩家/猜ID/直链拒绝、回执/commit失败回滚及新文件清理、Java+PG实际重启SHA/引用/回执均已验收，见 verification.md。共享逻辑网格不变，玩家原图权限未开放。
+2. P02b 持久素材与地图配置（已完成，1bfac83本地与push/PR完整CI通过）：稳定素材ID与独立存储键、PNG/JPEG真实解码与限额、V4同团引用FK、DM下载授权、Compose私有持久卷。契约先行与实际RED/GREEN，其他战役/玩家/猜ID/直链拒绝、回执/commit失败回滚及新文件清理、提交确认丢失保护已提交文件、Java+PG及Compose实际重启SHA/引用/回执均有验收证据，见verification.md。共享逻辑网格不变，玩家原图权限未开放。
 3. P02c 棋子作者与共享控制：DM配置名称/位置/隐藏和多控制者，移动保留原版本/幂等；测试收回控制和移除成员不恢复旧授权，隐藏字段不进入快照、错误或事件。
 4. P02d 地图交互及手动遮盖：原生Pixi平移/缩放/网格校准/吸附/测距，DM手动揭露与单位隐藏独立；玩家只获取已公开图像内容，客户端遮罩不能承担秘密边界。先验证遮盖区域原始像素不可通过素材URL或缓存获取，再验收界面。
 5. P02e 整体验收：实际DM/玩家双客户端切图、授权/撤销、地图揭露、断网与进程重启；更新契约、CHANGELOG和交接，当前提交CI通过后才标P02完成。容量、素材一致备份与异机恢复仍按P09/P10执行。

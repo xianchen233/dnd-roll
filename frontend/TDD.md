@@ -135,3 +135,5 @@ P01 浏览器脚本 `e2e/accounts.spec.ts` 使用现有 DM/PLAYER 环境账号�
 - 审查 assets/scenes 全部首次动作和重试/刷新动作，按钮点击统一先等待 enabled；upload helper 等文件输入可用，选择文件后再等上传按钮可用；create helper 同样等待输入及提交按钮。校准字段的动作保留先等待权威 gridSize=64，切团动作明确等待选择器可用。不会因面板已挂载而提前对 disabled 控件发 fireEvent。
 - 原 detach 用例改成确定性的 deferred 初始读取：显式验证配置尚未返回时移除按钮 disabled、POST 为 0，完成读取后再等待按钮 enabled 并点击；保留原 sceneVersion=9、map:null 的命令断言。没有删除/合并用例或放宽原断言，也未更改全局 timeout/retry。
 - **22:10:38** 聚焦 assets/scenes 2 文件 **46 项通过**；**22:10:46** 全量 **90 项通过**、构建通过。补齐输入/选团就绪条件后，**22:11:16** 再次全量 **7 文件、90 项通过**，TypeScript/Vite 构建通过。只改两份测试及此记录；四条真实 E2E 和容器重启的实际结果由协调者维护，未由本代理重复执行。
+
+最终远端验收：代码1bfac83的push39135326549与PR39135329930均frontend/backend/browser success；90前端测试/构建及原三条加素材共四条真实Compose浏览器通过，随后数据库/后端容器实际重启的SHA/配置/版本/回执验证通过。详见docs/verification.md。后续文档提交按当前HEAD另核Checks。

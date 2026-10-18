@@ -4,13 +4,14 @@
 
 ## 本轮状态与下一步
 
-- **P01 已完成，禁止重复开发。** 本轮起点 `d9a0393` 工作区干净、与 origin 一致；其 [push CI](https://github.com/xianchen233/dnd-roll/actions/runs/39127654306) 与 [PR CI](https://github.com/xianchen233/dnd-roll/actions/runs/39127657531) 均 completed/success，核对后才开工 P02a。
+- **P01 已完成，禁止重复开发。** P02a 开工起点 `d9a0393` 工作区干净、与 origin 一致；其 [push CI](https://github.com/xianchen233/dnd-roll/actions/runs/39127654306) 与 [PR CI](https://github.com/xianchen233/dnd-roll/actions/runs/39127657531) 均 completed/success，核对后才开工 P02a。
 - **P02a 已完成并通过本地及远端完整 CI。** 代码提交 `8836abbcca9a28a2e130770cb9839e0136f51fcf` 的 [push CI](https://github.com/xianchen233/dnd-roll/actions/runs/39129943816) 与 [PR CI](https://github.com/xianchen233/dnd-roll/actions/runs/39129946834) 均 frontend/backend/browser success，含标准 Compose 部署和全部三条真实浏览器流程。 契约先写 `contracts/scenes.md`，实际 RED/GREEN 见两端 TDD.md 与 verification.md。37 后端 unit、28 真实 PG/HTTP/WS、59 前端测试、构建、19 HTTP 操作契约、3 条真实 Chrome 流程、V2→V3 旧数据比较及真实 Java 进程重启全部通过。
 - DM 创建多个空场景（创建不切图）、明确切换全团当前场景；玩家不能列出未激活场景。旧场景位置/版本/控制权保存；历史激活回执只返回原结果，不再次切图。服务器仅接受当前场景的移动/移动重放，前端隔离旧场景在途响应和重试。
 - V3 保留 V1/V2，回填当前场景指针并通过复合 FK 限制归属；P01/demo 在同一事务设置指针，demo 重启不重置选择。scene-command 回执独立命名空间，全局 actor→campaign 锁；与 P01 共用 campaignVersion。
-- **P02b 已完成本地验收，远端 CI 待本轮推送后核实。** 本轮起点 `be96f2c` 工作区干净、与 origin 一致；其 push run39130339805 / PR run39130343257 三个 job 全 success。先写 `contracts/assets.md` 和实际 RED，再实现 DM 私有 PNG/JPEG 素材与地图引用/校准、V4 同团 FK、独立素材回执、Compose 私有卷。共享逻辑网格和玩家快照不含原图或地图素材字段，玩家图片揭露仍为 P02d。
+- **P02b 已完成本地与远端完整 CI 验收。** 代码 `1bfac83d55eb3ccab18778a30e5f5ba54f4e4289` 的 [push run39135326549](https://github.com/xianchen233/dnd-roll/actions/runs/39135326549) 和 [PR run39135329930](https://github.com/xianchen233/dnd-roll/actions/runs/39135329930) 均 frontend/backend/browser success，含四条真实浏览器和标准Compose的数据库/后端重启。开工起点 `be96f2c` clean、与origin一致，旧SHA CI先全绿才开工。先写 `contracts/assets.md` 和实际RED，再实现DM私有PNG/JPEG素材与地图引用/校准、V4同团FK、独立素材回执、Compose私有卷。共享逻辑网格和玩家快照不含原图或地图素材字段，玩家图片揭露仍为P02d。
 - 本地证据：最终52 unit + 41真实PG/HTTP/WS全量、最终90前端测试与构建、24 HTTP契约、4条真实Chrome全部通过；V3旧库自然升级比较、Java与PostgreSQL实际停止/同库同素材根重启的SHA-256/引用/版本/回执检查通过。初次新增E2E精确label定位失败已修复，原三条流程未放宽；详情见 verification.md 和两端 TDD.md。
-- 下一可执行步骤：先核验本轮提交的 push/PR CI（含Compose文件+数据库重启），全部通过后再进入 **P02c 棋子作者与共享控制**。先读契约，再RED验证名称/位置/隐藏/多控制者、撤回控制和移除成员后的旧回执不得恢复权限，保留移动版本/幂等。P02c/d/e、整个P02及后续包仍未完成。
+- 最终审查修复：同步确认由POST确认后启动且最新有效的权威读完成，旧成功/失败不能覆盖；测试动作等实际可用，不放宽业务断言/timeout、不加retry。提交确认丢失时先取得新campaign锁等待旧事务结束，再核对asset/storageKey；确认未提交才清文件，已提交或无法核对则保留，通过原requestId回执恢复。模拟故障的范围及实际RED/GREEN见两端TDD和verification。
+- 下一可执行步骤：核对Git/PR #1最新HEAD及其Checks（本次交接文档提交也要核对），再进入 **P02c 棋子作者与共享控制**。先读契约，再RED验证名称/位置/隐藏/多控制者、撤回控制和移除成员后的旧回执不得恢复权限，保留移动版本/幂等。P02c/d/e、整个P02及后续包仍未完成。
 
 ## 用户授权与开发约定
 
@@ -27,12 +28,12 @@
 
 V2 浏览器库升级前后逐项比较 5 个战役/场景、2 个棋子、controls 与旧回执数量一致。独立自动迁移 IT 另外逐行比较全部原表内容并验证跨团指针 FK。真实 Java 进程停止/同库重启后，当前指针、创建/切换/移动回执、旧场景位置与版本保持；demo 不重置选择，历史切换重放不重新切图。
 
-本机无 Docker；8836abb 的两次远端 CI 已实际通过容器构建、Compose、代理及三条浏览器流程。本轮 P02b 新增容器卷/重启须另核新 SHA。公网 TLS、触屏、容量、完整素材备份和异机恢复未验收；P02b 本地已验收，棋子作者 P02c、遮盖 P02d、整体验收 P02e 及 P03–P10/A 工作包继续见 work-packages.md。约 564 kB 主 chunk 提示保留为后续优化，不放宽检查。
+本机无Docker；P02b的1bfac83两次远端CI已实际通过容器构建、私有素材卷、代理、四条浏览器及数据库/后端重启，后续交接提交仍独立核对Checks。公网TLS、触屏、容量、完整素材备份和异机恢复未验收；棋子作者P02c、遮盖P02d、整体验收P02e及P03–P10/A继续见work-packages.md。约564kB主chunk提示保留为后续优化，不放宽检查。
 
 ## GitHub 与 CI
 
 - Git Credential Manager 已授权，CLI fetch/push 可用，不要再次要求用户登录。PR #1 仍 open draft、base main；继续更新这条 PR，不创建重复 P01 PR。
-- P02b 续接时 GitHub 连接器已成功读取 PR #1；本机 Git 凭据的只读辅助脚本 `.tools/check-p02-ci.mjs --jobs` 可按当前 HEAD 核验 Actions，凭据仅在内存，禁止打印或落盘。
+- P02b续接时GitHub连接器可读PR，但更新PR返回integration 403，部分日志读取出现transport error；已沿用现有GCM凭据更新同一PR，无需用户再登录。只读脚本 `.tools/check-p02-ci.mjs --jobs` 按当前HEAD核验Actions，`.tools/read-p02-job.mjs <jobId>`只输出筛选证据，`.tools/update-p02b-pr.mjs`读取外置body更新PR；凭据仅在内存，禁止打印或落盘。
 - CI 包含 frontend、真实 PG backend、标准 Compose browser；每次按目标 SHA 核验。旧 P01 全绿不代替新 P02a 检查。
 
 ## 本机辅助环境（均在应用仓库外，不提交）

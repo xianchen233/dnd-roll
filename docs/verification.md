@@ -1,6 +1,6 @@
 # 阶段验收记录
 
-日期：2026-10-18（Asia/Shanghai）。状态：M0/M1、P01、P02a 本地与远端 CI 通过；P02b 已完成本地验收，本轮新SHA远端CI另行核实，实际结果见文末。
+日期：2026-10-18（Asia/Shanghai）。状态：M0/M1、P01、P02a、P02b均已通过本地与远端完整CI；P02b最终代码1bfac83的push/PR全success，实际结果见文末。
 
 ## 测试与构建
 
@@ -169,3 +169,11 @@ Compose新增asset_data私有卷及运行用户目录权限，NGINX允许10MiB�
 最终审查另发现文件清理的真实持久性风险：原upload catch会在任何异常后删新文件，即使数据库已成功提交而commit确认丢失；可能使原回执指向丢失的文件。契约进一步明确未知提交不能视为已回滚，需新campaign锁等待原服务端事务结束后核对asset/storageKey；确认未提交才清，已提交或无法核对则保留，仍返回原失败、通过同requestId回执重试恢复。无metadata的保留文件不可下载，后续保留/恢复仍P09。后端先补实际unit RED并实现，证据随后记录。
 
 22:13:05先运行AssetServiceTest，9项中新增3断言实际失败；22:14:09同命令9项通过。以纯transaction Store模拟已提交后确认丢失、恢复库不可用、已回滚但无法核对，验证文件保护、原异常、同requestId原回执/原bytes和无metadata不可下载；没有声称进行真实断网commit实验。22:15:51最终全量 `mvn '-Dmaven.repo.local=D:/workspace/dnd/.tools/m2' -Pintegration verify -B -ntp`：**52 unit + 41真实PG/HTTP/WS全部通过**，0失败/错误/跳过，jar重新打包；即时receipt与延迟commit rollback清理等旧IT全保留。22:16核对PG PID/CommandLine后已停止。本轮最新代码的全量CI仍按新SHA核实，先前容器成功证据不能替代新提交。
+
+## P02b 最终完整 CI 通过
+
+最终代码 **1bfac83d55eb3ccab18778a30e5f5ba54f4e4289** 的 [push run39135326549](https://github.com/xianchen233/dnd-roll/actions/runs/39135326549) 与 [pull_request run39135329930](https://github.com/xianchen233/dnd-roll/actions/runs/39135329930) 均 **completed/success，frontend/backend/browser全部通过**。按该SHA核验而非复用前次运行：前端90测试/构建/24契约，后端日志52unit+41真实PG/HTTP/WS、0失败/错误/跳过；两条browser job均完成标准Compose构建、私有素材卷、原M1/P01/P02a及新素材共4流程和实际db/backend容器重启。PR浏览器日志4 passed（2.1m），随后明确输出seed PASS和新会话verify PASS：SHA-256、地图校准、版本、上传/map原回执、历史回放不重挂图、玩家/跨团/退出后下载拒绝。
+
+至此P02b本地与远端门槛完成，前述pending/failure记录为真实历史，已由对应RED/GREEN与最终新SHA验证关闭。PR #1仍open draft/base main，标题与说明按最终账号/多场景/私有素材范围更新，未合并或发布。当前本机Java/Vite/PG均在核对进程身份后停止，测试数据及外置素材保留。后续交接文档提交仍须单独查看当前PR Checks；不把代码1bfac83的结果冒称为文档新SHA结果。
+
+下一可执行包为P02c棋子作者与共享控制，先契约和授权/隐藏/撤权/旧回执失败测试，再实现与验收。P02d玩家派生图/Pixi/遮盖、P02e整体验收及P03–P10/A继续保留。整个P02和M2未完成；TLS、触屏、容量和完整一致备份/异机恢复不在本轮通过范围。
