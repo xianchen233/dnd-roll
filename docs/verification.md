@@ -155,3 +155,9 @@ Compose新增asset_data私有卷及运行用户目录权限，NGINX允许10MiB�
 ### P02b 第二次远端：生产静态路径误判
 
 修复提交 `c237dc7` 的 [PR run39133708410](https://github.com/xianchen233/dnd-roll/actions/runs/39133708410) frontend/backend仍success，原三条浏览器通过，新流程已通过保存后同步确认，随后“玩家未请求私有素材”断言失败。原因是路径检查 `includes('/assets')` 也匹配生产Vite公开的 `/assets/index-*.js`/CSS，本机开发服务没有这一bundle路径。检查改为精确匹配 `/api/campaigns/{id}/assets...` 和 `/api/campaigns/{id}/scenes/{id}/map`，并以具体路径数组报错；全部私有API仍被检测，静态JS/CSS排除，没有开放玩家原图权限或删除断言。对公开JS/CSS、素材列表/content、地图配置、普通场景路径逐项验证通过。该部署测试修正需新SHA远端运行确认；前端生产实现未变。
+
+### P02b 旧场景测试初始化同步
+
+`1b42c6c` 的push frontend90通过，但PR run39134127052 frontend89通过/1失败，旧scenes测试在等待“重试同一场景操作”处失败。create helper原先仅等名称输入出现便点击，初始列表尚未完成时创建按钮仍disabled，点击被忽略。helper现在填完后等待按钮enabled，setup补正常assets/sceneMap只读mock，移除无关的api.assets未定义错误。旧18项和全部原断言保留，未改生产逻辑、timeout或retry。22:04:52聚焦scenes18通过，22:04:57全量90和构建通过。修复需新SHA完整CI确认；此失败不冒称新产品行为RED。
+
+`1b42c6c` 的PR run39134127052 browser job **success**：标准Compose私有素材卷、四条真实浏览器及seed→实际db/backend容器重启→verify已运行通过。日志明确输出重启后SHA-256、引用/版本/原回执与历史回放检查PASS。因此本轮容器持久化已有实际证据，但该SHA的整个PR run因上述单项旧测试初始化失败而仍failure，交付须等修复的新SHA所有job通过。
