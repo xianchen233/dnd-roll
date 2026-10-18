@@ -80,6 +80,32 @@ P02c案例全部通过，仍60秒/条和零retry。第一次拆分运行6过1失
 前端构建/测试发现检查通过；生产代码未改，110unit及56+50后端全量结果仍适用。
 新SHA远端7流程及两个实际容器重启脚本仍须完整运行确认。
 
+### P02c 第二次远端：控制者输入与后台读竞争
+
+`8339354f7cdf9858c930a93f106ceea2185104fa`的
+[push39140226138](https://github.com/xianchen233/dnd-roll/actions/runs/39140226138)
+已全success（7浏览器及素材/棋子实际容器重启）；
+[PR39140229143](https://github.com/xianchen233/dnd-roll/actions/runs/39140229143)
+frontend/backend仍success，原四条与新增创建/移动、移除/再邀请均通过，但第六条36.3秒
+在取消`控制者 browser-player`时失败：`Clicking the checkbox did not change its state`。
+不是总时限失败，也不能用同SHA绿色push关闭。23:32:06补deferred后两个真实断言RED：
+已有成员的checkbox在背景重验证时被disabled，以及重新选中草稿后旧ack横幅被背景读
+重新插回。23:32:39原生checkbox.click在mousedown→背景读→click顺序下实际仍checked，
+复现动作被吃掉。针对最小表单行为修复，保持提交就绪/版本检查和所有浏览器断言。
+完整修复与新SHA结果后续记录；当前P02c远端门槛仍未完成。
+
+PR trace随后直接证实：失败uncheck在240477.847ms检查enabled/stable，240836ms开始
+背景scene/tokens/members读，241011.149ms action快照中FIELDSET已disabled，目标仍
+checked，241183.539ms才执行click，因此点击被禁用fieldset吃掉。after快照fieldset
+恢复但checked未变，且before/action没有的旧确认横幅重新出现。不是HTTP超时，相关
+HTTP仅7–13ms。原生click/deferred RED与真实trace一致。
+
+最小修复不改变E2E：后台权威读期间仍禁止提交，已加载成员checkbox的本地草稿保持
+可编辑；选择或开始新编辑时结束旧ack确认周期，旧横幅不再回插。23:33:35作者16项
+GREEN，23:33:38全量**112前端测试与构建通过**，旧110项保留；23:36协调者真实Chrome
+完整**7通过（24.3秒）**，仍60秒/条、零retry。CHANGELOG同步，后端与契约未改变。
+提交修复后仍按新SHA核实完整push/PR CI，8339354的绿色push不替代失败PR。
+
 日期：2026-10-18（Asia/Shanghai）。状态：M0/M1、P01、P02a、P02b均已通过本地与远端完整CI；P02b最终代码1bfac83的push/PR全success，实际结果见文末。
 
 ## 测试与构建

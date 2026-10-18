@@ -52,6 +52,9 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Fixed
 
+- Keep existing controller checkboxes editable during background authoring reads
+  while submission waits for fresh data. Stop old save acknowledgments from
+  reappearing after a new draft begins, preserving form position during editing.
 - Bind native browser fetch correctly so real-browser login succeeds.
 - Fit the complete Pixi canvas inside its panel while preserving logical grid
   coordinates, including clicks near the right edge.

@@ -12,6 +12,28 @@ function props(api: ReturnType<typeof setup>) { return { api: api as unknown as 
 async function click(name: string) { const button = await screen.findByRole('button', { name }); await waitFor(() => expect(button).toBeEnabled()); fireEvent.click(button); }
 async function name(value: string) { fireEvent.change(await screen.findByLabelText('棋子名称', { exact: true }), { target: { value } }); }
 describe('DM token authoring', () => {
+  it('keeps loaded controller checkboxes editable while background reads revalidate submission', async () => {
+    const revalidating = deferred<unknown>(), api = setup(), p = props(api), view = render(<TokenManagement {...p} />);
+    await click('编辑棋子 t'); expect(screen.getByLabelText('控制者 p1')).toBeChecked();
+    const controller = screen.getByLabelText('控制者 p1'); fireEvent.mouseDown(controller);
+    api.tokens.mockReturnValueOnce(revalidating.promise); view.rerender(<TokenManagement {...p} membersRevision={1} />);
+    expect(screen.getByRole('button', { name: '保存棋子配置' })).toBeDisabled();
+    // Native click honors inherited fieldset disabled, unlike dispatchEvent.
+    // A background read between actionability/mousedown and click must not eat
+    // the user's local controller change.
+    act(() => controller.click()); expect(controller).not.toBeChecked();
+    await act(async () => { revalidating.resolve(listed); });
+    expect(screen.getByLabelText('控制者 p1')).not.toBeChecked(); await click('保存棋子配置');
+    expect(api.updateToken.mock.calls[0][3]).toMatchObject({ expectedVersion: 4, controllers: [] });
+  });
+  it('does not reinsert an old acknowledgment banner after choosing a fresh edit and a later background read', async () => {
+    const revalidating = deferred<unknown>(), api = setup(), p = props(api), view = render(<TokenManagement {...p} />);
+    await click('编辑棋子 t'); await click('保存棋子配置'); await screen.findByText('棋子请求已确认；当前列表已从服务器刷新。');
+    await click('编辑棋子 t'); expect(screen.queryByText('棋子请求已确认；当前列表已从服务器刷新。')).not.toBeInTheDocument();
+    api.tokens.mockReturnValueOnce(revalidating.promise); view.rerender(<TokenManagement {...p} membersRevision={1} />);
+    await act(async () => { revalidating.resolve(listed); });
+    expect(screen.queryByText('棋子请求已确认；当前列表已从服务器刷新。')).not.toBeInTheDocument();
+  });
   it.each(['own-first', 'newest-first'] as const)('synchronizes from the newest post-ack read while ignoring historical receipts (%s)', async order => {
     const posted = deferred<unknown>(), own = deferred<unknown>(), newest = deferred<unknown>(), api = setup({ updateToken: vi.fn().mockReturnValue(posted.promise) }), p = props(api);
     const view = render(<TokenManagement {...p} />); await click('编辑棋子 t'); await name('历史名'); await click('保存棋子配置');

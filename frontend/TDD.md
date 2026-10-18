@@ -154,4 +154,13 @@ P01 浏览器脚本 `e2e/accounts.spec.ts` 使用现有 DM/PLAYER 环境账号�
 - 按三个独立验收边界拆分 `tokens.spec.ts`：①完整 UI 登录、建团、邀请、双控创建、玩家移动及回执幂等；②真实 CSRF+login 和 HTTP 建立独立团/棋子前置，再由 UI 验证隐藏/公开、撤控/再授权和旧选择清理；③另一个独立团，由 UI 移除成员、生成邀请并重新加入，再验证旧作者及移动回执不能恢复控制。全部原检查保留，HTTP/STOMP 不 mock，不注入或伪造 session/cookie，不改生产代码。后两条仅把已经单独验收过的前置设置移至真实 HTTP。
 - 新 sessions fixture 的关闭阶段具有独立 20 秒 teardown 预算，并行关闭两会话，避免业务用例的 finally 掩蔽失败。每条业务测试仍为 60 秒、0 retry；原四条 E2E 文件不改。拆分后的真实执行结果等待协调者记录，不能以 `--list` 代替验收。
 - 拆分后协调者实际本地执行：前六条通过，第七条已通过移除/再邀请和历史回执权限断言，最终 `frames.length > 0` 在玩家事件集合为 0 失败。该案例真实 HTTP 前置发生于 socket 建立前，移除时玩家被排除且 socket 关闭，重新接受邀请发生于新 socket 建立前，之后历史回放正确不发事件，因此旧长流程的“玩家收到过事件”前置不再成立。仅修正 E2E 观察对象：fixture 独立收集 DM 帧，第七条验证持续在线 DM 实际收到的无秘密成员失效事件；第一、二条仍验证玩家帧。保留 `> 0`、全部秘密字段及权限/回执断言，不加延时或放宽 retry/timeout。修正后的完整真实运行等待协调者复验。
+
+### PR 8339354：后台读与控制者复选框交互
+
+- 协调者核对 push 的 7 条浏览器与容器实际重启通过，但 PR run39140229143 的第六条在隐藏/公开后撤控前失败：`locator.uncheck` 报 `Clicking the checkbox did not change its state`。不能用 push 通过关闭 PR 失败。审读发现后台 load 每次设 ready=false，使已有成员的 fieldset 短暂 disabled；另外重新选择编辑只清消息却留下旧 afterAck，后续后台读会重新插入旧确认横幅，改变表单位置。
+- **23:32:06 RED**：新增两项 deferred 测试，原作者 14 项通过、新 2 项实际断言失败：已加载 checkbox 在后台重验证期间 disabled；旧确认消息在重新选择编辑后被晚到后台读插回。**23:32:39** 将首项加强为原生 `checkbox.click()`：mousedown 后启动 deferred 重验证再 click，实际断言“点击后仍 checked”失败，复现用户动作被丢弃；不是通过 fireEvent 人工绕开 disabled。
+- 最小生产修复：后台读期间继续禁止提交，但已有成员的本地 checkbox 草稿仍可编辑；尚未完成初次权威双读、待命令确认/重试以及撤权后的锁定保持。choose 或开始修改字段时结束上个命令的确认周期，后台读不再插回旧横幅；当前命令 post-ack 最新有效读的同步确认和失败恢复继续保留。未改 E2E 的真实 check/uncheck、断言、timeout 或 retry。
+- **23:33:35 GREEN**：聚焦作者 16 项通过。**23:33:38 GREEN**：全量 **8 文件、112 项通过**，TypeScript/Vite 构建与 `git diff --check` 通过。两个生产问题有确定 RED/GREEN；PR trace 尚在下载，因此此时不宣称已经确定该远端失败的唯一直接原因，后续仍需 trace 核对及真实七条复验。
+- 随后只读核对 PR trace833，直接原因得到证实：失败 `uncheck` 在 monotonic 240477.847 ms 通过 enabled/stable 检查，240836 ms 后台 tokens/members 开始读取；241011.149 ms 的 action 快照明确目标 checkbox 所属 FIELDSET 已有 `disabled=""` 且 checkbox checked=true，241183.539 ms 才实际 dispatch click。after 快照 FIELDSET 恢复 enabled，但 checkbox 仍 checked，说明后台重验证跨越实际点击窗口并吞掉动作。同一 after 快照重新插回旧确认横幅，before/action 均没有该横幅，第二项也有直接快照证据。HTTP 本身约 7–13 ms；失败来自浏览器异步渲染/事件派发交错，不是后端响应挂死。两项最小修复与 trace 一致，不增加其他生产改动或放宽 E2E。
+- **23:36 实际浏览器 GREEN**：协调者运行修复后的完整 7 条真实 E2E，**7 项全部通过（24.3 秒）**，日志位于仓库外 `.tools/p02c-browser-controls-fixed.log`。保留真实 check/uncheck 及全部权限/秘密字段/历史回执断言，每条 60 秒、零 retry；原四条回归一并通过。后续统一提交的 push/PR Checks 仍须按新 SHA 核验，旧 push 成功不替代本次修复的远端证据。
 - 协调者23:22统一真实Chrome复验 `npm run test:e2e`：**7通过（23.2秒）**，原四条及三个独立P02c用例全部通过，0 retry。拆分与观察对象修正未修改生产代码；新SHA远端Compose/7浏览器/实际容器重启继续单独核验。
