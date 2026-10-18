@@ -376,6 +376,7 @@ assert.ok(schemas.ApiError.properties.code.enum.includes('ASSET_UNAVAILABLE'));
 const assetPolicy = api['x-asset-policy'];
 assert.match(assetPolicy.storage, /server.generated.*opaque.*atomic.*before.*metadata/i);
 assert.match(assetPolicy.atomicity, /rollback.*metadata.*versions.*receipts.*clean.*new.*files/i);
+assert.match(assetPolicy.atomicity, /uncertain commit.*after the transaction.*preserve committed.*database is unavailable.*absence is confirmed.*original failure.*durable receipt/i);
 assert.match(assetPolicy.visibility, /snapshot.*unchanged.*no.*asset.*map.*player/i);
 assert.match(assetPolicy.download, /every.*read.*logout.*revocation.*no.*public.*signed/i);
 assert.match(assetPolicy.map, /same.campaign.*inactive.*logical.*unchanged/i);

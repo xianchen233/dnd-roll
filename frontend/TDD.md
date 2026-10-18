@@ -128,3 +128,10 @@ P01 浏览器脚本 `e2e/accounts.spec.ts` 使用现有 DM/PLAYER 环境账号�
 - 协调者核对 `1b42c6c` 的 PR frontend：**89 通过、1 失败**，旧 `retains the exact body ... Error offline` 在寻找重试按钮时失败；同 SHA 的 push frontend 90 通过。CI DOM 显示名称已填写、创建按钮最终可用，却没有 offline 错误。`create()` 只等输入 label 就点击，初始场景列表仍在读取时按钮 disabled，fireEvent 点击被忽略；该 RED 属于测试初始化同步，不作为新的产品行为失败。
 - 仅修改 `scenes.test.tsx`：helper 在填写后等待创建按钮 enabled 再点击；setup 补齐 assets/sceneMap 的正常只读 fixture，去掉缺少方法产生的无关错误。既有所有用例、重试 body/requestId 等业务断言保持；不改生产代码、全局 timeout 或 retry。
 - **22:04:52 GREEN**：`npm test -- --run src/scenes.test.tsx` 18 项通过；**22:04:57** 全量 `npm test` 7 文件、90 项通过；`npm run build` TypeScript/Vite 通过，既有 564 kB chunk 提示保持。未执行真实 E2E、未改协调者的 assets API 路径断言；新 SHA CI 仍由协调者核对。
+
+### PR/push CI：素材移除与动作就绪条件的全面检查
+
+- 协调者报告 `a33bd99` 的 push/PR frontend 都为 **89 通过、1 失败**：原 detach 测试直接点击 `findByRole` 找到的按钮时，configuration 初始读取未完成，按钮仍 disabled，`saveSceneMap` 调用为 0。此次 RED 也是测试初始化同步；DOM 存在不能代替操作已可用，不改产品逻辑规避。
+- 审查 assets/scenes 全部首次动作和重试/刷新动作，按钮点击统一先等待 enabled；upload helper 等文件输入可用，选择文件后再等上传按钮可用；create helper 同样等待输入及提交按钮。校准字段的动作保留先等待权威 gridSize=64，切团动作明确等待选择器可用。不会因面板已挂载而提前对 disabled 控件发 fireEvent。
+- 原 detach 用例改成确定性的 deferred 初始读取：显式验证配置尚未返回时移除按钮 disabled、POST 为 0，完成读取后再等待按钮 enabled 并点击；保留原 sceneVersion=9、map:null 的命令断言。没有删除/合并用例或放宽原断言，也未更改全局 timeout/retry。
+- **22:10:38** 聚焦 assets/scenes 2 文件 **46 项通过**；**22:10:46** 全量 **90 项通过**、构建通过。补齐输入/选团就绪条件后，**22:11:16** 再次全量 **7 文件、90 项通过**，TypeScript/Vite 构建通过。只改两份测试及此记录；四条真实 E2E 和容器重启的实际结果由协调者维护，未由本代理重复执行。

@@ -53,7 +53,7 @@ public final class AssetService {
     public UploadResult upload(UUID campaign, String actor, UUID request, long expectedVersion, byte[] bytes, String mediaType) {
         command(request, expectedVersion);
         // Validate only after current authorization, including on retries.
-        String[] published = {null};
+        Stored[] published = {null};
         try {
             return store.actorLocked(actor, () -> store.locked(campaign, () -> {
                 AccountPolicy.dm(store.role(campaign, actor));
@@ -64,9 +64,9 @@ public final class AssetService {
                 AccountPolicy.version(store.assets(campaign).campaignVersion(), expectedVersion);
                 var asset = new Asset(UUID.randomUUID(), image.mediaType(), image.bytes().length, image.width(), image.height());
                 String key = UUID.randomUUID().toString();
-                published[0] = key;
+                published[0] = new Stored(asset, key, image.sha256());
                 files.publish(key, image.bytes());
-                store.insertAsset(campaign, new Stored(asset, key, image.sha256()));
+                store.insertAsset(campaign, published[0]);
                 var result = new UploadResult(asset, store.advanceCampaign(campaign));
                 store.assetReceipt(actor, request, new Receipt(fingerprint, result, null));
                 events.changed(campaign);
@@ -74,7 +74,20 @@ public final class AssetService {
             }));
         } catch (RuntimeException | Error failure) {
             if (published[0] != null) {
-                try { files.discard(published[0]); } catch (RuntimeException cleanup) { failure.addSuppressed(cleanup); }
+                try {
+                    // A lost commit acknowledgment can throw after PostgreSQL committed.
+                    // A fresh campaign lock waits for the original server transaction to
+                    // finish; an unlocked MVCC read could still see an uncommitted absence.
+                    boolean committed = store.locked(campaign, () -> {
+                        var saved = store.asset(campaign, published[0].asset().id());
+                        return saved != null && saved.storageKey().equals(published[0].storageKey());
+                    });
+                    if (!committed) files.discard(published[0].storageKey());
+                } catch (RuntimeException | Error cleanup) {
+                    // Unknown outcome: retain the opaque file and preserve the original
+                    // failure. No committed metadata means it still cannot be downloaded.
+                    failure.addSuppressed(cleanup);
+                }
             }
             throw failure;
         }

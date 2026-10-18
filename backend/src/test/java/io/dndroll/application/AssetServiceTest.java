@@ -25,16 +25,35 @@ class AssetServiceTest {
         long campaignVersion, sceneVersion;
         Role role = Role.DM;
         MapConfig map;
-        boolean receiptFailure, fileFailure;
+        boolean receiptFailure, fileFailure, commitAckFailure, recoveryFailure, inActorTransaction;
+        final RuntimeException commitAckError = new IllegalStateException("Commit acknowledgment lost");
+        final RuntimeException recoveryError = new IllegalStateException("Recovery database unavailable");
         List<String> locks = new ArrayList<>();
         Map<UUID, Stored> assets = new HashMap<>();
         Map<String, Receipt> receipts = new HashMap<>();
         Map<String, byte[]> files = new HashMap<>();
-        public <T> T actorLocked(String actor, Supplier<T> work) { locks.add("actor"); return work.get(); }
+        public <T> T actorLocked(String actor, Supplier<T> work) {
+            locks.add("actor");
+            var previousAssets = new HashMap<>(assets); var previousReceipts = new HashMap<>(receipts);
+            long previousCampaign = campaignVersion, previousScene = sceneVersion; var previousMap = map;
+            T result;
+            inActorTransaction = true;
+            try { result = work.get(); }
+            catch (RuntimeException | Error failure) {
+                assets = previousAssets; receipts = previousReceipts; campaignVersion = previousCampaign; sceneVersion = previousScene; map = previousMap;
+                throw failure;
+            } finally { inActorTransaction = false; }
+            // The transaction committed, but the transport lost its acknowledgment.
+            if (commitAckFailure) throw commitAckError;
+            return result;
+        }
         public <T> T locked(UUID id, Supplier<T> work) { locks.add("campaign"); return work.get(); }
         public Role role(UUID id, String actor) { return role; }
         public Listing assets(UUID id) { return new Listing(campaignVersion, assets.values().stream().map(Stored::asset).toList()); }
-        public Stored asset(UUID id, UUID asset) { return campaign.equals(id) ? assets.get(asset) : null; }
+        public Stored asset(UUID id, UUID asset) {
+            if (recoveryFailure && !inActorTransaction) throw recoveryError;
+            return campaign.equals(id) ? assets.get(asset) : null;
+        }
         public void insertAsset(UUID id, Stored asset) { assets.put(asset.asset().id(), asset); }
         public long advanceCampaign(UUID id) { return ++campaignVersion; }
         public MapResult map(UUID id, UUID target) { return campaign.equals(id) && scene.equals(target) ? new MapResult(scene, sceneVersion, map) : null; }
@@ -104,6 +123,39 @@ class AssetServiceTest {
         store.receiptFailure = true; assertThrows(IllegalStateException.class, () -> upload(UUID.randomUUID(), 1));
         assertEquals(Set.of(committed), store.files.keySet()); assertArrayEquals(png, store.files.get(committed));
         assertEquals(1, events);
+    }
+    @Test void committedUploadWithLostAcknowledgmentKeepsFileAndRetryDownloadsOriginalAsset() {
+        var request = UUID.randomUUID(); store.commitAckFailure = true;
+        assertSame(store.commitAckError, assertThrows(IllegalStateException.class, () -> upload(request, 0)));
+        assertEquals(1, store.assets.size()); assertEquals(1, store.receipts.size());
+        assertEquals(List.of("actor", "campaign", "campaign"), store.locks, "Recovery must wait on a fresh campaign lock after the outer transaction ends");
+        var committed = store.assets.values().iterator().next();
+        assertArrayEquals(png, store.files.get(committed.storageKey()), "A committed asset must retain its backing file");
+        store.commitAckFailure = false;
+        var retried = upload(request, 0);
+        assertEquals(committed.asset(), retried.asset()); assertEquals(1, retried.campaignVersion());
+        assertArrayEquals(png, service.content(campaign, retried.asset().id(), "dm").bytes());
+        assertEquals(1, store.assets.size()); assertEquals(1, store.files.size()); assertEquals(1, events);
+    }
+    @Test void unavailableRecoveryDatabasePreservesCommittedFileAndOriginalFailure() {
+        store.commitAckFailure = true; store.recoveryFailure = true; var request = UUID.randomUUID();
+        var failure = assertThrows(IllegalStateException.class, () -> upload(request, 0));
+        assertSame(store.commitAckError, failure); assertEquals(1, store.files.size());
+        assertEquals(List.of(store.recoveryError), Arrays.asList(failure.getSuppressed()));
+        store.commitAckFailure = false; store.recoveryFailure = false;
+        var retried = upload(request, 0);
+        assertArrayEquals(png, service.content(campaign, retried.asset().id(), "dm").bytes());
+        assertEquals(1, store.files.size()); assertEquals(1, events);
+    }
+    @Test void unavailableRecoveryDatabaseRetainsOpaqueFileWithoutMakingRollbackDownloadable() {
+        store.receiptFailure = true; store.recoveryFailure = true;
+        var failure = assertThrows(IllegalStateException.class, () -> upload(UUID.randomUUID(), 0));
+        assertEquals("forced receipt failure", failure.getMessage()); assertEquals(1, store.files.size());
+        assertEquals(List.of(store.recoveryError), Arrays.asList(failure.getSuppressed()));
+        assertTrue(store.assets.isEmpty()); assertTrue(store.receipts.isEmpty()); assertEquals(0, store.campaignVersion);
+        store.recoveryFailure = false;
+        assertTrue(service.list(campaign, "dm").assets().isEmpty());
+        code("NOT_FOUND", () -> service.content(campaign, UUID.randomUUID(), "dm"));
     }
     static void code(String code, Runnable action) { assertEquals(code, assertThrows(DomainException.class, action::run).code()); }
 }

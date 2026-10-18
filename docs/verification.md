@@ -161,3 +161,11 @@ Compose新增asset_data私有卷及运行用户目录权限，NGINX允许10MiB�
 `1b42c6c` 的push frontend90通过，但PR run39134127052 frontend89通过/1失败，旧scenes测试在等待“重试同一场景操作”处失败。create helper原先仅等名称输入出现便点击，初始列表尚未完成时创建按钮仍disabled，点击被忽略。helper现在填完后等待按钮enabled，setup补正常assets/sceneMap只读mock，移除无关的api.assets未定义错误。旧18项和全部原断言保留，未改生产逻辑、timeout或retry。22:04:52聚焦scenes18通过，22:04:57全量90和构建通过。修复需新SHA完整CI确认；此失败不冒称新产品行为RED。
 
 `1b42c6c` 的PR run39134127052 browser job **success**：标准Compose私有素材卷、四条真实浏览器及seed→实际db/backend容器重启→verify已运行通过。日志明确输出重启后SHA-256、引用/版本/原回执与历史回放检查PASS。因此本轮容器持久化已有实际证据，但该SHA的整个PR run因上述单项旧测试初始化失败而仍failure，交付须等修复的新SHA所有job通过。
+
+### P02b 素材测试动作就绪与提交确认丢失边界
+
+`a33bd99` 的push/PR frontend均89过1失败，assets原detach用例在初始map读取未完成、按钮disabled时点击被忽略。系统检查assets/scenes测试首次动作，统一语义clickReady等待按钮enabled；upload/create也等待输入与提交可用。detach原用例改为deferred初始读取，先断言disabled/POST0，resolve后按原版本与map:null断言；全部90项与原业务断言保留。22:10:38聚焦46通过，22:11:16全量90、构建及diff-check通过；未改生产逻辑/全局timeout/retry/E2E。
+
+最终审查另发现文件清理的真实持久性风险：原upload catch会在任何异常后删新文件，即使数据库已成功提交而commit确认丢失；可能使原回执指向丢失的文件。契约进一步明确未知提交不能视为已回滚，需新campaign锁等待原服务端事务结束后核对asset/storageKey；确认未提交才清，已提交或无法核对则保留，仍返回原失败、通过同requestId回执重试恢复。无metadata的保留文件不可下载，后续保留/恢复仍P09。后端先补实际unit RED并实现，证据随后记录。
+
+22:13:05先运行AssetServiceTest，9项中新增3断言实际失败；22:14:09同命令9项通过。以纯transaction Store模拟已提交后确认丢失、恢复库不可用、已回滚但无法核对，验证文件保护、原异常、同requestId原回执/原bytes和无metadata不可下载；没有声称进行真实断网commit实验。22:15:51最终全量 `mvn '-Dmaven.repo.local=D:/workspace/dnd/.tools/m2' -Pintegration verify -B -ntp`：**52 unit + 41真实PG/HTTP/WS全部通过**，0失败/错误/跳过，jar重新打包；即时receipt与延迟commit rollback清理等旧IT全保留。22:16核对PG PID/CommandLine后已停止。本轮最新代码的全量CI仍按新SHA核实，先前容器成功证据不能替代新提交。

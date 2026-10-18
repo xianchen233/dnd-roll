@@ -65,6 +65,9 @@ and successful CI runs do not by themselves constitute a release.
 - Confirm saved asset/map commands through the newest valid read started after
   acknowledgment, including superseding realtime refreshes. Ignore older errors
   and recover synchronization after a temporary read failure without reposting.
+- Preserve asset files when a database commit acknowledgment is lost. Recheck
+  matching metadata under a fresh campaign lock before cleanup; retain files
+  when the outcome cannot be established so a committed receipt stays usable.
 
 ### Security
 

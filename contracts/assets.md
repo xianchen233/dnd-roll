@@ -41,6 +41,16 @@ never be downloadable without committed metadata. Do not delete referenced or
 previously committed assets on failed commands. No automatic asset deletion in
 this slice; future backup/retention belongs to P09.
 
+A lost database commit acknowledgment is an uncertain outcome, not proof of
+rollback. Acquire a fresh campaign lock to wait for the original server transaction
+to finish; an unlocked MVCC read alone cannot prove absence during an in-flight
+commit. After the transaction ends, preserve a new file if matching committed
+metadata exists; if metadata cannot be checked because the database is unavailable,
+also preserve it for reconciliation. Only delete a new file after confirming its
+metadata did not commit. Return the original failure, without claiming success;
+the same requestId resolves through its durable receipt on retry. Unreferenced
+files left by uncertain outcomes have no download authority, like crash orphans.
+
 ## Visibility and clients
 
 Existing current-scene snapshots remain unchanged for both roles: no map/asset
