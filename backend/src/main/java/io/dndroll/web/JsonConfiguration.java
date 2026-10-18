@@ -8,6 +8,7 @@ import tools.jackson.databind.MapperFeature;
 @Configuration
 public class JsonConfiguration {
     @Bean JsonMapperBuilderCustomizer strictNumbers() {
-        return builder -> builder.disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT).disable(MapperFeature.ALLOW_COERCION_OF_SCALARS);
+        return builder -> builder.disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT).disable(MapperFeature.ALLOW_COERCION_OF_SCALARS)
+            .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     }
 }

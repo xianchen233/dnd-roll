@@ -33,9 +33,12 @@ services:
       DEMO_PLAYER_USERNAME: ${DEMO_PLAYER_USERNAME:-player}
       DEMO_PLAYER_PASSWORD: ${DEMO_PLAYER_PASSWORD:-}
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      ASSET_STORAGE_ROOT: /var/lib/dnd-roll/assets
       # This service is reachable only through the trusted Compose web proxy.
       SERVER_FORWARD_HEADERS_STRATEGY: framework
       JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=70
+    volumes:
+      - asset_data:/var/lib/dnd-roll/assets
     depends_on:
       db:
         condition: service_healthy
@@ -50,3 +53,4 @@ services:
       - backend
 volumes:
   postgres_data:
+  asset_data:

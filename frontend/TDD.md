@@ -89,3 +89,24 @@ P01 浏览器脚本 `e2e/accounts.spec.ts` 使用现有 DM/PLAYER 环境账号�
 协调者补充：20:56–57 已实际运行 `npm run test:e2e`，全部3条通过（14.8秒），原M1/P01加P02a双端切图；人工查看DM/player截图。20:58真实Java进程重启也通过，详细证据见 `docs/verification.md`。本机未运行Compose，新提交远端CI另记。
 
 21:03协调者在最终晚到撤权修复后重新实际执行全部3条Chrome E2E，全部通过；无mock、无retry，原M1/P01断言保留。最终59前端测试/构建与本轮37unit/28IT、真实Java重启证据见verification.md。
+
+## P02b 持久素材与地图备团（2026-10-18，Asia/Shanghai）
+
+- 先读取 `contracts/assets.md`；不改变 Pixi 逻辑网格、P01 账号/邀请及 P02a 场景行为。
+- **21:22:42 RED**：`npm test -- --run src/assets.test.tsx src/api.test.ts` 实际 **12 失败、7 通过**。API 3 项因缺少 assets/content 等操作失败；组件 9 项因缺少地图文件入口、校准、私密预览等断言失败，玩家不请求作者元数据的边界当次即通过。初次命令在工具返回后继续运行，第二次完整收集到相同失败结果；不把代码/测试 discovery 当作执行通过。
+- 实现全部五项 API，multipart 的 command 为 application/json Blob，file 保留原 File；浏览器设置 multipart boundary，POST 使用会话 CSRF。内容通过 credentials/include 与 cache/no-store fetch 获取 Blob，保留非 JSON 代理错误状态；不把原图地址作为公共 img src。
+- 实现当前场景 DM 原图列表/上传/Blob 预览/下载及校准/移除。新命令前读取最新 campaign/scene 版本；网络或 5xx 不确定结果保留相同 body/requestId/File；4xx 清除、409 刷新；回执仅确认请求，读回权威状态后才宣称同步。已确认后读失败明确提示未同步，不再重试 POST。
+- 并发 assets/map 读取分别观察 401/403，较早网络/503 不吞掉晚到撤权、不等待挂起的另一个读。内容和 POST 同样观察授权；卸载、切场景/团、退出、撤权时清理 pending 和私密预览并 revoke Object URL，晚到成功不得恢复。新的测试同时覆盖先失败后拒绝、另一个读一直 pending、迟到内容/POST、相同对象重试、替换/关闭/下载 URL 清理、原图不进入玩家请求。
+- **21:24:31 GREEN**：聚焦 19 项通过。**21:24:57** 全量 72 项及 TypeScript/Vite 构建通过；继续补充上述授权与回归边界。
+- **21:27:33 RED**：聚焦共享 campaignVersion 回归 `npm test -- --run src/assets.test.tsx -t 'refreshes shared campaign'`，实际断言 `members.mock.calls.length` 为 1、预期大于 1，**1 失败**。上传会推进 P01 管理版本，旧接线仅刷新场景列表；修复 assetsChanged 同时失效成员/邀请、场景管理列表和权威逻辑快照。**21:27:50 GREEN** 同一聚焦测试通过；其余项按 `-t` 未执行，不能冒称全量通过。
+- **21:28:49 GREEN**：全量 `npm test` **7 文件、83 项通过**；`npm run build` TypeScript/Vite 通过，主 chunk 约 564 kB 的既有体积提示仍保留。全部既有 59 项未删除或放宽。
+- 第四条真实服务验收 `e2e/assets.spec.ts` 已编写；运行时生成有效 PNG、真实 DM 上传/Blob 预览/下载 SHA-256/保存校准、玩家 metadata/已知和猜 ID/直链 403、切图返回保持，并 finally 恢复原 current。`npx playwright test --list` 实际识别全部 **4 条**；**本代理未执行真实 E2E**，协调者统一启动服务并记录结果。旧三条完整保留。
+
+### 第四条真实浏览器验收的定位器修复
+
+- 协调者首次真实 E2E 中 P01 通过，assets 在 60 秒超时；超时耗尽后原 finally 的 API 清理被取消，空场景导致后两条旧回归继发失败。只读分析忽略目录中的 trace/error-context，未打印任何登录 fill 参数或凭据。
+- Trace 证实上传、Blob 预览、真实下载事件、下载 SHA-256 和鉴权 content HTTP/响应头断言都已完成；卡在后续 `getByLabel('当前场景地图素材', { exact: true }).selectOption()` 的控件定位。包装 label 的 DOM 文本混入 option 文本，不能稳定使用精确文本查找；没有修改已验证成功的下载或 URL 清理实现。
+- select 增加明确 aria-label，E2E 按精确角色/accessible name 定位，补名称回归。单步 action timeout 限为 10 秒；恢复原场景与关闭 context 移到自带 20 秒 teardown 预算的 fixture，防止测试 timeout 取消清理。所有业务断言保持；不增加 retry 或放宽总 timeout。
+- **21:38:11** 全量 `npm test` **7 文件、84 项通过**；随后修正测试中的 Testing Library 类型参数并重跑 `npm run build` 通过。`npx playwright test --list` 继续识别四条；本代理没有运行真实 E2E，修复后实际重跑仍由协调者执行。
+
+协调者实际验收补充：21:39–40 修正精确可访问名称后，统一 `npm run test:e2e` 全部4条通过（16.8秒），包含原M1/P01/P02a和新素材流程；实际查看DM/player截图。21:36–37同库同素材根真正停止/重启Java与PostgreSQL，SHA/引用/版本/回执及下载隔离验证通过。详见docs/verification.md；新SHA远端CI另核。

@@ -29,6 +29,13 @@ and successful CI runs do not by themselves constitute a release.
   control grants, and persist scene command receipts with the campaign version.
 - Add a V3 migration that preserves existing scenes and backfills each campaign's
   current scene, with a foreign key enforcing campaign ownership.
+- Add durable private PNG/JPEG assets with stable IDs, authenticated downloads and
+  a DM preparation panel for upload, preview, download and scene map calibration.
+- Add a V4 migration for same-campaign map references and durable asset command
+  receipts. Preserve logical grids, existing scenes, tokens and earlier receipts.
+- Add a dedicated Compose asset volume and a real HTTP acceptance script for
+  checking file hashes, map references and receipts across application/database
+  restart. Player image revelation and Pixi map interaction remain P02d.
 
 ### Changed
 
@@ -78,5 +85,13 @@ and successful CI runs do not by themselves constitute a release.
   replay for tokens outside the current scene. Clear DM panels on access denial.
 - Observe authorization errors from each concurrent management read so an earlier
   network failure cannot conceal a later access denial or leave old maps visible.
+- Restrict original assets and map authoring metadata to current campaign DMs,
+  including direct downloads and command replay; keep asset IDs and original pixels
+  out of player snapshots and events. Disable caching on content responses.
+- Validate image format, decoded dimensions, pixel count and byte limits, ignore
+  client filenames and keep server storage keys private. Roll back failed asset
+  commands and clean newly published files on normal failure.
+- Revoke private preview URLs and isolate delayed asset responses on scene/campaign
+  changes or access denial; preserve exact upload bodies for uncertain retries.
 
 [Unreleased]: https://github.com/xianchen233/dnd-roll/commits/main/

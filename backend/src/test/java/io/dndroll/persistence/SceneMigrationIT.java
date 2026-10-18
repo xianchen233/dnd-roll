@@ -26,7 +26,7 @@ class SceneMigrationIT {
             jdbc.update("insert into movement_receipt(campaign_id,actor,request_id,token_id,expected_version,requested_x,requested_y,result_name,result_x,result_y,result_version,result_can_move) values (?,'old_dm',?,?,4,12,8,'Secret old enemy',12,8,5,true)", campaign, request, token);
             jdbc.update("insert into account_command_receipt(actor,request_id,kind,target,expected_version,name,result_id,result_version) values ('old_dm',?,'CREATE','',0,'Old campaign',?,0)", UUID.randomUUID(), campaign);
             var before = preserved(jdbc);
-            Flyway.configure().dataSource(source).schemas(schema).defaultSchema(schema).load().migrate();
+            Flyway.configure().dataSource(source).schemas(schema).defaultSchema(schema).target("3").load().migrate();
             assertEquals(before, preserved(jdbc));
             assertEquals(scene, jdbc.queryForObject("select current_scene_id from campaign where id=?", UUID.class, campaign));
             UUID second = UUID.randomUUID(); jdbc.update("insert into scene(id,campaign_id,name,width,height,grid_size) values (?,?,'Second',24,16,48)", second, campaign);

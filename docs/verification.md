@@ -1,6 +1,6 @@
 # 阶段验收记录
 
-日期：2026-10-18（Asia/Shanghai）。状态：M0/M1、P01 本地与远端 CI 通过；P02a 亦已完成本地及远端完整 CI，实际结果见文末。
+日期：2026-10-18（Asia/Shanghai）。状态：M0/M1、P01、P02a 本地与远端 CI 通过；P02b 已完成本地验收，本轮新SHA远端CI另行核实，实际结果见文末。
 
 ## 测试与构建
 
@@ -119,3 +119,27 @@ dbe61cf的push run39126867019三个job通过，但[PR run39126870907](https://gi
 代码提交 **8836abbcca9a28a2e130770cb9839e0136f51fcf** 已推送至原分支。经认证 GitHub API 按该 SHA 核对：[push run39129943816](https://github.com/xianchen233/dnd-roll/actions/runs/39129943816) 与 [pull_request run39129946834](https://github.com/xianchen233/dnd-roll/actions/runs/39129946834) 均 **completed/success，frontend/backend/browser 全部通过**。标准 Compose 的新鲜 V1/V2/V3 迁移、镜像构建/启动、NGINX HTTP/WS 与全部3条真实浏览器流程均有远端证据；非仅静态配置检查。
 
 PR #1 标题/说明已按最终 P01+P02a 范围更新，仍为 open draft、base main，未合并/发布。P02a 门槛完成；下一子包 P02b 尚未开工。交接文档后续提交不改变该代码 SHA 的测试证据，交付前另核对 PR 当前 HEAD 的 Checks。任务启动的本机 Java/Vite/PG 已核实后停止，测试数据与忽略产物保留。
+
+## P02b 持久素材与地图配置
+
+2026-10-18（Asia/Shanghai）。开工 HEAD `be96f2c0841fc81a9917d1fd7d3510ef4feac928`，Git clean、fetch 后与 origin 一致；连接器核对 PR #1 open/draft/base main，按该 SHA 核对 [push run39130339805](https://github.com/xianchen233/dnd-roll/actions/runs/39130339805) 与 [PR run39130343257](https://github.com/xianchen233/dnd-roll/actions/runs/39130343257) 均三个 job success。未重复开发 P01/P02a。
+
+先写 `contracts/assets.md`，再补检查器并实际运行 exit1：缺少 assets list/upload/content 与 map get/post 共五操作。补 OpenAPI 后 exit0：**24 HTTP 操作**，全部原19操作检查保留。检查器覆盖multipart精确parts、DM-only、上传限额/解码、no-store/503、版本/回执、严格可空地图配置及秘密字段；仍不冒称通用OpenAPI validator。后端图片验证3断言RED和真实HTTP预期200/实际404 RED、前端12断言RED及共享管理版本RED的具体命令/时间见两端 TDD.md。
+
+| 检查 | 实际执行结果 |
+| --- | --- |
+| 后端全量 | 21:31:33 `mvn '-Dmaven.repo.local=D:/workspace/dnd/.tools/m2' -Pintegration verify -B -ntp`：**49 unit + 40真实PG/HTTP/WS通过**，0失败/错误/跳过，jar打包；原28IT全部保留 |
+| 后端最后增量 | 21:34:43 新增额外/重复multipart parts拒绝后，聚焦AssetsIT：**49 unit + 12 AssetsIT通过**，jar重新打包；合计41个独立IT均执行通过，不声称此命令重跑其余IT。上一全量后生产代码无变动 |
+| 前端最终 | 21:38 `npm test`：**7文件84通过**，保留旧59；`npm run build` TypeScript/Vite通过；约564kB主chunk提示未放宽 |
+| 真实Chrome | 21:39–40 `npm run test:e2e`：**4通过（16.8s）**，本机Chrome+真实Java/PG/Vite、独立DM/player会话、无HTTP/STOMP mock、0 retry；原M1/P01/P02a三流程保留 |
+| V3→V4旧库自然升级 | 21:32打包服务自然升级原browser库，`P02Snapshot.java`升级前后逐项比较campaign/scene/token/control和旧receipt数量一致，Flyway为1/2/3/4；独立AssetMigrationIT另逐行比较全部原表和V1–V3 checksums，验证asset和scene两条同团FK |
+| 文件与数据库实际重启 | 21:36–37 `node scripts/check-asset-restart.mjs seed <外置JSON>` → 核实PID/CommandLine后停止Java、pg_ctl停止/同库重启PG、同素材根重新启动jar → 新会话`verify`：**PASS**。文件SHA-256、稳定ID、校准、版本和两类原回执一致，重复上传只有一个ID；detach后历史map重放不重挂图，旧文件不删除；玩家/其他战役/退出后content403/404/401 |
+| 人工/静态 | 已查看DM/player实际PNG，完整画布、DM配置可见、玩家无素材/管理区；`git diff --check`、`node --check scripts/check-asset-restart.mjs`通过。Compose/NGINX/Dockerfile已改，本机无Docker，不以此声称容器运行通过 |
+
+新增真实流程实际完成：DM创建备团场景并切图→上传运行时生成PNG→鉴权Blob预览→真实浏览器下载及HTTP下载SHA-256相同→保存校准→玩家不请求素材/地图、已知ID/猜ID/直链均403且快照无原图字段→切走再回来配置保持。截图位于忽略目录 `frontend/test-results/assets-DM-uploads-download-a95ce--fetch-original-or-metadata/`。
+
+第一次真实运行中，P01通过，素材上传/预览/下载/SHA都已通过，随后`getByLabel(...exact:true).selectOption`因包裹select的label文本包含option而等不到目标，耗尽60秒。finally恢复请求被测试结束取消，造成后面两条旧流程落在空场景的继发失败。trace定位后给select明确accessible name，精确combobox定位；恢复放入独立20秒fixture teardown，每个恢复HTTP限5秒、动作限10秒，原业务期望与60秒总测试限额不变，不加retry。经版本化授权HTTP恢复demo原图后重跑全部4条通过，未将首次失败记作通过。下载生命周期无故障，没有修改。前端新增名称回归后最终84通过。
+
+实现安全与故障验收：原图只由同团当前DM访问；玩家快照/事件不增加asset/map字段；上传真实PNG/JPEG解码、完整容器/CRC、字节/尺寸/像素限额；忽略客户端文件名，独立UUID存储键不出接口。asset-commands按actor→campaign锁，上传共享campaignVersion，map与move共享sceneVersion；回执前重验DM。同request并发单效、双DM单版本单胜、跨团全局request竞争、撤权/退出、缺文件503均有实际测试。即时receipt插入及延迟commit触发器故障验证DB引用/版本/回执原子回滚，只清新文件、旧素材保持。前端独立观察并发401/403，切场景/团/撤权清理objectURL与pending并隔离晚到成功；不确定重试保留原File/body。
+
+Compose新增asset_data私有卷及运行用户目录权限，NGINX允许10MiB文件加multipart开销；CI新增真实浏览器后seed→重启db/backend→verify同套HTTP脚本。**本轮新SHA远端CI尚待推送核实**，不复用旧P02a容器绿灯。崩溃可遗留无元数据的不可下载孤立文件，无自动删除；完整一致备份/保留/异机恢复仍P09。玩家派生图和Pixi交互/遮盖仍P02d，P02c/d/e、P03–P10/A未完成。

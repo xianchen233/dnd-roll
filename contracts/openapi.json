@@ -3,7 +3,7 @@
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "info": {
     "title": "D&D Roll HTTP contract",
-    "version": "0.3.0"
+    "version": "0.4.0"
   },
   "servers": [
     {
@@ -964,6 +964,420 @@
           "versionConflict": "409 VERSION_CONFLICT when expectedVersion differs from the shared campaign management version"
         }
       }
+    },
+    "/api/campaigns/{campaignId}/assets": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/CampaignId"
+        }
+      ],
+      "get": {
+        "operationId": "listAssets",
+        "description": "Requires authenticated current DM membership before access or receipt replay; PLAYER and nonmembers receive 403, then foreign or unknown asset/scene IDs receive 404. Lists private durable validated image metadata only.",
+        "x-required-role": "DM",
+        "responses": {
+          "200": {
+            "description": "Private assets and shared campaign management version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "post": {
+        "operationId": "uploadAsset",
+        "description": "Requires authenticated current DM membership before access or receipt replay; PLAYER and nonmembers receive 403, then foreign or unknown asset/scene IDs receive 404. Validates nonempty decoded PNG/JPEG before writing metadata; rejects malformed/truncated images, SVG, MIME mismatch and extra or duplicate multipart parts with 400 INVALID_INPUT. Metadata is derived from decoded bytes. Browser filenames are ignored.",
+        "x-required-role": "DM",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/AssetUploadMultipart"
+              },
+              "encoding": {
+                "command": {
+                  "contentType": "application/json"
+                },
+                "file": {
+                  "contentType": "image/png, image/jpeg"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Uploaded asset or original authorized replay; campaignVersion advanced once",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetUploadResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "409 VERSION_CONFLICT for stale object version or IDEMPOTENCY_CONFLICT for changed command fingerprint",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Transport or proxy multipart size limit exceeded; do not expose uploaded bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503 ASSET_UNAVAILABLE: file storage unavailable; never expose internal paths",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "x-version": "campaign management version shared with P01/P02a",
+        "x-idempotency": {
+          "namespace": "asset-commands",
+          "key": [
+            "sessionActor",
+            "requestId"
+          ],
+          "payload": [
+            "commandKind",
+            "campaignId",
+            "expectedVersion",
+            "validatedFileSha256",
+            "mediaType"
+          ],
+          "authorization": "Validate current DM authorization before receipt replay",
+          "samePayload": "Return original result before stale version checks; no repeated mutation or event",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT",
+          "versionConflict": "409 VERSION_CONFLICT for stale expectedVersion"
+        },
+        "x-image-validation": {
+          "maxBytes": 10485760,
+          "minDimension": 1,
+          "maxDimension": 8192,
+          "maxPixels": 32000000,
+          "allowedMediaTypes": [
+            "image/png",
+            "image/jpeg"
+          ],
+          "decodedFormatMustMatch": true,
+          "rejectMalformedOrTruncated": true,
+          "ignoreOriginalFilename": true
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/assets/{assetId}/content": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/CampaignId"
+        },
+        {
+          "$ref": "#/components/parameters/AssetId"
+        }
+      ],
+      "get": {
+        "operationId": "downloadAsset",
+        "description": "Requires authenticated current DM membership before access or receipt replay; PLAYER and nonmembers receive 403, then foreign or unknown asset/scene IDs receive 404. Reauthorize every read, including after logout or membership revocation. Never expose public/static asset routes, signed URLs or filesystem/storage identifiers. All success/failure responses are private no-store.",
+        "x-required-role": "DM",
+        "responses": {
+          "200": {
+            "description": "Original validated bytes; no ETag, conditional 304 or public caching",
+            "headers": {
+              "Cache-Control": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "const": "no-store, private"
+                }
+              },
+              "Content-Disposition": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "const": "attachment"
+                }
+              },
+              "X-Content-Type-Options": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "400 INVALID_INPUT: malformed input or invalid coordinates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "const": "no-store, private"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "401 UNAUTHENTICATED: authenticated session required or credentials invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "const": "no-store, private"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "403 FORBIDDEN: CSRF, campaign membership or token control denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "const": "no-store, private"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404 NOT_FOUND: unavailable resource; never reveal hidden token data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "const": "no-store, private"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503 ASSET_UNAVAILABLE: missing or unreadable backing file; never expose internal paths",
+            "headers": {
+              "Cache-Control": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "const": "no-store, private"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/scenes/{sceneId}/map": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/CampaignId"
+        },
+        {
+          "$ref": "#/components/parameters/SceneId"
+        }
+      ],
+      "get": {
+        "operationId": "getSceneMap",
+        "description": "Requires authenticated current DM membership before access or receipt replay; PLAYER and nonmembers receive 403, then foreign or unknown asset/scene IDs receive 404. Reads DM preparation configuration for any own scene, including inactive scenes, without changing the current scene.",
+        "x-required-role": "DM",
+        "responses": {
+          "200": {
+            "description": "Target scene version and nullable map configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SceneMap"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "post": {
+        "operationId": "setSceneMap",
+        "description": "Requires authenticated current DM membership before access or receipt replay; PLAYER and nonmembers receive 403, then foreign or unknown asset/scene IDs receive 404. Assigns a same-campaign validated asset with calibration or detaches with map:null; inactive scenes are allowed. Advances only the target scene version once. Logical grid dimensions and tokens are unchanged. A historical receipt never reattaches an earlier image; reread authoritative map after success.",
+        "x-required-role": "DM",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SceneMapRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Historical command result; reread current authoritative configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SceneMap"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "409 VERSION_CONFLICT for stale object version or IDEMPOTENCY_CONFLICT for changed command fingerprint",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "x-version": "target scene version shared with movement",
+        "x-idempotency": {
+          "namespace": "asset-commands",
+          "key": [
+            "sessionActor",
+            "requestId"
+          ],
+          "payload": [
+            "commandKind",
+            "campaignId",
+            "sceneId",
+            "expectedVersion",
+            "map"
+          ],
+          "authorization": "Validate current DM authorization before receipt replay",
+          "samePayload": "Return original result before stale version checks; no repeated mutation or event",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT",
+          "versionConflict": "409 VERSION_CONFLICT for stale expectedVersion"
+        }
+      }
     }
   },
   "components": {
@@ -1022,6 +1436,14 @@
       },
       "SceneId": {
         "name": "sceneId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "$ref": "#/components/schemas/Uuid"
+        }
+      },
+      "AssetId": {
+        "name": "assetId",
         "in": "path",
         "required": true,
         "schema": {
@@ -1312,7 +1734,8 @@
               "INVITE_EXPIRED",
               "INVITE_UNAVAILABLE",
               "USERNAME_TAKEN",
-              "DM_REMOVAL_DENIED"
+              "DM_REMOVAL_DENIED",
+              "ASSET_UNAVAILABLE"
             ]
           },
           "message": {
@@ -1686,6 +2109,205 @@
             "$ref": "#/components/schemas/Version"
           }
         }
+      },
+      "AssetView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "mediaType",
+          "byteSize",
+          "width",
+          "height"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "mediaType": {
+            "type": "string",
+            "enum": [
+              "image/png",
+              "image/jpeg"
+            ]
+          },
+          "byteSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10485760
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8192
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8192
+          }
+        }
+      },
+      "AssetList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "campaignVersion",
+          "assets"
+        ],
+        "properties": {
+          "campaignVersion": {
+            "$ref": "#/components/schemas/Version"
+          },
+          "assets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssetView"
+            }
+          }
+        }
+      },
+      "AssetUploadCommand": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion"
+        ],
+        "properties": {
+          "requestId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "expectedVersion": {
+            "$ref": "#/components/schemas/Version"
+          }
+        }
+      },
+      "AssetUploadMultipart": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "command",
+          "file"
+        ],
+        "properties": {
+          "command": {
+            "$ref": "#/components/schemas/AssetUploadCommand"
+          },
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "minLength": 1,
+            "description": "Nonempty actual PNG/JPEG; at most 10 MiB. Original browser filename ignored."
+          }
+        }
+      },
+      "AssetUploadResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "asset",
+          "campaignVersion"
+        ],
+        "properties": {
+          "asset": {
+            "$ref": "#/components/schemas/AssetView"
+          },
+          "campaignVersion": {
+            "$ref": "#/components/schemas/Version"
+          }
+        }
+      },
+      "MapConfiguration": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "assetId",
+          "gridSize",
+          "offsetX",
+          "offsetY",
+          "distancePerCell"
+        ],
+        "properties": {
+          "assetId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "gridSize": {
+            "type": "integer",
+            "minimum": 8,
+            "maximum": 512
+          },
+          "offsetX": {
+            "type": "integer",
+            "minimum": -8192,
+            "maximum": 8192
+          },
+          "offsetY": {
+            "type": "integer",
+            "minimum": -8192,
+            "maximum": 8192
+          },
+          "distancePerCell": {
+            "type": "number",
+            "minimum": 0.01,
+            "maximum": 10000,
+            "description": "Finite number in group-chosen distance units."
+          }
+        }
+      },
+      "SceneMap": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sceneId",
+          "sceneVersion",
+          "map"
+        ],
+        "properties": {
+          "sceneId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "sceneVersion": {
+            "$ref": "#/components/schemas/Version"
+          },
+          "map": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MapConfiguration"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "SceneMapRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "map"
+        ],
+        "properties": {
+          "requestId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "expectedVersion": {
+            "$ref": "#/components/schemas/Version"
+          },
+          "map": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MapConfiguration"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
       }
     }
   },
@@ -1712,5 +2334,17 @@
     "realtime": "After commit send private SCENE_CHANGED invalidation containing only type and campaignId. Reconnect and periodic reads recover missed switches.",
     "clientLifecycle": "On scene change clear old selection and failed movement retry; ignore old in-flight movement responses. Retain scene command requestId/body for explicit retry after ambiguous transport/5xx; refresh version on 409; clear map and management data on 401/403, including delayed successes.",
     "migration": "V3 preserves V1/V2 checksums and scene/token/receipt data, removes single-scene uniqueness and backfills a current-scene pointer constrained to the same campaign; initialization sets pointer transactionally and never resets an existing one."
+  },
+  "x-asset-policy": {
+    "storage": "Stable UUID asset IDs and independent server-generated opaque storage keys. Publish files atomically before metadata commits in the configured private persistent root; never expose paths, keys or original filenames. Process crash may leave an unreferenced opaque file, which cannot be downloaded without committed metadata.",
+    "atomicity": "On file, database or receipt failure rollback metadata, references, versions and receipts; clean new files on normal failure. Never delete previously committed or referenced assets. No automatic deletion in P02b.",
+    "locking": "Acquire actor then campaign locks consistently with account/scene management commands. Identical concurrent retries have one effect and return the original receipt before stale version checks.",
+    "visibility": "Existing snapshot payloads remain unchanged: no asset or map metadata reaches player snapshots or events. SCENE_CHANGED contains only type and campaignId, emitted after commit and never replay.",
+    "download": "Reauthorize every content read after logout or membership revocation; no public route or signed URL. Download successes and failures use Cache-Control: no-store, private; no ETag/304.",
+    "map": "Enforce same-campaign map references. An inactive scene may be configured without switching; logical scene gridSize, dimensions, token positions and controls are unchanged. Calibration gridSize is in image pixels.",
+    "historicalReplay": "Historical map receipts never reattach earlier images; clients reread authoritative state after success. Upload advances campaign management version; map command advances only target scene version.",
+    "migration": "V4 preserves V1 through V3 data and checksums; database constraint enforces same-campaign asset references.",
+    "clientLifecycle": "Retain requestId and exact file/body on transport or 5xx uncertainty for explicit retry; clear on deterministic 4xx, refresh versions/state on 409. Revoke object URLs and clear private previews/pending commands on unmount, scene/campaign switch and 401/403. Late successes cannot restore cleared private data; handle concurrent authorization failures independently. Successful command with failed refresh must not claim synchronized current map.",
+    "deployment": "ASSET_STORAGE_ROOT uses a dedicated persistent Compose volume; local default is outside source files and git-ignored. DB plus asset backup/retention is P09; player-safe derived images and Pixi interaction are P02d."
   }
 }

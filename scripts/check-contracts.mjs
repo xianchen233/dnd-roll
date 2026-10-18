@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const read = (path) => readFile(new URL(path, import.meta.url), 'utf8');
-const [apiText, eventText, readme, accounts, scenes] = await Promise.all([
+const [apiText, eventText, readme, accounts, scenes, assets] = await Promise.all([
   read('../contracts/openapi.json'),
   read('../contracts/scene-events.schema.json'),
   read('../contracts/README.md'),
   read('../contracts/accounts.md'),
   read('../contracts/scenes.md'),
+  read('../contracts/assets.md'),
 ]);
 const api = JSON.parse(apiText);
 const event = JSON.parse(eventText);
@@ -19,6 +20,12 @@ const resolve = (schema) => schema.$ref
 function validate(schema, value) {
   schema = resolve(schema);
   assert.ok(schema, 'Referenced schema exists');
+  if (schema.anyOf) {
+    assert.ok(schema.anyOf.some((option) => {
+      try { validate(option, value); return true; } catch { return false; }
+    }), 'Value matches one documented option');
+    return;
+  }
   if (schema.type === 'null') { assert.equal(value, null); return; }
   if (Array.isArray(schema.type)) {
     const types = schema.type;
@@ -43,6 +50,11 @@ function validate(schema, value) {
   } else if (schema.type === 'integer') {
     assert.ok(Number.isSafeInteger(value));
     if (schema.minimum !== undefined) assert.ok(value >= schema.minimum);
+    if (schema.maximum !== undefined) assert.ok(value <= schema.maximum);
+  } else if (schema.type === 'number') {
+    assert.ok(typeof value === 'number' && Number.isFinite(value));
+    if (schema.minimum !== undefined) assert.ok(value >= schema.minimum);
+    if (schema.maximum !== undefined) assert.ok(value <= schema.maximum);
   } else if (schema.type === 'string') {
     assert.equal(typeof value, 'string');
     if (schema['x-trimBeforeValidation']) value = value.trim();
@@ -71,7 +83,7 @@ assert.equal(api.openapi, '3.1.0');
 assert.equal(api.jsonSchemaDialect, 'https://json-schema.org/draft/2020-12/schema');
 assert.equal(event.$schema, api.jsonSchemaDialect);
 checkRefs(api);
-const documentedOperations = [...`${readme}\n${accounts}\n${scenes}`.matchAll(/(?:`|### )(GET|POST) (\/api[^` \r\n]*)/g)]
+const documentedOperations = [...`${readme}\n${accounts}\n${scenes}\n${assets}`.matchAll(/(?:`|### )(GET|POST) (\/api[^` \r\n]*)/g)]
   .map(([, method, path]) => `${method} ${path}`);
 const actualOperations = Object.entries(api.paths).flatMap(([path, item]) =>
   Object.keys(item).filter((method) => ['get', 'post'].includes(method))
@@ -304,4 +316,109 @@ for (const invalid of [
   { ...sceneListView, campaignVersion: -1 }, { campaignVersion: 1, scenes: [] },
   { ...sceneListView, currentSceneId: 'bad' }, { ...sceneListView, scenes: [{ id }] },
 ]) assert.throws(() => validate(schemas.SceneList, invalid));
-console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; CSRF/session, P01 credentials/version/secret-free views/one-time invitation token/fragment links, P02a DM-only scenes/shared management version/scene receipt namespace, movement/idempotency, snapshot and token-free STOMP event constraints. This is a focused contract checker, not a general OpenAPI validator.`);
+const assetList = '/api/campaigns/{campaignId}/assets';
+const assetContent = `${assetList}/{assetId}/content`;
+const sceneMap = '/api/campaigns/{campaignId}/scenes/{sceneId}/map';
+for (const [path, method] of [[assetList, 'get'], [assetList, 'post'], [assetContent, 'get'], [sceneMap, 'get'], [sceneMap, 'post']]) {
+  const operation = api.paths[path][method];
+  assert.equal(operation['x-required-role'], 'DM');
+  assert.match(operation.description, /current DM.*PLAYER.*403.*foreign.*404/i);
+  for (const status of ['401', '403', '404']) assert.ok(operation.responses[status]);
+}
+const upload = api.paths[assetList].post;
+const mapCommand = api.paths[sceneMap].post;
+const multipart = upload.requestBody.content['multipart/form-data'];
+assert.equal(upload.requestBody.required, true);
+assert.deepEqual(Object.keys(upload.requestBody.content), ['multipart/form-data']);
+assert.deepEqual(resolve(multipart.schema).required, ['command', 'file']);
+assert.deepEqual(Object.keys(resolve(multipart.schema).properties), ['command', 'file']);
+assert.equal(resolve(multipart.schema).additionalProperties, false);
+assert.deepEqual(resolve(resolve(multipart.schema).properties.command).required, ['requestId', 'expectedVersion']);
+assert.equal(resolve(resolve(multipart.schema).properties.command).additionalProperties, false);
+assert.equal(multipart.encoding.command.contentType, 'application/json');
+assert.equal(multipart.encoding.file.contentType, 'image/png, image/jpeg');
+assert.deepEqual(upload['x-image-validation'], {
+  maxBytes: 10485760, minDimension: 1, maxDimension: 8192, maxPixels: 32000000,
+  allowedMediaTypes: ['image/png', 'image/jpeg'], decodedFormatMustMatch: true,
+  rejectMalformedOrTruncated: true, ignoreOriginalFilename: true,
+});
+assert.match(resolve(upload.responses['400']).description, /INVALID_INPUT/);
+assert.ok(upload.responses['413']);
+for (const [operation, version, fields] of [
+  [upload, 'campaign management version shared with P01/P02a', ['commandKind', 'campaignId', 'expectedVersion', 'validatedFileSha256', 'mediaType']],
+  [mapCommand, 'target scene version shared with movement', ['commandKind', 'campaignId', 'sceneId', 'expectedVersion', 'map']],
+]) {
+  assert.equal(operation['x-version'], version);
+  assert.equal(operation['x-idempotency'].namespace, 'asset-commands');
+  assert.deepEqual(operation['x-idempotency'].key, ['sessionActor', 'requestId']);
+  assert.deepEqual(operation['x-idempotency'].payload, fields);
+  assert.match(operation['x-idempotency'].authorization, /current DM.*before.*replay/i);
+  assert.match(operation['x-idempotency'].samePayload, /original.*before.*stale.*no.*event/i);
+  assert.match(operation['x-idempotency'].differentPayload, /409 IDEMPOTENCY_CONFLICT/);
+  assert.match(resolve(operation.responses['409']).description, /VERSION_CONFLICT.*IDEMPOTENCY_CONFLICT/);
+}
+assert.deepEqual(requestSchema(sceneMap).required, ['requestId', 'expectedVersion', 'map']);
+assert.deepEqual(responseSchema(assetList, 'get', '200').required, ['campaignVersion', 'assets']);
+assert.deepEqual(responseSchema(assetList, 'post', '200').required, ['asset', 'campaignVersion']);
+assert.deepEqual(responseSchema(sceneMap, 'get', '200').required, ['sceneId', 'sceneVersion', 'map']);
+assert.deepEqual(responseSchema(sceneMap, 'post', '200'), responseSchema(sceneMap, 'get', '200'));
+const download = api.paths[assetContent].get;
+assert.deepEqual(Object.keys(download.responses['200'].content), ['image/png', 'image/jpeg']);
+assert.equal(download.responses['200'].headers['Content-Disposition'].schema.const, 'attachment');
+assert.equal(download.responses['200'].headers['X-Content-Type-Options'].schema.const, 'nosniff');
+for (const response of Object.values(download.responses)) {
+  assert.equal(resolve(response).headers['Cache-Control'].schema.const, 'no-store, private');
+  assert.equal(resolve(response).headers.ETag, undefined);
+}
+assert.equal(download.responses['304'], undefined);
+assert.match(resolve(download.responses['503']).description, /ASSET_UNAVAILABLE.*never.*path/i);
+assert.ok(schemas.ApiError.properties.code.enum.includes('ASSET_UNAVAILABLE'));
+const assetPolicy = api['x-asset-policy'];
+assert.match(assetPolicy.storage, /server.generated.*opaque.*atomic.*before.*metadata/i);
+assert.match(assetPolicy.atomicity, /rollback.*metadata.*versions.*receipts.*clean.*new.*files/i);
+assert.match(assetPolicy.visibility, /snapshot.*unchanged.*no.*asset.*map.*player/i);
+assert.match(assetPolicy.download, /every.*read.*logout.*revocation.*no.*public.*signed/i);
+assert.match(assetPolicy.map, /same.campaign.*inactive.*logical.*unchanged/i);
+assert.match(assetPolicy.historicalReplay, /never.*reattach.*reread/i);
+assert.match(assetPolicy.locking, /actor.*campaign/i);
+assert.match(assetPolicy.migration, /V4.*V1.*V3.*same.campaign/i);
+const assetView = { id, mediaType: 'image/png', byteSize: 67, width: 1, height: 1 };
+const map = { assetId: id, gridSize: 48, offsetX: 0, offsetY: 0, distancePerCell: 5 };
+const mapView = { sceneId: id, sceneVersion: 0, map };
+const setMap = { requestId: id, expectedVersion: 0, map };
+for (const [schema, value] of [
+  [schemas.AssetView, assetView], [schemas.AssetList, { campaignVersion: 0, assets: [assetView] }],
+  [schemas.AssetUploadResult, { asset: assetView, campaignVersion: 1 }],
+  [schemas.SceneMap, mapView], [schemas.SceneMap, { ...mapView, map: null }],
+  [schemas.SceneMapRequest, setMap], [schemas.SceneMapRequest, { ...setMap, map: null }],
+  [schemas.MapConfiguration, { ...map, gridSize: 8, offsetX: -8192, offsetY: 8192, distancePerCell: 0.01 }],
+  [schemas.MapConfiguration, { ...map, gridSize: 512, distancePerCell: 10000 }],
+]) validate(schema, value);
+for (const invalid of [
+  {}, { ...map, assetId: 'bad' }, { ...map, gridSize: 7 }, { ...map, gridSize: 513 }, { ...map, gridSize: 8.5 },
+  { ...map, offsetX: -8193 }, { ...map, offsetY: 8193 }, { ...map, offsetX: 0.1 },
+  { ...map, distancePerCell: 0 }, { ...map, distancePerCell: 10001 }, { ...map, distancePerCell: NaN },
+  { ...map, distancePerCell: Infinity }, { ...map, distancePerCell: '5' }, { ...map, hidden: true },
+]) assert.throws(() => validate(schemas.MapConfiguration, invalid));
+for (const key of Object.keys(map)) {
+  const partial = { ...map }; delete partial[key];
+  assert.throws(() => validate(schemas.MapConfiguration, partial));
+}
+for (const invalid of [
+  { requestId: id, expectedVersion: 0 }, { ...setMap, map: false }, { ...setMap, map: [] },
+  { ...setMap, expectedVersion: -1 }, { ...setMap, requestId: 'bad' }, { ...setMap, actor: 'dm' },
+]) assert.throws(() => validate(schemas.SceneMapRequest, invalid));
+for (const invalid of [
+  { ...assetView, mediaType: 'image/svg+xml' }, { ...assetView, byteSize: 0 }, { ...assetView, byteSize: 10485761 },
+  { ...assetView, width: 0 }, { ...assetView, height: 8193 }, { ...assetView, width: 1.5 },
+]) assert.throws(() => validate(schemas.AssetView, invalid));
+for (const secret of ['assetId', 'map', 'storageKey', 'filename', 'originalFilename', 'path', 'sha256', 'imageWidth', 'imageHeight']) {
+  assert.throws(() => validate(schemas.SceneSnapshot, { ...snapshot, [secret]: 'secret' }));
+  assert.throws(() => validate(schemas.TokenView, { ...token, [secret]: 'secret' }));
+  assert.throws(() => validate(event, { type: 'SCENE_CHANGED', campaignId: id, [secret]: 'secret' }));
+  assert.throws(() => validate(schemas.ApiError, { code: 'ASSET_UNAVAILABLE', message: 'Unavailable', [secret]: 'secret' }));
+}
+for (const secret of ['storageKey', 'filename', 'originalFilename', 'path', 'sha256', 'campaignId']) {
+  assert.throws(() => validate(schemas.AssetView, { ...assetView, [secret]: 'secret' }));
+}
+console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; all M1/P01/P02a assertions retained; P02b DM-only assets/maps, exact multipart parts, image limits, no-store downloads/503, asset receipt namespace/shared versions, nullable strict finite map fields, and unchanged secret-free snapshots/STOMP events. This is a focused contract checker, not a general OpenAPI validator.`);

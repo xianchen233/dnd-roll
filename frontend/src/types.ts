@@ -14,3 +14,7 @@ export interface InvitePreview { campaignId: string; campaignName: string; expir
 export interface SceneSummary { id: string; name: string }
 export interface Scenes { campaignVersion: number; currentSceneId: string; scenes: SceneSummary[] }
 export interface SceneReceipt extends SceneSummary { campaignVersion: number }
+export interface Asset { id: string; mediaType: string; byteSize: number; width: number; height: number }
+export interface Assets { campaignVersion: number; assets: Asset[] }
+export interface MapConfiguration { assetId: string; gridSize: number; offsetX: number; offsetY: number; distancePerCell: number }
+export interface SceneMap { sceneId: string; sceneVersion: number; map: MapConfiguration | null }

@@ -1,16 +1,19 @@
-import type { Campaign, CreatedInvitation, Csrf, Identity, Invitations, InvitePreview, Members, Move, Scene, Scenes, SceneReceipt, Token, VersionedCommand } from './types';
+import type { Asset, Assets, Campaign, CreatedInvitation, Csrf, Identity, Invitations, InvitePreview, MapConfiguration, Members, Move, Scene, SceneMap, Scenes, SceneReceipt, Token, VersionedCommand } from './types';
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
 export class Api {
   private csrf?: Csrf;
   constructor(private request: typeof fetch = globalThis.fetch.bind(globalThis)) {}
   private async call<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
     const response = await this.request(`/api${path}`, { method, credentials: 'include', headers: { ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(method === 'POST' && this.csrf ? { [this.csrf.headerName]: this.csrf.token } : {}) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+    await this.check(response);
+    return response.status === 204 ? undefined as T : response.json();
+  }
+  private async check(response: Response): Promise<void> {
     if (!response.ok) {
       let message = `请求失败 (${response.status})`;
       try { const data = await response.json(); if (typeof data.message === 'string') message = data.message; } catch { /* Proxies may return HTML. */ }
       throw new ApiError(response.status, message);
     }
-    return response.status === 204 ? undefined as T : response.json();
   }
   async getCsrf(): Promise<Csrf> { this.csrf = await this.call<Csrf>('/auth/csrf'); return this.csrf; }
   async login(username: string, password: string): Promise<Identity> {
@@ -40,6 +43,19 @@ export class Api {
   scenes(id: string): Promise<Scenes> { return this.call(`/campaigns/${encodeURIComponent(id)}/scenes`); }
   createScene(id: string, body: VersionedCommand & { name: string }): Promise<SceneReceipt> { return this.post(`/campaigns/${encodeURIComponent(id)}/scenes`, body); }
   activateScene(id: string, sceneId: string, body: VersionedCommand): Promise<SceneReceipt> { return this.post(`/campaigns/${encodeURIComponent(id)}/scenes/${encodeURIComponent(sceneId)}/activate`, body); }
+  assets(id: string): Promise<Assets> { return this.call(`/campaigns/${encodeURIComponent(id)}/assets`); }
+  async uploadAsset(id: string, command: VersionedCommand, file: File): Promise<{ asset: Asset; campaignVersion: number }> {
+    if (!this.csrf) await this.getCsrf();
+    const body = new FormData(); body.append('command', new Blob([JSON.stringify(command)], { type: 'application/json' })); body.append('file', file);
+    const response = await this.request(`/api/campaigns/${encodeURIComponent(id)}/assets`, { method: 'POST', credentials: 'include', headers: { [this.csrf!.headerName]: this.csrf!.token }, body });
+    await this.check(response); return response.json();
+  }
+  async assetContent(id: string, assetId: string): Promise<Blob> {
+    const response = await this.request(`/api/campaigns/${encodeURIComponent(id)}/assets/${encodeURIComponent(assetId)}/content`, { credentials: 'include', cache: 'no-store' });
+    await this.check(response); return response.blob();
+  }
+  sceneMap(id: string, sceneId: string): Promise<SceneMap> { return this.call(`/campaigns/${encodeURIComponent(id)}/scenes/${encodeURIComponent(sceneId)}/map`); }
+  saveSceneMap(id: string, sceneId: string, body: VersionedCommand & { map: MapConfiguration | null }): Promise<SceneMap> { return this.post(`/campaigns/${encodeURIComponent(id)}/scenes/${encodeURIComponent(sceneId)}/map`, body); }
   async move(campaignId: string, tokenId: string, move: Move): Promise<Token> {
     if (!this.csrf) await this.getCsrf();
     return this.call(`/campaigns/${encodeURIComponent(campaignId)}/tokens/${encodeURIComponent(tokenId)}/moves`, 'POST', move);

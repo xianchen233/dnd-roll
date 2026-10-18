@@ -11,7 +11,9 @@ RUN ./mvnw -B -ntp package
 
 FROM eclipse-temurin:25-jre
 WORKDIR /app
-RUN useradd --system --uid 10001 --create-home dndroll
+RUN useradd --system --uid 10001 --create-home dndroll \
+    && mkdir -p /var/lib/dnd-roll/assets \
+    && chown -R dndroll:dndroll /var/lib/dnd-roll
 COPY --from=build --chown=dndroll:dndroll /workspace/target/dnd-roll-backend-0.1.0-SNAPSHOT.jar app.jar
 USER dndroll
 EXPOSE 8080

@@ -2,6 +2,30 @@ import { describe, expect, it, vi } from 'vitest';
 import { Api, ApiError } from './api';
 
 describe('session HTTP client', () => {
+  it('uses multipart JSON command Blob, authenticated binary reads and all five asset operations', async () => {
+    const map = { assetId: 'a', gridSize: 64, offsetX: 0, offsetY: 0, distancePerCell: 5 };
+    const request = vi.fn().mockResolvedValueOnce(Response.json({ campaignVersion: 2, assets: [] }))
+      .mockResolvedValueOnce(Response.json({ token: 'csrf', headerName: 'X-CSRF-TOKEN' }))
+      .mockResolvedValueOnce(Response.json({ asset: { id: 'a' }, campaignVersion: 3 }))
+      .mockResolvedValueOnce(new Response('png', { headers: { 'Content-Type': 'image/png' } }))
+      .mockResolvedValueOnce(Response.json({ sceneId: 's', sceneVersion: 0, map: null }))
+      .mockResolvedValueOnce(Response.json({ sceneId: 's', sceneVersion: 1, map }));
+    const api = new Api(request), body = { requestId: 'r', expectedVersion: 2 }, file = new File(['png'], 'private.png', { type: 'image/png' });
+    await api.assets('c/id'); await api.uploadAsset('c/id', body, file);
+    expect((await api.assetContent('c/id', 'a/id')).type).toBe('image/png');
+    await api.sceneMap('c/id', 's/id'); await api.saveSceneMap('c/id', 's/id', { ...body, map });
+    expect(request.mock.calls.map(c => c[0])).toEqual(['/api/campaigns/c%2Fid/assets', '/api/auth/csrf', '/api/campaigns/c%2Fid/assets', '/api/campaigns/c%2Fid/assets/a%2Fid/content', '/api/campaigns/c%2Fid/scenes/s%2Fid/map', '/api/campaigns/c%2Fid/scenes/s%2Fid/map']);
+    const init = request.mock.calls[2][1]; expect(init.credentials).toBe('include'); expect(init.headers).toEqual({ 'X-CSRF-TOKEN': 'csrf' }); expect(init.body).toBeInstanceOf(FormData);
+    expect([...init.body.keys()]).toEqual(['command', 'file']); expect(init.body.get('command').type).toBe('application/json');
+    const commandText = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsText(init.body.get('command')); });
+    expect(JSON.parse(commandText)).toEqual(body);
+    expect(init.body.get('file').name).toBe('private.png');
+    expect(request.mock.calls[3][1]).toMatchObject({ credentials: 'include' }); expect(JSON.parse(request.mock.calls[5][1].body)).toEqual({ ...body, map });
+  });
+  it.each([403, 503])('keeps binary content failure status %i without producing a blob', async status => {
+    const api = new Api(vi.fn().mockResolvedValue(new Response('proxy', { status })));
+    await expect(api.assetContent('c', 'a')).rejects.toMatchObject({ status });
+  });
   it('encodes scene identifiers and sends session CSRF with versioned scene commands', async () => {
     const request = vi.fn().mockResolvedValueOnce(Response.json({ campaignVersion: 2, currentSceneId: 's', scenes: [] }))
       .mockResolvedValueOnce(Response.json({ token: 'csrf', headerName: 'X-CSRF-TOKEN' }))
