@@ -11,9 +11,9 @@
 - **P02b 已完成本地与远端完整 CI 验收。** 代码 `1bfac83d55eb3ccab18778a30e5f5ba54f4e4289` 的 [push run39135326549](https://github.com/xianchen233/dnd-roll/actions/runs/39135326549) 和 [PR run39135329930](https://github.com/xianchen233/dnd-roll/actions/runs/39135329930) 均 frontend/backend/browser success，含四条真实浏览器和标准Compose的数据库/后端重启。开工起点 `be96f2c` clean、与origin一致，旧SHA CI先全绿才开工。先写 `contracts/assets.md` 和实际RED，再实现DM私有PNG/JPEG素材与地图引用/校准、V4同团FK、独立素材回执、Compose私有卷。共享逻辑网格和玩家快照不含原图或地图素材字段，玩家图片揭露仍为P02d。
 - 本地证据：最终52 unit + 41真实PG/HTTP/WS全量、最终90前端测试与构建、24 HTTP契约、4条真实Chrome全部通过；V3旧库自然升级比较、Java与PostgreSQL实际停止/同库同素材根重启的SHA-256/引用/版本/回执检查通过。初次新增E2E精确label定位失败已修复，原三条流程未放宽；详情见 verification.md 和两端 TDD.md。
 - 最终审查修复：同步确认由POST确认后启动且最新有效的权威读完成，旧成功/失败不能覆盖；测试动作等实际可用，不放宽业务断言/timeout、不加retry。提交确认丢失时先取得新campaign锁等待旧事务结束，再核对asset/storageKey；确认未提交才清文件，已提交或无法核对则保留，通过原requestId回执恢复。模拟故障的范围及实际RED/GREEN见两端TDD和verification。
-- **P02c 已完成本地完整验收，当前新SHA远端CI待核实。** 开工2967c37干净且与origin一致，其push39135956651/PR39135959413全部success后才开工。先写`contracts/tokens.md`和实际RED，再实现DM创建/完整编辑名称、位置、隐藏与多控制者，移动协议不变。56 unit + 50真实PG/HTTP/WS、112前端测试/构建、27HTTP契约、7条真实Chrome通过；13张旧表全部原列/行及V1–V4 checksum自然升级比较通过，Java+PG真实停止/同库同素材根重启的棋子与素材脚本均通过。见verification及两端TDD。
+- **P02c 已完成本地与远端完整验收。** 代码`5160c0fdbb98a9bb189193f1ec8735d004ffb978`的[push39141337705](https://github.com/xianchen233/dnd-roll/actions/runs/39141337705)和[PR39141340870](https://github.com/xianchen233/dnd-roll/actions/runs/39141340870)均frontend/backend/browser success，含标准Compose七流程和素材/棋子实际数据库/后端重启。开工2967c37干净且与origin一致，其push/PR全部success后才开工。先写`contracts/tokens.md`和实际RED，再实现DM创建/完整编辑名称、位置、隐藏与多控制者，移动协议不变。56unit+50真实PG/HTTP/WS、112前端测试/构建、27HTTP契约、7真实Chrome通过；13表全部旧列/行及V1–V4 checksum自然升级一致，Java+PG本机真实重启亦通过。首次长流程CI超时和第二次checkbox交互竞争均已实际重现/修复，最终新SHA关闭，见verification及两端TDD。
 - P02c独立token回执使用actor→campaign锁，DM/目标归属先于回放；历史配置只返回原确认、不恢复控制。V5回填同团键并限制成员FK；移除成员推进受影响token/scene版本，重加入不恢复控制。前端撤控/隐藏清除旧选择与在途移动，作者草稿保留原版本，任一并发拒绝清私有状态，最新post-ack读完成确认。
-- 下一可执行步骤：先检查当前新SHA的完整push/PR CI，全部通过才标P02c完成；然后进入 **P02d 地图交互及手动遮盖**，先契约及秘密像素不可经URL/缓存取得的实际失败测试。P02d/e、整个P02及后续包仍未完成。
+- 下一可执行步骤：先核对Git与PR #1当前HEAD及Checks（交接文档提交也独立核对），再进入 **P02d 地图交互及手动遮盖**，先契约及秘密像素不可经URL/缓存取得的实际失败测试。P02c不用重复开发；P02d/e、整个P02及后续包仍未完成。
 
 ## 用户授权与开发约定
 
@@ -30,7 +30,7 @@
 
 V2 浏览器库升级前后逐项比较 5 个战役/场景、2 个棋子、controls 与旧回执数量一致。独立自动迁移 IT 另外逐行比较全部原表内容并验证跨团指针 FK。真实 Java 进程停止/同库重启后，当前指针、创建/切换/移动回执、旧场景位置与版本保持；demo 不重置选择，历史切换重放不重新切图。
 
-本机无Docker；P02b的1bfac83两次远端CI已实际通过容器构建、私有素材卷、代理、四条浏览器及数据库/后端重启，后续交接提交仍独立核对Checks。公网TLS、触屏、容量、完整素材备份和异机恢复未验收；棋子作者P02c、遮盖P02d、整体验收P02e及P03–P10/A继续见work-packages.md。约564kB主chunk提示保留为后续优化，不放宽检查。
+本机无Docker；P02c的5160c0f两次远端CI已实际通过容器构建、私有素材卷、代理、七条浏览器及数据库/后端重启，后续交接提交仍独立核对Checks。公网TLS、触屏、容量、完整素材备份和异机恢复未验收；遮盖P02d、整体验收P02e及P03–P10/A继续见work-packages.md。约572kB主chunk提示保留为后续优化，不放宽检查。
 
 ## GitHub 与 CI
 

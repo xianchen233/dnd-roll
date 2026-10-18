@@ -140,6 +140,8 @@ P01 浏览器脚本 `e2e/accounts.spec.ts` 使用现有 DM/PLAYER 环境账号�
 
 ## P02c 棋子作者与共享控制（2026-10-18）
 
+最终远端闭环：代码`5160c0fdbb98a9bb189193f1ec8735d004ffb978`的push39141337705与PR39141340870均frontend/backend/browser success。112前端测试/构建/27契约、全部7条真实Compose浏览器通过；PR七条4.7m、push4.8m，仍60秒/条和0 retry。两个实际db/backend容器重启脚本均seed/verify PASS。下文保留先前RED与失败历史，最终新SHA已验证关闭，后续文档提交检查自己的Checks。
+
 - 先读 `contracts/tokens.md` 固定契约。**22:43:11 RED**：`npm test -- src/scene-store.test.ts` 23 项中 3 项实际断言失败：撤权/隐藏后 `canRetry()` 仍为 true，撤权再授权后的旧重试多发一次 POST。实现当前权威快照清除命令并推进移动 generation，使旧异步成功不再启动读或恢复待移动状态。
 - **22:45:05 RED**：新作者组件以可编译的空实现运行 `npm test -- src/tokens.test.tsx src/scene-store.test.ts`，作者 8 项因缺少实际名称/编辑/控制者界面断言失败，移动 23 项通过。随后实现 DM 当前场景列表、完整创建/编辑表单与 API；token/member 双读就绪、独立观察任一 401/403、作用域卸载隔离、409 放弃命令刷新、transport/5xx 同一 body/requestId 显式重试、回执只确认历史并重读权威。**22:46:10 GREEN**：同命令 31 项通过。
 - **22:47:47 RED**：追加未保存草稿/旧版本测试，实际读回字段 `另一位 DM`，而应保留 `未保存名称`。实现后台刷新保留 dirty 草稿和最初 token version，剔除已退出成员的 controllers，显式提示版本变化；成功/409 才重置为服务器当前配置。**22:48:21 GREEN**：作者 9 项通过。

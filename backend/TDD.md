@@ -88,6 +88,8 @@ Final remote acceptance: code 1bfac83 passes all frontend/backend/browser jobs i
 
 ## P02c token authoring and shared control — 2026-10-18
 
+Final remote acceptance: code `5160c0fdbb98a9bb189193f1ec8735d004ffb978` passes frontend/backend/browser in push39141337705 and PR39141340870. Logs confirm 56 unit + 50 real PostgreSQL/HTTP/WS tests, no failures/errors/skips; standard Compose also passes seven browser cases and token/asset seed → actual database/backend container restart → new-session verify. Actual local migration/process-restart evidence remains in docs/verification.md. P02c is complete; P02d/e and the full P02 remain open. Later handoff-only commits require their own current Checks.
+
 - Contract first: read the fixed `contracts/tokens.md`, preserving shared scene/movement/event shapes. Added four focused database-free application tests before behavior implementation.
 - Actual RED: 22:44:36, `mvn '-Dmaven.repo.local=D:/workspace/dnd/.tools/m2' '-Dtest=TokenServiceTest' test -B -ntp` ended with **4 tests, 4 assertion failures**, each expecting a non-null authoring response while the service skeleton returned null. Initial command used a wrong working-directory-relative path and therefore found no tests; that setup failure is not counted as RED.
 - Implementation: token creation/configuration has separate globally actor-keyed receipts, actor→campaign locks, canonical controllers, current DM/ownership before replay, fresh membership validation, token/scene versions shared with movement and atomic JDBC writes. Existing movement already checked current membership/current scene/visibility/control before receipt replay; retain it and add HTTP regressions.

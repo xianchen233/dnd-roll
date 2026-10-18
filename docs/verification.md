@@ -106,7 +106,26 @@ GREEN，23:33:38全量**112前端测试与构建通过**，旧110项保留；23:
 完整**7通过（24.3秒）**，仍60秒/条、零retry。CHANGELOG同步，后端与契约未改变。
 提交修复后仍按新SHA核实完整push/PR CI，8339354的绿色push不替代失败PR。
 
-日期：2026-10-18（Asia/Shanghai）。状态：M0/M1、P01、P02a、P02b均已通过本地与远端完整CI；P02b最终代码1bfac83的push/PR全success，实际结果见文末。
+### P02c 最终完整 CI 通过
+
+最终代码 **5160c0fdbb98a9bb189193f1ec8735d004ffb978** 的
+[push39141337705](https://github.com/xianchen233/dnd-roll/actions/runs/39141337705)和
+[PR39141340870](https://github.com/xianchen233/dnd-roll/actions/runs/39141340870)
+均 **completed/success，frontend/backend/browser全部通过**。新SHA前端112项/构建/
+27契约、后端56unit+50真实PG/HTTP/WS通过；标准Compose构建/启动、原四条加三个独立
+P02c流程全通过，PR日志7 passed（4.7m）。随后两个seed和两个新会话verify均PASS：
+实际db/backend容器重启后，文件SHA-256/地图/版本/素材回执保持，棋子名称/位置/
+隐藏/控制/版本/原回执保持，撤控/重新加入后的旧移动仍拒绝，旧作者/移除回执无新
+效果，历史地图回执不重挂图。按当前SHA检查，没有以8339354绿色push代替失败PR。
+
+至此P02c门槛完成。前述真实失败历史已由对应RED/GREEN与最终新SHA关闭；没有删除
+旧测试、放宽业务断言、增加retry或延长每条业务60秒时限。PR #1仍open draft/base
+main，未合并、未发布。Java/Vite/PG已按进程身份核对后停止，数据/素材保留。后续
+交接文档提交仍核对自己的Checks。下一包P02d；P02e与整个P02、M2尚未完成。
+
+## 既有里程碑验收历史
+
+日期：2026-10-18（Asia/Shanghai）。以下保留M0/M1、P01、P02a、P02b原始验收记录；P02c当前结果见上文。
 
 ## 测试与构建
 
