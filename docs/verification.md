@@ -71,3 +71,5 @@ TDD实际发现并修复：邀请首次响应纳秒与PG微秒精度不一致；
 真实P01浏览器步骤：DM创建空战役→分享`#invite=`链接→第三个独立context注册固定账号并自动正常登录→选择新战役→DM刷新成员并移除→真实socket关闭、客户端地图清空、后续场景403→账号仍保持有效且重新登录也不恢复成员。原M1截图已重新生成并人工查看，画布完整、管理区及权限单位列表正常。
 
 进程重启为本机外置smoke脚本，非Maven自动测试；复现时用独立数据库执行上表命令顺序，不把在同一Spring context内调用bootstrap视为进程重启。P02场景与素材、P03角色卡以及M2其余工作包未完成。
+
+P01代码提交 **3c12f8d4c0fe0687e3c3af09af40a87ab60065f4** 的[远端CI](https://github.com/xianchen233/dnd-roll/actions/runs/39126498540)：**frontend、backend、browser全部success**，含标准Compose构建/启动、真实PG与两条真实浏览器流程。[草稿PR #1](https://github.com/xianchen233/dnd-roll/pull/1)已创建并附到聊天，未合并或发布。后续文档交接提交不改变上述代码测试证据；应继续核对PR当前提交状态。

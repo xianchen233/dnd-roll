@@ -1,6 +1,6 @@
 # 继续工作的入口
 
-更新：2026-10-18。当前分支 `feat/accounts-and-invitations`，P01实现与本地验收完成，待推送/远端CI。
+更新：2026-10-18。当前分支 `feat/accounts-and-invitations`，P01实现、本地验收与远端CI通过，代码3c12f8d已推送。
 **基线c57c35a已推送，第三轮CI全通过；已按用户要求通过CI后才开始P01。**
 本文件用于上下文用尽或新会话接手，必须随实际进度更新。
 
@@ -31,7 +31,7 @@
 
 ## 当前P01工作与责任
 
-契约详见 `../contracts/accounts.md`。实现已落地，未提交；P01的CI尚未运行，不应预先标阶段完成。代理均已交付，其可用性不影响接手。
+契约详见 `../contracts/accounts.md`。代码已提交推送3c12f8d；[草稿PR #1](https://github.com/xianchen233/dnd-roll/pull/1)已创建并附到聊天。P01代码CI三个job全部success，尚未合并/发布。代理均已交付，其可用性不影响接手。
 
 | 范围 | 当前责任 | 工作 |
 | --- | --- | --- |
@@ -46,16 +46,17 @@
 
 1. 本地最终证据已在verification.md：30后端unit+18真实PG/HTTP/WS、31前端unit/组件、构建、16HTTP操作契约、2条真实Chrome流程和真实Java进程重启全部通过。V1既有库已成功升级V2，M1回归保留。
 2. Root已核查实现、权限/回执、前端异步撤权，人工查看实际截图；README/deploy已切bootstrap owner，CHANGELOG按Keep a Changelog记录P01。
-3. 执行Git diff检查、提交并推送当前feature分支，创建可审阅PR并附到聊天。所有文件仍未提交，禁止丢弃。
-4. 观察当前提交的CI全通过，失败先修；不以旧基线绿灯冒充P01结果。更新本文件/verification/work-packages/CHANGELOG实际状态。
-5. 清理仅属于本任务的Java/Vite/PG进程，保留本地测试数据及产物。P01之后再按依赖进入P02场景/素材和P03角色卡，M2其余包仍待实现。
+3. 3c12f8d的[CI](https://github.com/xianchen233/dnd-roll/actions/runs/39126498540)全通过（frontend/backend/browser），这是P01实际代码证据。PR创建也会触发独立pull_request CI；最新文档提交亦应核对当前CI，不以旧代码基线绿灯冒充代码改动的结果。
+4. 同步最后交接文档、当前提交/PR CI和PR描述；保留草稿待审阅，未合并main，不是已发布版本。
+5. 已清理仅属于本任务的Java/Vite/PG进程，测试数据及产物保留。P01之后再按依赖进入P02场景/素材和P03角色卡，M2其余包仍待实现。
 
 中途审查已发现并通过真实RED/GREEN修复：邀请消费后preview失败仍可登录并恢复accept；Unicode密码字符数两端一致；任一当前epoch的401/403都会废弃在途旧成功响应，不能重新显示被撤权地图；邀请到期时间统一PG微秒精度。测试专用Hikari池3避免小PG连接上限，生产配置未变。实际Java重启后权限/邀请/管理回执均已验收，不仅调用bootstrap模拟。
 
 ## GitHub与CI访问
 
 - 用户先通过Desktop发布，随后完成Git Credential Manager设备授权。CLI `git push`已成功，自动推送可用；不要再让用户反复登录Desktop。
-- GitHub连接器读取Actions可用；先前写Contents返回403。正常代码推送用已认证Git，不读取或打印任何凭据。
+- GitHub连接器读取Actions可用；先前写Contents返回403。正常代码推送用已认证Git，不记录或打印凭据。
+- PR写入连接器同样403，已用本机Git认证为同一GitHub账号创建PR #1；辅助脚本只在内存使用Git提供的凭据，不落盘/打印。后续更新PR可用相同本机认证，无需再次向用户要求登录。
 - 通用GitHub fetch可读 `/repos/xianchen233/dnd-roll/actions/runs`，然后用jobs/logs工具读取；专用fetch_commit_workflow_runs只筛PR，push可能空。匿名API共享出口可能限流，避免重复匿名轮询。
 - CI包含frontend、真实PG backend、Compose部署browser。每次以目标提交SHA核实结论。
 
@@ -64,6 +65,6 @@
 - PowerShell7、Node24.21.0/npm11.19.0。Git ownership提示时仅对该命令加 `-c safe.directory=D:/workspace/dnd/dnd-roll`。
 - JDK `.tools/java/jdk-25.0.4.1+1`；Maven `.tools/apache-maven-3.9.16/bin/mvn.cmd`；依赖缓存 `.tools/m2`（均相对于D:/workspace/dnd）。
 - Java命令设置JAVA_HOME；TEMP/TMP设 `D:/workspace/dnd/.tools/tmp`，JAVA_TOOL_OPTIONS设 `-Djava.io.tmpdir=D:/workspace/dnd/.tools/tmp`，避免此机器C盘临时目录权限故障。Maven的-D参数用完整引号，避免PowerShell拆点号版本。
-- 当前PG已启动于127.0.0.1:55432，data `.tools/pg-data`，启动使用huge_pages=off。测试连接 `.tools/test-database.json`；browser库连接 `.tools/browser-database.json`。**读取为环境变量，禁止打印/复制密码。**
-- 当前Java/Vite测试服务仍运行，PID见 `.tools/browser-backend.pid`/`browser-frontend.pid`；停止前通过CIM核实命令行确为本任务。browser测试账号 `.tools/browser-credentials.json`，默认E2E需四个账号变量；本机Chrome路径 `C:/Program Files/Google/Chrome/Application/chrome.exe`。辅助脚本 `.tools/start-p01-browser.ps1` 和 `.tools/smoke-p01-restart.ps1` 均在应用仓库外，不提交、不打印凭据。
+- PG已正常停止，data `.tools/pg-data`仍保留，重启用pg_ctl指定127.0.0.1:55432和huge_pages=off。测试连接 `.tools/test-database.json`；browser库连接 `.tools/browser-database.json`。**读取为环境变量，禁止打印/复制密码。**
+- Java/Vite测试服务已停止；PID文件仍保留，后续不可假设该PID仍属于旧进程。browser测试账号 `.tools/browser-credentials.json`，默认E2E需四个账号变量；本机Chrome路径 `C:/Program Files/Google/Chrome/Application/chrome.exe`。辅助脚本 `.tools/start-p01-browser.ps1` 和 `.tools/smoke-p01-restart.ps1` 均在应用仓库外，不提交、不打印凭据。
 - 当前完全权限；不要沿用旧沙箱的提权参数，也不要假设中断后的进程和代理仍在运行。
