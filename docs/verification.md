@@ -151,3 +151,7 @@ Compose新增asset_data私有卷及运行用户目录权限，NGINX允许10MiB�
 21:51:02 先补两种deferred响应顺序，实际2断言失败，21:51:39同测试GREEN。修复POST确认时记录读序号，让其后启动且最新有效的权威读取（含revision/实时刷新）统一完成同步提示；确认前的读、旧成功/旧失败均不能确认或覆盖，新读失败明确未同步，之后成功可恢复而不重复POST。新增6项边界后21:52:45前端全量90项/构建通过。后端源码未改；首次远端backend实际日志确认49unit+41IT全部通过，0失败/错误/跳过。
 
 协调者随后复验中，原三条再次通过，新增assets因登录后立即inputValue读取尚为空的campaign selector而提前失败，未进入地图操作；补与既有scenes测试相同的自动等待 `expect(combobox).not.toHaveValue('')`，未改变业务断言/timeout/retry。21:54–55再实际运行全部E2E：**4通过（16.6秒）**，保存后的同步提示及全部素材/权限/切图断言通过。修复的新SHA须再次检查完整push/PR CI；不复用cfdfccf失败结果，也不将新提交重启step尚未执行记为通过。
+
+### P02b 第二次远端：生产静态路径误判
+
+修复提交 `c237dc7` 的 [PR run39133708410](https://github.com/xianchen233/dnd-roll/actions/runs/39133708410) frontend/backend仍success，原三条浏览器通过，新流程已通过保存后同步确认，随后“玩家未请求私有素材”断言失败。原因是路径检查 `includes('/assets')` 也匹配生产Vite公开的 `/assets/index-*.js`/CSS，本机开发服务没有这一bundle路径。检查改为精确匹配 `/api/campaigns/{id}/assets...` 和 `/api/campaigns/{id}/scenes/{id}/map`，并以具体路径数组报错；全部私有API仍被检测，静态JS/CSS排除，没有开放玩家原图权限或删除断言。对公开JS/CSS、素材列表/content、地图配置、普通场景路径逐项验证通过。该部署测试修正需新SHA远端运行确认；前端生产实现未变。

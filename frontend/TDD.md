@@ -120,3 +120,5 @@ P01 浏览器脚本 `e2e/accounts.spec.ts` 使用现有 DM/PLAYER 环境账号�
 协调者实际验收补充：21:39–40 修正精确可访问名称后，统一 `npm run test:e2e` 全部4条通过（16.8秒），包含原M1/P01/P02a和新素材流程；实际查看DM/player截图。21:36–37同库同素材根真正停止/重启Java与PostgreSQL，SHA/引用/版本/回执及下载隔离验证通过。详见docs/verification.md；新SHA远端CI另核。
 
 协调者复验：修复确认竞态后的首次运行，原三条通过，assets刚登录即inputValue读取尚为空而失败；补与旧scenes流程相同的自动等待选团非空，不改变业务断言。21:54–55再次统一 `npm run test:e2e`：4通过（16.6秒），包含保存确认及原三条；0 retry。新的push/PR CI继续按SHA核对。
+
+协调者远端补充：c237dc7 PR39133708410的保存确认已过，但网络断言误把公开生产 `/assets/index-*.js` 当私有素材。E2E路径改为精确的campaign assets/map API，仍断言玩家私有请求数组为空且保留全部直链403等检查；公开bundle路径应排除。本机dev无该生产路径，最终GREEN以新SHA标准Compose CI为准。

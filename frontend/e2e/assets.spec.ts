@@ -80,7 +80,9 @@ test('DM uploads, downloads and calibrates a durable private map; players cannot
   const saved = await (await dmContext.request.get(`${endpoint}/scenes/${prepared.id}/map`)).json(); expect(saved.map).toEqual({ assetId: asset.id, gridSize: 64, offsetX: -12, offsetY: 7, distancePerCell: 5 });
   expect(saved.sceneVersion).toBe(prepared.version + 1);
   await expect(player.getByRole('heading', { name: '地图备团', exact: true })).toHaveCount(0);
-  expect(playerPaths.some(p => p.includes('/assets') || p.endsWith('/map'))).toBe(false);
+  // Production bundles are public /assets/*.js; only campaign API paths carry
+  // private originals or authoring metadata. Report actual offending paths.
+  expect(playerPaths.filter(p => /^\/api\/campaigns\/[^/]+\/(?:assets(?:\/|$)|scenes\/[^/]+\/map$)/.test(p))).toEqual([]);
   const playerSnapshot = await (await playerContext.request.get(`${endpoint}/scene`)).json(); expect(Object.keys(playerSnapshot).sort()).toEqual(Object.keys(original).sort());
   expect(playerSnapshot).toMatchObject({ id: prepared.id, width: 24, height: 16, gridSize: 48, tokens: [] }); expect(JSON.stringify(playerSnapshot)).not.toContain(asset.id);
   for (const path of [`${endpoint}/assets`, `${endpoint}/assets/${asset.id}/content`, `${endpoint}/assets/${randomUUID()}/content`, `${endpoint}/scenes/${prepared.id}/map`]) {
