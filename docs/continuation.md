@@ -1,6 +1,6 @@
 # 继续工作的入口
 
-更新：2026-10-18。当前分支 `feat/accounts-and-invitations`，3c12f8d代码及dbe61cf交接已推送；CI暴露的移动确认/实时刷新竞争条件已修复，本地36项前端测试、构建及2条真实E2E通过。最新远端状态直接核对[PR #1 Checks](https://github.com/xianchen233/dnd-roll/pull/1/checks)，交付前须确认当前提交全通过。
+更新：2026-10-18。当前分支 `feat/accounts-and-invitations`，3c12f8d主功能、dbe61cf交接和dabef40竞态修复均已推送；本地最终36项前端测试、构建及2条真实E2E通过。最新远端状态直接核对[PR #1 Checks](https://github.com/xianchen233/dnd-roll/pull/1/checks)，交付前须确认当前提交全通过。最新文档提交只同步这轮实际结果；Git status/log是当前HEAD的依据。
 
 **CI并发回归修复：** dbe61cf push run39126867019三个job通过，但PR run39126870907 browser失败：原M1移动已保存，直接refresh被并发STOMP refresh替代，界面误报刷新失败。20:25/26真实deferred RED后，记录POST成功时的refresh序号，由之后最新有效快照完成确认，不再让被替代读取覆盖结果；保留旧403清空与POST前快照隔离。20:26:50前端36测试/构建通过，20:29实际Chrome两流程再次通过（11.8秒）。复验另发现E2E退出后立即导航的顺序错误，已等待真实登录入口再重登录，未放宽产品断言或加retry。后端无变，原30unit/18IT及真实进程重启证据保留。CHANGELOG/verification/TDD均记录此轮。
 **基线c57c35a已推送，第三轮CI全通过；已按用户要求通过CI后才开始P01。**

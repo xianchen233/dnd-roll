@@ -40,5 +40,5 @@
 - M0框架与M1最小切片已实现；目录、契约、前后端、真实PostgreSQL迁移、会话及实时同步已落地。
 - 最终本地检查：16后端unit、9真实数据库/WS集成、14前端测试、1真实双浏览器流程、构建及打包进程重启回放均通过。证据见 [阶段验收记录](verification.md)。
 - c57c35a已推送，[远端CI](https://github.com/xianchen233/dnd-roll/actions/runs/39124712714)全通过，含Compose构建/启动/真实浏览器；Git终端认证已解决。
-- 当前分支feat/accounts-and-invitations，P01正式账号/邀请/成员管理已实现。30后端unit、18真实PG/HTTP/WS、31前端测试、2真实Chrome流程与实际Java重启检查通过；代码提交3c12f8d的[远端CI](https://github.com/xianchen233/dnd-roll/actions/runs/39126498540)三个job全部success。草稿PR #1供审阅，尚未合并或发布。
+- 当前分支feat/accounts-and-invitations，P01正式账号/邀请/成员管理已实现。30后端unit、18真实PG/HTTP/WS、最终36前端测试、2真实Chrome流程与实际Java重启检查通过；初始代码3c12f8d的[远端CI](https://github.com/xianchen233/dnd-roll/actions/runs/39126498540)三个job全部success。后续PR暴露的刷新竞态已通过RED/GREEN修复并推送dabef40，当前交付门槛为[PR #1 Checks](https://github.com/xianchen233/dnd-roll/pull/1/checks)中最新SHA全通过；草稿供审阅，尚未合并或发布。
 - 后续任务不能以“预留接口”为由标记完成。规则相关实现开始前使用工作区 `dnd-rule-lookup` 核对 5R 依据；当前移动仅为探索网格操作，不承诺战斗移动规则。

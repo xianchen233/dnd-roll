@@ -17,7 +17,7 @@
 
 ## M2：完整首版业务
 
-当前：**P01实现、本地验收及远端CI完成**，契约见contracts/accounts.md，分支feat/accounts-and-invitations，提交3c12f8d，草稿PR #1待审阅/合并。P02及之后仍未开工。
+当前：**P01已实现并完成本地验收**，初始3c12f8d远端CI通过；PR暴露的刷新竞态已修复推送dabef40，当前交付须核对[PR #1最新Checks](https://github.com/xianchen233/dnd-roll/pull/1/checks)全部通过。契约见contracts/accounts.md，分支feat/accounts-and-invitations，草稿待审阅/合并。P02及之后仍未开工。
 
 | 工作包 | 前置 | 首先测试的行为 / 交付边界 |
 | --- | --- | --- |
