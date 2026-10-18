@@ -1,6 +1,6 @@
 # 继续工作的入口
 
-更新：2026-10-18，用户通过GitHub Desktop发布main，首轮CI前后端通过、Docker校验失败修复中。用户要求CI通过后才进入P01。**本文件用于上下文用尽或新会话接手，必须随着实际进度更新。**
+更新：2026-10-18，用户通过GitHub Desktop发布main，并已完成终端GCM设备授权，自动Git推送已可用。第二轮CI镜像构建成功，当前修复启动就绪检查；CI通过后才进入P01。**本文件用于上下文用尽或新会话接手，必须随着实际进度更新。**
 
 ## 用户已明确的授权与约束
 
@@ -39,6 +39,8 @@
 5. 当前框架批次交接完成后进入P01正式账号与邀请，再按work-packages推进P02场景/素材、P03角色卡。后续能力未实现，不能因当前40项检查通过而关闭整个产品计划。
 
 读取Actions时可用已连接GitHub的通用fetch读取 `/repos/xianchen233/dnd-roll/actions/runs`，再读取jobs/logs；专用fetch_commit_workflow_runs只筛PR事件，push会返回空。匿名API共享出口可能限流；不要重复匿名轮询。当前尚未开始P01编码。
+
+最近CI为d903d40 / run39124457926：镜像已构建成功，前后端检查通过；browser因容器刚启动时curl连接重置(56)退出。已为curl加retry-all-errors并限制120秒，准备推送再观察。用户另要求Keep a Changelog，已建立CHANGELOG.md的Unreleased分类并在AGENTS.md要求随功能同步维护。
 
 ## 当前机器的辅助环境（仅供接手定位，不是项目依赖）
 

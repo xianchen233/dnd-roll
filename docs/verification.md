@@ -47,3 +47,5 @@
 ## 远端CI首次执行
 
 2026-10-18，用户通过Desktop发布79cf832后，运行 [Build and test #1](https://github.com/xianchen233/dnd-roll/actions/runs/39124170015)：frontend与backend通过；browser在后端Docker构建时失败，还未执行浏览器步骤。Temurin构建镜像没有unzip，only-script Wrapper将ZIP替换为tar.gz，导致与ZIP的固定SHA-256不符。已为构建阶段补unzip，保留校验，需推送并等待新CI结果。此项为真实部署RED，不是业务单元测试失败。
+
+[Build and test #2](https://github.com/xianchen233/dnd-roll/actions/runs/39124457926)（d903d40）：frontend/backend仍通过，前后端镜像均成功构建、PostgreSQL健康；紧接容器启动的curl遇到连接重置(56)，原有retry未涵盖此错误，browser尚未执行。就绪检查改为重试所有暂时错误、单次5秒、总重试120秒；没有跳过就绪检查或放宽业务测试断言。

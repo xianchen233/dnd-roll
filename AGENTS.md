@@ -12,3 +12,4 @@ At the start of a resumed session, read `docs/continuation.md` first, then `docs
 - Do not commit credentials, local runtime downloads, binary source libraries, commercial rules text, generated build output or private game data.
 - Each task owns specific directories. Coordinate shared contracts before parallel edits. Only the coordinating agent performs Git commits.
 - Keep unfinished functionality explicit in the implementation plan and UI; the current milestone does not imply the entire product is complete.
+- Maintain `CHANGELOG.md` using Keep a Changelog: record notable behavior, deployment, migration and security changes under Unreleased in the same change as the code. Use Added/Changed/Deprecated/Removed/Fixed/Security as appropriate; omit empty sections. Create a dated version section only when that version is actually released, and never claim pending work or unexecuted checks as completed changes.
