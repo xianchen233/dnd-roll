@@ -1,0 +1,24 @@
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+target/
+coverage/
+playwright-report/
+test-results/
+.tools/
+.runtime/
+.idea/
+*.log
+*.iml
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+# Local source libraries and private game material never belong in this repository.
+Documents/
+dnd_index/
+vecdb/
+*.chm
+*.sqlite*
+*.db

@@ -1,0 +1,159 @@
+{
+  "openapi": "3.1.0",
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "info": { "title": "D&D Roll first playable slice", "version": "0.1.0" },
+  "servers": [{ "url": "/" }],
+  "security": [{ "sessionCookie": [] }],
+  "x-session-policy": {
+    "transport": "same-origin HTTPS in production; include cookies on requests",
+    "actor": "Derived from the authenticated session; never supplied by the client",
+    "csrfRefresh": "Obtain a fresh CSRF token after login or logout"
+  },
+  "paths": {
+    "/api/auth/csrf": {
+      "get": {
+        "operationId": "getCsrf",
+        "security": [],
+        "responses": {
+          "200": { "description": "Current session CSRF token", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CsrfToken" } } } }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "operationId": "login",
+        "security": [],
+        "parameters": [{ "$ref": "#/components/parameters/CsrfHeader" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginRequest" } } } },
+        "responses": {
+          "200": { "description": "Authenticated session; refresh CSRF token before next POST", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Identity" } } } },
+          "400": { "$ref": "#/components/responses/InvalidInput" },
+          "401": { "$ref": "#/components/responses/Unauthenticated" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "operationId": "getIdentity",
+        "responses": {
+          "200": { "description": "Current authenticated identity", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Identity" } } } },
+          "401": { "$ref": "#/components/responses/Unauthenticated" }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "parameters": [{ "$ref": "#/components/parameters/CsrfHeader" }],
+        "responses": {
+          "204": { "description": "Session invalidated; obtain a new CSRF token before subsequent login" },
+          "401": { "$ref": "#/components/responses/Unauthenticated" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/campaigns": {
+      "get": {
+        "operationId": "listCampaigns",
+        "responses": {
+          "200": { "description": "Only campaigns of which the actor is a member", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Campaign" } } } } },
+          "401": { "$ref": "#/components/responses/Unauthenticated" }
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/scene": {
+      "parameters": [{ "$ref": "#/components/parameters/CampaignId" }],
+      "get": {
+        "operationId": "getScene",
+        "description": "Permission-filtered authoritative snapshot. Hidden tokens are absent from player snapshots. Refresh after a successful move, scene-change hint, reconnect and periodically.",
+        "responses": {
+          "200": { "description": "Visible scene snapshot", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SceneSnapshot" } } } },
+          "400": { "$ref": "#/components/responses/InvalidInput" },
+          "401": { "$ref": "#/components/responses/Unauthenticated" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/tokens/{tokenId}/moves": {
+      "parameters": [{ "$ref": "#/components/parameters/CampaignId" }, { "$ref": "#/components/parameters/TokenId" }],
+      "post": {
+        "operationId": "moveToken",
+        "description": "Exploration movement only. Server enforces membership, visibility, control, grid bounds and object version. Invisible token: 404; visible uncontrolled token: 403. DM may move any token in their own campaign. Persist state and idempotency receipt atomically. Read a fresh scene snapshot after success.",
+        "x-idempotency": {
+          "key": ["campaignId", "sessionActor", "requestId"],
+          "payload": ["tokenId", "expectedVersion", "x", "y"],
+          "samePayload": "Return original response, including when expectedVersion is now stale; do not apply twice",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT",
+          "versionConflict": "409 VERSION_CONFLICT; refresh authoritative snapshot"
+        },
+        "x-grid-bounds": { "x": "0 <= x < scene.width", "y": "0 <= y < scene.height" },
+        "parameters": [{ "$ref": "#/components/parameters/CsrfHeader" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MoveRequest" } } } },
+        "responses": {
+          "200": { "description": "Updated visible token or original idempotent response", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TokenView" } } } },
+          "400": { "$ref": "#/components/responses/InvalidInput" },
+          "401": { "$ref": "#/components/responses/Unauthenticated" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "description": "VERSION_CONFLICT or IDEMPOTENCY_CONFLICT", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiError" } } } }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sessionCookie": { "type": "apiKey", "in": "cookie", "name": "JSESSIONID", "description": "Server-managed authenticated session cookie; send using credentials: include" }
+    },
+    "parameters": {
+      "CampaignId": { "name": "campaignId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/Uuid" } },
+      "TokenId": { "name": "tokenId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/Uuid" } },
+      "CsrfHeader": { "name": "X-CSRF-TOKEN", "in": "header", "required": true, "description": "Current CSRF token obtained from GET /api/auth/csrf; use returned headerName", "schema": { "type": "string", "minLength": 1 } }
+    },
+    "responses": {
+      "InvalidInput": { "description": "400 INVALID_INPUT: malformed input or invalid coordinates", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiError" } } } },
+      "Unauthenticated": { "description": "401 UNAUTHENTICATED: authenticated session required or credentials invalid", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiError" } } } },
+      "Forbidden": { "description": "403 FORBIDDEN: CSRF, campaign membership or token control denied", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiError" } } } },
+      "NotFound": { "description": "404 NOT_FOUND: unavailable resource; never reveal hidden token data", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiError" } } } }
+    },
+    "schemas": {
+      "Uuid": { "type": "string", "format": "uuid" },
+      "Version": { "type": "integer", "minimum": 0, "description": "Non-negative optimistic concurrency version" },
+      "GridCoordinate": { "type": "integer", "minimum": 0, "description": "Integer grid cell; server additionally enforces x < width and y < height" },
+      "CsrfToken": {
+        "type": "object", "additionalProperties": false, "required": ["token", "headerName"],
+        "properties": { "token": { "type": "string", "minLength": 1 }, "headerName": { "const": "X-CSRF-TOKEN" } }
+      },
+      "LoginRequest": {
+        "type": "object", "additionalProperties": false, "required": ["username", "password"],
+        "properties": { "username": { "type": "string", "minLength": 1 }, "password": { "type": "string", "minLength": 1, "writeOnly": true } }
+      },
+      "Identity": {
+        "type": "object", "additionalProperties": false, "required": ["username"],
+        "properties": { "username": { "type": "string" } }
+      },
+      "Campaign": {
+        "type": "object", "additionalProperties": false, "required": ["id", "name", "role"],
+        "properties": { "id": { "$ref": "#/components/schemas/Uuid" }, "name": { "type": "string" }, "role": { "type": "string", "enum": ["DM", "PLAYER"] } }
+      },
+      "TokenView": {
+        "type": "object", "additionalProperties": false, "required": ["id", "name", "x", "y", "version", "canMove"],
+        "properties": { "id": { "$ref": "#/components/schemas/Uuid" }, "name": { "type": "string" }, "x": { "$ref": "#/components/schemas/GridCoordinate" }, "y": { "$ref": "#/components/schemas/GridCoordinate" }, "version": { "$ref": "#/components/schemas/Version" }, "canMove": { "type": "boolean" } }
+      },
+      "SceneSnapshot": {
+        "type": "object", "additionalProperties": false, "required": ["id", "campaignId", "name", "width", "height", "gridSize", "version", "tokens"],
+        "properties": { "id": { "$ref": "#/components/schemas/Uuid" }, "campaignId": { "$ref": "#/components/schemas/Uuid" }, "name": { "type": "string" }, "width": { "type": "integer", "minimum": 1 }, "height": { "type": "integer", "minimum": 1 }, "gridSize": { "type": "integer", "minimum": 1 }, "version": { "$ref": "#/components/schemas/Version" }, "tokens": { "type": "array", "items": { "$ref": "#/components/schemas/TokenView" } } }
+      },
+      "MoveRequest": {
+        "type": "object", "additionalProperties": false, "required": ["requestId", "expectedVersion", "x", "y"],
+        "properties": { "requestId": { "$ref": "#/components/schemas/Uuid" }, "expectedVersion": { "$ref": "#/components/schemas/Version" }, "x": { "$ref": "#/components/schemas/GridCoordinate" }, "y": { "$ref": "#/components/schemas/GridCoordinate" } }
+      },
+      "ApiError": {
+        "type": "object", "additionalProperties": false, "required": ["code", "message"],
+        "description": "HTTP status is authoritative. Clients must also tolerate non-JSON transport errors. Messages must never include hidden token data.",
+        "properties": { "code": { "type": "string", "enum": ["UNAUTHENTICATED", "FORBIDDEN", "NOT_FOUND", "VERSION_CONFLICT", "IDEMPOTENCY_CONFLICT", "INVALID_INPUT"] }, "message": { "type": "string" } }
+      }
+    }
+  }
+}

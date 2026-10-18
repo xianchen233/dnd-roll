@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: dnd-roll
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/dnd_roll}
+    username: ${DATABASE_USERNAME:dnd_roll}
+    password: ${DATABASE_PASSWORD:}
+  flyway:
+    enabled: true
+server:
+  shutdown: graceful
+  servlet:
+    session:
+      timeout: 8h
+      cookie:
+        http-only: true
+        same-site: lax
+        secure: ${SESSION_COOKIE_SECURE:false}
+  error:
+    include-message: never
+    include-stacktrace: never

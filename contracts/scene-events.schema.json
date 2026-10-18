@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Scene cache invalidation event",
+  "description": "Server hint only. Fetch a permission-filtered authoritative scene snapshot after receipt; reconnect and periodic refresh also fetch snapshots. No token IDs, names, coordinates or counts may be included.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["type", "campaignId"],
+  "properties": {
+    "type": { "type": "string", "const": "SCENE_CHANGED" },
+    "campaignId": { "type": "string", "format": "uuid" }
+  },
+  "x-stomp": {
+    "endpoint": "/ws",
+    "session": "Same authenticated HTTP session",
+    "connectCsrfHeader": "X-CSRF-TOKEN",
+    "subscription": "/user/queue/scene-changes",
+    "recipients": "Only authenticated campaign members",
+    "clientSendAllowed": false,
+    "arbitrarySubscriptionsAllowed": false,
+    "sockJsRequired": false
+  }
+}

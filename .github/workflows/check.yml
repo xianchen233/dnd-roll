@@ -1,0 +1,105 @@
+name: Build and test
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24.22.0
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: node scripts/check-contracts.mjs
+      - run: npm ci
+        working-directory: frontend
+      - run: npm test
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.6
+        env:
+          POSTGRES_DB: dnd_roll_test
+          POSTGRES_USER: dnd_test
+          POSTGRES_PASSWORD: ci-database-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U dnd_test -d dnd_roll_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      TEST_DATABASE_URL: jdbc:postgresql://localhost:5432/dnd_roll_test
+      TEST_DATABASE_USERNAME: dnd_test
+      TEST_DATABASE_PASSWORD: ci-database-only
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-java@v6.1.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+      - run: ./mvnw -B -ntp -Pintegration verify
+        working-directory: backend
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: backend-test-reports
+          path: |
+            backend/target/surefire-reports
+            backend/target/failsafe-reports
+  browser:
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_DB: dnd_roll_browser
+      POSTGRES_USER: dnd_test
+      POSTGRES_PASSWORD: ci-database-only
+      SPRING_PROFILES_ACTIVE: demo
+      DEMO_DM_USERNAME: browser-dm
+      DEMO_DM_PASSWORD: ci-browser-dm-only
+      DEMO_PLAYER_USERNAME: browser-player
+      DEMO_PLAYER_PASSWORD: ci-browser-player-only
+      E2E_DM_USERNAME: browser-dm
+      E2E_DM_PASSWORD: ci-browser-dm-only
+      E2E_PLAYER_USERNAME: browser-player
+      E2E_PLAYER_PASSWORD: ci-browser-player-only
+      E2E_BASE_URL: http://localhost:8080
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24.22.0
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - name: Build and start standard Compose deployment
+        run: |
+          docker compose -f deploy/compose.yaml config --quiet
+          docker compose -f deploy/compose.yaml up --build -d
+          curl --fail --retry 40 --retry-delay 3 --retry-connrefused http://localhost:8080/api/auth/csrf > /dev/null
+      - run: npm run test:e2e
+        working-directory: frontend
+      - name: Save container logs
+        if: always()
+        run: docker compose -f deploy/compose.yaml logs --no-color > compose.log
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: browser-test-reports
+          path: |
+            frontend/test-results
+            frontend/playwright-report
+            compose.log
