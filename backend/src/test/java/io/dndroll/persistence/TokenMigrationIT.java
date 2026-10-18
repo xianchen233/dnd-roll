@@ -54,4 +54,3 @@ class TokenMigrationIT {
         return rows;
     }
 }
-
