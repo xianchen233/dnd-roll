@@ -1,6 +1,6 @@
 # 继续工作的入口
 
-更新：2026-10-18 19:13（Asia/Shanghai），M0/M1本地验收完成，准备提交/推送。**本文件用于上下文用尽或新会话接手，必须随着实际进度更新。**
+更新：2026-10-18，M0/M1本地验收完成，代码已提交；推送受GitHub认证/写入权限阻塞。**本文件用于上下文用尽或新会话接手，必须随着实际进度更新。**
 
 ## 用户已明确的授权与约束
 
@@ -26,12 +26,14 @@
 - 契约 OpenAPI3.1 与scene event schema已落地，`node scripts/check-contracts.mjs`通过。
 - 已修复默认fetch原生receiver、画布autoDensity裁切、scene版本不递增与demo重启恢复撤权；均有实际RED/GREEN。
 - Compose/NGINX/Dockerfile、PowerShell检查入口和CI已写，官方Maven Wrapper3.9.16已生成、校验并用于统一检查。
-- GitHub远端最初为空，本地尚待通过检查后的初始提交/推送。提交前核实实际状态，禁止覆盖远端已有提交。
+- 本地main已提交实现，初始实现提交为 `3e3aa70`；后续交接提交请以 `git log` 为准。工作区应保持干净。
+- GitHub远端最初为空，**未推送成功**。CLI的Git Credential Manager无可用凭据，非交互push失败；已连接GitHub工具能读且metadata显示push权限，但实际create_file返回 `403 Resource not accessible by integration`，没有创建远端README或提交。不要因读取权限存在而继续假设可写，不要尝试绕过权限。
+- 需要用户在Git Credential Manager完成GitHub登录，或为连接的GitHub App授予此仓库实际Contents写权限；然后重新核实远端历史并推送。用户已授权推送，无需重问是否推送，仅缺实际认证/权限。
 
 ## 当前下一步（按顺序）
 
 1. 本地检查与重启回放已完成，详见verification；不用因为旧会话的中断或代理不可用重做已通过检查。
-2. 检查Git是否已经产生初始提交并推送。尚未完成时先完成，注意核实远端历史、凭据与main分支；严禁force覆盖。
+2. 首先解决GitHub认证/写权限并推送：`git fetch origin`，确认远端是否仍为空，再 `git push -u origin main`。现有本地提交不得丢失；远端若已有提交先审查并安全整合，严禁force覆盖。
 3. 查看远端CI三项job：frontend、backend、browser。browser使用Compose构建并启动标准部署，验证生产代理链的HTTP/WS；本机无Docker，不能提前标为通过。
 4. 有CI失败先修并添加必要回归；如CI未运行或权限受限，明确记录，不把配置存在当作执行成功。
 5. 当前框架批次交接完成后进入P01正式账号与邀请，再按work-packages推进P02场景/素材、P03角色卡。后续能力未实现，不能因当前40项检查通过而关闭整个产品计划。
@@ -46,6 +48,7 @@
 - 此机器C盘临时目录曾报权限错误，运行Java/浏览器测试时将 `TEMP`、`TMP` 指向工作区外层 `.tools/tmp`，并为Java设置 `JAVA_TOOL_OPTIONS=-Djava.io.tmpdir=D:/workspace/dnd/.tools/tmp`。这属于本机配置，不把路径写死到应用中，也不算行为RED。
 - 临时PostgreSQL18.6：`.tools/postgres/bin`，数据`.tools/pg-data`，回环`127.0.0.1:55432`；Windows下测试实例使用 `huge_pages=off` 排除巨页权限错误。连接配置在仓库外 `.tools/test-database.json`，**读取成环境变量，不打印或复制密码到文档/聊天**。
 - 本机Chrome：`C:/Program Files/Google/Chrome/Application/chrome.exe`；E2E可用 `E2E_CHROME_PATH`，CI使用Playwright Chromium。
+- 本轮临时Java/Vite/PostgreSQL测试服务在交接时关闭；数据与本地截图保留，接手不要假设8080/5173/55432仍有服务。浏览器测试账号配置在仓库外 `.tools/browser-credentials.json`，数据库配置 `.tools/browser-database.json`，不要打印或提交密码。
 - 之前沙箱网络受限；用户已切换完全权限。按当前工具策略执行，不要沿用旧会话的提权参数或旧进程编号。
 
 ## 续接后的默认方向
