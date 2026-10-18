@@ -73,3 +73,11 @@ TDD实际发现并修复：邀请首次响应纳秒与PG微秒精度不一致；
 进程重启为本机外置smoke脚本，非Maven自动测试；复现时用独立数据库执行上表命令顺序，不把在同一Spring context内调用bootstrap视为进程重启。P02场景与素材、P03角色卡以及M2其余工作包未完成。
 
 P01代码提交 **3c12f8d4c0fe0687e3c3af09af40a87ab60065f4** 的[远端CI](https://github.com/xianchen233/dnd-roll/actions/runs/39126498540)：**frontend、backend、browser全部success**，含标准Compose构建/启动、真实PG与两条真实浏览器流程。[草稿PR #1](https://github.com/xianchen233/dnd-roll/pull/1)已创建并附到聊天，未合并或发布。后续文档交接提交不改变上述代码测试证据；应继续核对PR当前提交状态。
+
+### PR CI暴露的并发回归
+
+dbe61cf的push run39126867019三个job通过，但[PR run39126870907](https://github.com/xianchen233/dnd-roll/actions/runs/39126870907)在M1浏览器移动确认处失败。真实STOMP刷新替代移动后的直接refresh时，位置已保存/同步，界面却停留在“场景刷新失败”。这是真实状态竞争，不能以另一个绿色run或自动retry关闭。
+
+20:25:19先补deferred RED（两种响应顺序2失败），20:26:32补恢复边界再RED；最小修复记录POST成功时refresh序号，只让其后最新有效快照完成同步确认，旧/撤权响应继续隔离。20:26:50 `npm test`最终**36通过**，TypeScript/Vite构建通过，原M1/P01测试保留。
+
+本机复验中，P01所有邀请/移除/403断言先通过，但退出后脚本立即导航导致重新登录表单超时；trace定位于8.34秒开始的账号fill。补上等待退出完成后的“进入冒险”按钮可见再导航。20:29再次 `npm run test:e2e`：**2通过（11.8秒）**，E2E业务断言未放宽、未配置retry。后端源码未改，不重复冒称执行新的Java检查。最新提交的远端结果以[PR Checks](https://github.com/xianchen233/dnd-roll/pull/1/checks)为准，交付必须检查当前SHA。

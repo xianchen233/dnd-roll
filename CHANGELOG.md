@@ -44,6 +44,9 @@ and successful CI runs do not by themselves constitute a release.
 - Keep login and invitation acceptance available when a consumed invitation can no
   longer be previewed, allowing recovery after a lost registration response.
 - Count Unicode password characters consistently in the browser and backend.
+- Confirm a saved move when its direct refresh is superseded by a successful
+  realtime refresh. Keep pre-acknowledgment and revoked snapshots from confirming
+  the move, and recover confirmation after a transient refresh failure.
 
 ### Security
 

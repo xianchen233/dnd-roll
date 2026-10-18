@@ -1,6 +1,8 @@
 # 继续工作的入口
 
-更新：2026-10-18。当前分支 `feat/accounts-and-invitations`，P01实现、本地验收与远端CI通过，代码3c12f8d已推送。
+更新：2026-10-18。当前分支 `feat/accounts-and-invitations`，3c12f8d代码及dbe61cf交接已推送；CI暴露的移动确认/实时刷新竞争条件已修复，本地36项前端测试、构建及2条真实E2E通过。最新远端状态直接核对[PR #1 Checks](https://github.com/xianchen233/dnd-roll/pull/1/checks)，交付前须确认当前提交全通过。
+
+**CI并发回归修复：** dbe61cf push run39126867019三个job通过，但PR run39126870907 browser失败：原M1移动已保存，直接refresh被并发STOMP refresh替代，界面误报刷新失败。20:25/26真实deferred RED后，记录POST成功时的refresh序号，由之后最新有效快照完成确认，不再让被替代读取覆盖结果；保留旧403清空与POST前快照隔离。20:26:50前端36测试/构建通过，20:29实际Chrome两流程再次通过（11.8秒）。复验另发现E2E退出后立即导航的顺序错误，已等待真实登录入口再重登录，未放宽产品断言或加retry。后端无变，原30unit/18IT及真实进程重启证据保留。CHANGELOG/verification/TDD均记录此轮。
 **基线c57c35a已推送，第三轮CI全通过；已按用户要求通过CI后才开始P01。**
 本文件用于上下文用尽或新会话接手，必须随实际进度更新。
 
@@ -44,10 +46,10 @@
 
 ## 下一步
 
-1. 本地最终证据已在verification.md：30后端unit+18真实PG/HTTP/WS、31前端unit/组件、构建、16HTTP操作契约、2条真实Chrome流程和真实Java进程重启全部通过。V1既有库已成功升级V2，M1回归保留。
+1. 本地最终证据已在verification.md：30后端unit+18真实PG/HTTP/WS、36前端unit/组件、构建、16HTTP操作契约、2条真实Chrome流程和真实Java进程重启全部通过。V1既有库已成功升级V2，M1回归保留。
 2. Root已核查实现、权限/回执、前端异步撤权，人工查看实际截图；README/deploy已切bootstrap owner，CHANGELOG按Keep a Changelog记录P01。
 3. 3c12f8d的[CI](https://github.com/xianchen233/dnd-roll/actions/runs/39126498540)全通过（frontend/backend/browser），这是P01实际代码证据。PR创建也会触发独立pull_request CI；最新文档提交亦应核对当前CI，不以旧代码基线绿灯冒充代码改动的结果。
-4. 同步最后交接文档、当前提交/PR CI和PR描述；保留草稿待审阅，未合并main，不是已发布版本。
+4. 最新修复提交的CI以PR Checks为准；若任何job失败先修复，不通过重跑掩盖真实断言失败。保留草稿待审阅，未合并main，不是已发布版本。下一实现为work-packages.md的P02a，先契约和最小RED，不直接铺开P02全部功能。
 5. 已清理仅属于本任务的Java/Vite/PG进程，测试数据及产物保留。P01之后再按依赖进入P02场景/素材和P03角色卡，M2其余包仍待实现。
 
 中途审查已发现并通过真实RED/GREEN修复：邀请消费后preview失败仍可登录并恢复accept；Unicode密码字符数两端一致；任一当前epoch的401/403都会废弃在途旧成功响应，不能重新显示被撤权地图；邀请到期时间统一PG微秒精度。测试专用Hikari池3避免小PG连接上限，生产配置未变。实际Java重启后权限/邀请/管理回执均已验收，不仅调用bootstrap模拟。

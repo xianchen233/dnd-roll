@@ -64,6 +64,7 @@ test('DM creates an empty campaign, a fragment invitation registers a fixed acco
     await expect(guest.getByRole('combobox', { name: '选择战役' })).toHaveValue('');
     // The newly registered fixed account still logs in after removal; campaign access stays removed.
     await guest.getByRole('button', { name: '退出', exact: true }).click();
+    await expect(guest.getByRole('button', { name: '进入冒险', exact: true })).toBeVisible();
     await login(guest, username, password);
     await expect(guest.getByRole('combobox', { name: '选择战役' })).toHaveValue('');
     expect(pageErrors).toEqual([]);

@@ -28,6 +28,51 @@ describe('membership loss', () => {
 const snapshot = (version = 0, x = 2): Scene => ({ id: 'scene', campaignId: 'c', name: '营地', width: 24, height: 16, gridSize: 48, version, tokens: [{ id: 'hero', name: '游侠', x, y: 3, version, canMove: true }, { id: 'ally', name: '队友', x: 6, y: 3, version, canMove: false }] });
 const deferred = <T,>() => { let resolve!: (v: T) => void; const promise = new Promise<T>(r => { resolve = r; }); return { resolve, promise }; };
 describe('authoritative scene state', () => {
+  it.each(['move-first', 'realtime-first'] as const)('confirms a saved move when realtime supersedes its refresh (%s)', async order => {
+    const direct = deferred<Scene>(), realtime = deferred<Scene>();
+    const api = { scene: vi.fn().mockResolvedValueOnce(snapshot()).mockReturnValueOnce(direct.promise).mockReturnValueOnce(realtime.promise), move: vi.fn().mockResolvedValue({}) };
+    const store = new SceneStore(api); await store.open('c');
+    const moving = store.move('hero', 4, 5); await Promise.resolve();
+    const invalidating = store.refresh();
+    if (order === 'move-first') { direct.resolve(snapshot(1, 4)); await moving; realtime.resolve(snapshot(1, 4)); await invalidating; }
+    else { realtime.resolve(snapshot(1, 4)); await invalidating; direct.resolve(snapshot(1, 4)); await moving; }
+    expect(store.getSnapshot()).toMatchObject({ status: 'confirmed', message: '移动已保存，场景已同步', scene: { version: 1 } });
+    expect(store.getSnapshot().scene?.tokens[0].x).toBe(4);
+    expect(store.canRetry()).toBe(false);
+  });
+  it('recovers saved confirmation when the superseding refresh fails and a later refresh succeeds', async () => {
+    const direct = deferred<Scene>();
+    const api = { scene: vi.fn().mockResolvedValueOnce(snapshot()).mockReturnValueOnce(direct.promise).mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(snapshot(1, 4)), move: vi.fn().mockResolvedValue({}) };
+    const store = new SceneStore(api); await store.open('c');
+    const moving = store.move('hero', 4, 5); await Promise.resolve();
+    await store.refresh(); direct.resolve(snapshot(1, 4)); await moving;
+    expect(store.getSnapshot().status).toBe('failed'); expect(store.canRetry()).toBe(false);
+    await store.refresh();
+    expect(store.getSnapshot()).toMatchObject({ status: 'confirmed', message: '移动已保存，场景已同步' });
+  });
+  it('does not confirm from a snapshot requested before the move POST succeeded', async () => {
+    const post = deferred<unknown>(), before = deferred<Scene>(), after = deferred<Scene>();
+    const api = { scene: vi.fn().mockResolvedValueOnce(snapshot()).mockReturnValueOnce(before.promise).mockReturnValueOnce(after.promise), move: vi.fn().mockReturnValue(post.promise) };
+    const store = new SceneStore(api); await store.open('c');
+    const moving = store.move('hero', 4, 5), early = store.refresh();
+    post.resolve({}); await Promise.resolve();
+    before.resolve(snapshot()); await early;
+    expect(store.getSnapshot().status).toBe('pending');
+    expect(store.getSnapshot().scene?.tokens[0].x).toBe(2);
+    after.resolve(snapshot(1, 4)); await moving;
+    expect(store.getSnapshot().status).toBe('confirmed');
+  });
+  it('clears a saved move when its superseded refresh reports forbidden after realtime sync', async () => {
+    let rejectDenied!: (error: Error) => void;
+    const denied = new Promise<Scene>((_resolve, reject) => { rejectDenied = reject; });
+    const api = { scene: vi.fn().mockResolvedValueOnce(snapshot()).mockReturnValueOnce(denied).mockResolvedValueOnce(snapshot(1, 4)), move: vi.fn().mockResolvedValue({}) };
+    const store = new SceneStore(api); await store.open('c');
+    const moving = store.move('hero', 4, 5); await Promise.resolve();
+    await store.refresh(); rejectDenied(new ApiError(403, 'removed')); await moving;
+    expect(store.getSnapshot()).toMatchObject({ status: 'failed', scene: undefined });
+    expect(store.getSnapshot().message).toContain('已失去战役访问权限');
+    expect(store.canRetry()).toBe(false);
+  });
   it('keeps the move pending until the authoritative snapshot arrives', async () => {
     const confirmed = deferred<Scene>();
     const api = { scene: vi.fn().mockResolvedValueOnce(snapshot()).mockReturnValueOnce(confirmed.promise), move: vi.fn().mockResolvedValue({ x: 4 }) };
