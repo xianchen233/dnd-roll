@@ -60,6 +60,10 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Fixed
 
+- Preserve valid Pixi gestures across same-scene snapshot and safe-image refreshes
+  while immediately discarding obsolete pixels. Cancel gestures when scene,
+  selection, token version or control changes. Keep loaded fog drafts editable
+  during background validation while saving waits for fresh state.
 - Keep existing controller checkboxes editable during background authoring reads
   while submission waits for fresh data. Stop old save acknowledgments from
   reappearing after a new draft begins, preserving form position during editing.

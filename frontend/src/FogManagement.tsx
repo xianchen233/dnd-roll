@@ -9,7 +9,7 @@ function FogEditor({ api, campaignId, sceneId, width, height, revision, onChange
   const [coords, setCoords] = useState(['0', '0', '0', '0']);
   const active = useRef(true), readId = useRef(0), version = useRef<number | undefined>(undefined), dirty = useRef(false), pending = useRef<FogCommand | undefined>(undefined), afterAck = useRef<number | undefined>(undefined);
   function deny(e: unknown) {
-    if (active.current && e instanceof ApiError && (e.status === 401 || e.status === 403)) { active.current = false; readId.current++; pending.current = undefined; afterAck.current = undefined; setDraft([]); setReady(false); setError(''); setMessage(''); onDenied(); return true; }
+    if (active.current && e instanceof ApiError && (e.status === 401 || e.status === 403)) { active.current = false; readId.current++; pending.current = undefined; afterAck.current = undefined; version.current = undefined; dirty.current = false; setDraft([]); setReady(false); setError(''); setMessage(''); onDenied(); return true; }
     return false;
   }
   async function load() {
@@ -30,7 +30,7 @@ function FogEditor({ api, campaignId, sceneId, width, height, revision, onChange
   useEffect(() => { void load(); }, [revision]);
   const locked = busy || !!pending.current;
   function edit(a: Cell, b: Cell, reveal: boolean) {
-    if (locked || !ready || version.current === undefined) return;
+    if (!active.current || locked || version.current === undefined) return;
     if (![a, b].every(c => Number.isInteger(c.x) && Number.isInteger(c.y) && c.x >= 0 && c.y >= 0 && c.x < width && c.y < height)) { setError('请填写网格内的整数坐标。'); return; }
     dirty.current = true; afterAck.current = undefined; setMessage('草稿尚未保存；玩家地图保持服务器已确认状态。'); setError(''); setDraft(cells => rectangle(cells, a, b, reveal));
   }
@@ -51,5 +51,5 @@ function FogEditor({ api, campaignId, sceneId, width, height, revision, onChange
     if (coords.some(v => !v.trim())) { setError('请填写网格内的整数坐标。'); return; }
     edit({ x: Number(coords[0]), y: Number(coords[1]) }, { x: Number(coords[2]), y: Number(coords[3]) }, reveal);
   }
-  return <>{children({ revealed: draft, locked: locked || !ready, onRectangle: edit })}<section className="campaign-management fog-management" aria-label="地图遮盖"><div className="management-title"><h2>地图遮盖</h2><button disabled={busy} onClick={() => void load()}>刷新遮盖</button></div><p className="hint">矩形揭露或遮盖只修改草稿，保存后才影响玩家。单位隐藏独立管理。已公开并被保存的图片无法撤回。</p><p>已揭露 {draft.length} 格</p><fieldset disabled={locked}><legend>遮盖坐标</legend><div className="asset-calibration">{['起点 X', '起点 Y', '终点 X', '终点 Y'].map((label, i) => <label key={label}>{label}<input type="number" min="0" max={(i % 2 ? height : width) - 1} step="1" value={coords[i]} onChange={e => setCoords(v => v.map((old, n) => n === i ? e.target.value : old))} /></label>)}</div><button type="button" disabled={!ready} onClick={() => coordinates(true)}>加入揭露矩形</button> <button type="button" disabled={!ready} onClick={() => coordinates(false)}>加入遮盖矩形</button></fieldset><button disabled={locked || !ready} onClick={() => void save()}>保存地图遮盖</button>{pending.current && <button disabled={busy || !ready} onClick={() => void save()}>重试同一遮盖操作</button>}{error && <p role="alert" className="error">{error}</p>}{message && <p role="status" className="hint">{message}</p>}</section></>;
+  return <>{children({ revealed: draft, locked: locked || version.current === undefined, onRectangle: edit })}<section className="campaign-management fog-management" aria-label="地图遮盖"><div className="management-title"><h2>地图遮盖</h2><button disabled={busy} onClick={() => void load()}>刷新遮盖</button></div><p className="hint">矩形揭露或遮盖只修改草稿，保存后才影响玩家。单位隐藏独立管理。已公开并被保存的图片无法撤回。</p><p>已揭露 {draft.length} 格</p><fieldset disabled={locked}><legend>遮盖坐标</legend><div className="asset-calibration">{['起点 X', '起点 Y', '终点 X', '终点 Y'].map((label, i) => <label key={label}>{label}<input type="number" min="0" max={(i % 2 ? height : width) - 1} step="1" value={coords[i]} onChange={e => setCoords(v => v.map((old, n) => n === i ? e.target.value : old))} /></label>)}</div><button type="button" disabled={version.current === undefined} onClick={() => coordinates(true)}>加入揭露矩形</button> <button type="button" disabled={version.current === undefined} onClick={() => coordinates(false)}>加入遮盖矩形</button></fieldset><button disabled={locked || !ready} onClick={() => void save()}>保存地图遮盖</button>{pending.current && <button disabled={busy || !ready} onClick={() => void save()}>重试同一遮盖操作</button>}{error && <p role="alert" className="error">{error}</p>}{message && <p role="status" className="hint">{message}</p>}</section></>;
 }

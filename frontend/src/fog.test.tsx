@@ -12,6 +12,19 @@ function props(api: ReturnType<typeof setup>) {
 }
 async function click(name: string) { const b = await screen.findByRole('button', { name }); await waitFor(() => expect(b).toBeEnabled()); fireEvent.click(b); }
 describe('DM manual fog authoring', () => {
+  it('keeps a loaded fog draft editable during background revalidation and saves its original version', async () => {
+    const api = setup(), p = props(api), view = render(<FogManagement {...p} />); await waitFor(() => expect(screen.getByRole('button', { name: '模拟矩形手势' })).toBeEnabled());
+    const revalidating = deferred<typeof initial>(); api.fog.mockReturnValueOnce(revalidating.promise); view.rerender(<FogManagement {...p} revision={9} />);
+    expect(screen.getByRole('button', { name: '保存地图遮盖' })).toBeDisabled(); act(() => screen.getByRole('button', { name: '模拟矩形手势' }).click());
+    expect(screen.getByTestId('draft')).toHaveTextContent('[{"x":1,"y":1},{"x":2,"y":1},{"x":1,"y":2},{"x":2,"y":2}]');
+    await act(async () => { revalidating.resolve({ ...initial, sceneVersion: 9 }); }); await click('保存地图遮盖'); expect(api.saveFog.mock.calls[0][2].expectedVersion).toBe(8);
+  });
+  it('locks loaded local gestures after a stale authorization denial even when no command is pending', async () => {
+    const api = setup(), p = props(api), view = render(<FogManagement {...p} />); await click('模拟矩形手势');
+    const old = deferred<typeof initial>(); api.fog.mockReturnValueOnce(old.promise); view.rerender(<FogManagement {...p} revision={9} />); await click('刷新遮盖');
+    await act(async () => { old.reject(new ApiError(403, 'denied')); }); expect(p.onDenied).toHaveBeenCalledOnce();
+    expect(screen.getByRole('button', { name: '模拟矩形手势' })).toBeDisabled(); expect(screen.getByTestId('draft')).toHaveTextContent('[]');
+  });
   it('keeps gestures local until explicit save, canonicalizes reverse rectangles, and does not send token fields', async () => {
     const api = setup(); render(<FogManagement {...props(api)} />); await click('模拟矩形手势'); expect(api.saveFog).not.toHaveBeenCalled();
     expect(screen.getByTestId('draft')).toHaveTextContent('[{"x":1,"y":1},{"x":2,"y":1},{"x":1,"y":2},{"x":2,"y":2}]');
@@ -62,7 +75,7 @@ describe('DM manual fog authoring', () => {
   it.each([401, 403])('a concurrent old read %s clears drafts and prevents a late POST from restoring private state', async status => {
     const old = deferred<typeof initial>(), post = deferred<unknown>(), api = setup({ saveFog: vi.fn().mockReturnValue(post.promise) }), p = props(api), view = render(<FogManagement {...p} />);
     await click('模拟矩形手势'); api.fog.mockReturnValueOnce(old.promise); view.rerender(<FogManagement {...p} revision={9} />); api.fog.mockResolvedValue({ ...initial, sceneVersion: 9 }); await click('刷新遮盖'); await click('保存地图遮盖');
-    await act(async () => { old.reject(new ApiError(status, 'denied')); }); expect(p.onDenied).toHaveBeenCalledOnce(); expect(screen.getByTestId('draft')).toHaveTextContent('[]');
+    await act(async () => { old.reject(new ApiError(status, 'denied')); }); expect(p.onDenied).toHaveBeenCalledOnce(); expect(screen.getByTestId('draft')).toHaveTextContent('[]'); expect(screen.getByRole('button', { name: '模拟矩形手势' })).toBeDisabled();
     await act(async () => { post.resolve(initial); }); expect(screen.queryByText('遮盖请求已确认；当前揭露状态已从服务器刷新。')).not.toBeInTheDocument(); expect(screen.getByRole('button', { name: '保存地图遮盖' })).toBeDisabled();
   });
   it('disposes commands and late reads on scene/campaign switch', async () => {

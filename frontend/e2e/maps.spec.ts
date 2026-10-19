@@ -50,13 +50,24 @@ async function prepare(s: Sessions) {
   await s.dm.goto('/'); await s.player.goto('/'); await expect(s.dm.locator('.topbar-right')).toContainText(dmUsername); await expect(s.player.locator('.topbar-right')).toContainText(playerUsername);
   await s.dm.getByRole('combobox', { name: '选择战役' }).selectOption(campaignId); await s.player.getByRole('combobox', { name: '选择战役' }).selectOption(campaignId);
   await expect(s.dm.locator('.connection')).toHaveText('● 实时连接'); await expect(s.player.locator('.connection')).toHaveText('● 实时连接');
+  await expect(s.dm.getByRole('img', { name: '场景网格地图' })).toHaveAttribute('data-interaction-ready', 'ready'); await expect(s.player.getByRole('img', { name: '场景网格地图' })).toHaveAttribute('data-interaction-ready', 'ready');
   await expect(s.dm.getByRole('img', { name: '场景网格地图' })).toHaveAttribute('data-map-image', 'ready'); await expect(s.player.getByRole('img', { name: '场景网格地图' })).toHaveAttribute('data-map-image', 'ready');
   await expect(s.player.getByRole('button', { name: new RegExp(publicName) })).toBeEnabled(); await expect(s.player.getByText(hiddenName, { exact: true })).toHaveCount(0);
   return { campaignId, endpoint, sceneId: scene.id as string, assetId, bytes, token, publicName, hiddenName, fogPath: `${endpoint}/scenes/${scene.id}/fog` };
 }
 async function position(page: Page, x: number, y: number) { const canvas = page.locator('.map-surface canvas'); await canvas.scrollIntoViewIfNeeded(); const b = await canvas.boundingBox(); if (!b) throw new Error('Canvas has no bounds'); return { x: b.x + (x + 0.5) * b.width / 24, y: b.y + (y + 0.5) * b.height / 16 }; }
 async function cell(page: Page, x: number, y: number) { const p = await position(page, x, y); await page.mouse.click(p.x, p.y); }
-async function drag(page: Page, ax: number, ay: number, bx: number, by: number) { const a = await position(page, ax, ay), b = await position(page, bx, by); await page.mouse.move(a.x, a.y); await page.mouse.down(); await page.mouse.move(b.x, b.y, { steps: 5 }); await page.mouse.up(); }
+async function drag(page: Page, ax: number, ay: number, bx: number, by: number, revalidate = false) {
+  const a = await position(page, ax, ay), b = await position(page, bx, by); await page.mouse.move(a.x, a.y); await page.mouse.down();
+  if (revalidate) {
+    const read = page.waitForResponse(r => new URL(r.url()).pathname.endsWith('/scene') && r.request().method() === 'GET');
+    // A real authoritative read is deliberately interleaved while the native
+    // pointer remains held, reproducing the periodic-refresh gesture boundary.
+    await page.getByRole('button', { name: '↻ 刷新场景', exact: true }).evaluate(button => (button as HTMLButtonElement).click()); await read;
+    await expect(page.getByRole('img', { name: '场景网格地图' })).toHaveAttribute('data-map-image', 'ready');
+  }
+  await page.mouse.move(b.x, b.y, { steps: 5 }); await page.mouse.up();
+}
 async function safeImage(request: APIRequestContext, page: Page, endpoint: string, sceneId: string, version: number, headers: Record<string, string> = {}) {
   const response = await request.get(`${endpoint}/scene/map-image?sceneId=${sceneId}&version=${version}`, { headers }); expect(response.status()).toBe(200);
   expect(response.headers()['cache-control']).toContain('no-store'); expect(response.headers()['cache-control']).toContain('private'); expect(response.headers()['x-content-type-options']).toBe('nosniff'); expect(response.headers()['content-type']).toContain('image/png'); expect(response.headers()['etag']).toBeUndefined(); expect(response.headers()['last-modified']).toBeUndefined();
@@ -65,32 +76,53 @@ async function safeImage(request: APIRequestContext, page: Page, endpoint: strin
 }
 function assertHints(s: Sessions, assetId: string, hiddenName: string) { expect(s.frames.length).toBeGreaterThan(0); for (const frame of s.frames) { expect(frame).not.toContain(assetId); expect(frame).not.toContain(hiddenName); expect(frame).not.toContain('revealed'); expect(frame).not.toContain('map-image'); } expect(s.paths.filter(p => /^\/api\/campaigns\/[^/]+\/(?:assets(?:\/|$)|scenes\/[^/]+\/(?:map|fog)$)/.test(p))).toEqual([]); }
 
-test('real player Pixi supports select, snapped drag, click movement, geometric measurement, pan and cursor zoom/reset', async ({ sessions: s }, info) => {
+test('real player Pixi selects, snaps a drag through a same-scene refresh and click-moves without exposing hidden units', async ({ sessions: s }, info) => {
   const { endpoint, publicName, hiddenName, assetId } = await prepare(s);
-  await cell(s.player, 2, 3); await expect(s.player.getByRole('heading', { name: publicName, exact: true })).toBeVisible(); await drag(s.player, 2, 3, 4, 5);
+  await cell(s.player, 2, 3); await expect(s.player.getByRole('heading', { name: publicName, exact: true })).toBeVisible(); await drag(s.player, 2, 3, 4, 5, true);
   await expect(s.player.getByRole('button', { name: new RegExp(publicName) })).toContainText('(4, 5)'); await expect(s.dm.getByRole('button', { name: new RegExp(publicName) })).toContainText('(4, 5)');
   await cell(s.player, 6, 7); await expect(s.player.getByRole('button', { name: new RegExp(publicName) })).toContainText('(6, 7)');
-  await click(s.player, '两点测距'); await cell(s.player, 1, 1); await cell(s.player, 4, 5); await expect(s.player.getByLabel('测距结果')).toHaveText('25.00 距离单位');
+  expect(JSON.stringify(await (await s.playerContext.request.get(`${endpoint}/scene`)).json())).not.toContain(hiddenName); assertHints(s, assetId, hiddenName);
+  await s.player.screenshot({ path: info.outputPath('player-pixi-movement.png'), fullPage: true }); await s.dm.screenshot({ path: info.outputPath('dm-pixi-tabletop.png'), fullPage: true }); expect(s.errors).toEqual([]);
+});
+
+test('real player Pixi keeps geometric measurement through refresh, resets partial pairs, pans and cursor-zooms', async ({ sessions: s }, info) => {
+  const { endpoint, hiddenName } = await prepare(s);
+  await click(s.player, '两点测距'); await cell(s.player, 1, 1);
+  const read = s.player.waitForResponse(r => new URL(r.url()).pathname === `${endpoint}/scene` && r.request().method() === 'GET');
+  await s.player.getByRole('button', { name: '↻ 刷新场景', exact: true }).evaluate(button => (button as HTMLButtonElement).click()); await read;
+  await expect(s.player.getByRole('img', { name: '场景网格地图' })).toHaveAttribute('data-map-image', 'ready');
+  await cell(s.player, 4, 5); await expect(s.player.getByLabel('测距结果')).toHaveText('25.00 距离单位');
   await cell(s.player, 1, 1); await click(s.player, '重置视图'); await cell(s.player, 4, 5); await expect(s.player.getByLabel('测距结果')).toContainText('起点 (4, 5)');
   await click(s.player, '平移地图'); const before = await s.player.locator('.map-surface canvas').screenshot(); await drag(s.player, 0, 0, 1, 1); const after = await s.player.locator('.map-surface canvas').screenshot(); expect(after.equals(before)).toBe(false);
   const center = await position(s.player, 8, 6); await s.player.mouse.move(center.x, center.y); await s.player.mouse.wheel(0, -100); await expect(s.player.getByLabel('地图缩放')).toHaveText('120%'); await click(s.player, '重置视图'); await expect(s.player.getByLabel('地图缩放')).toHaveText('100%');
-  expect(JSON.stringify(await (await s.playerContext.request.get(`${endpoint}/scene`)).json())).not.toContain(hiddenName); assertHints(s, assetId, hiddenName);
-  await s.player.screenshot({ path: info.outputPath('player-pixi-interaction.png'), fullPage: true }); await s.dm.screenshot({ path: info.outputPath('dm-pixi-tabletop.png'), fullPage: true }); expect(s.errors).toEqual([]);
+  expect(JSON.stringify(await (await s.playerContext.request.get(`${endpoint}/scene`)).json())).not.toContain(hiddenName);
+  await s.player.screenshot({ path: info.outputPath('player-pixi-interaction.png'), fullPage: true }); expect(s.errors).toEqual([]);
 });
 
-test('DM Pixi rectangle reveal/cover saves safe public PNGs while original, hidden token, stale URLs and cache conditions stay protected', async ({ sessions: s }, info) => {
+test('DM Pixi rectangle reveal survives a same-scene refresh and saves only explicitly public PNG pixels', async ({ sessions: s }, info) => {
   const { endpoint, sceneId, assetId, hiddenName, publicName, fogPath } = await prepare(s);
   const before = await (await s.playerContext.request.get(`${endpoint}/scene`)).json(); expect((await safeImage(s.playerContext.request, s.player, endpoint, sceneId, before.version)).public).toEqual([0, 0, 0, 255]);
-  await click(s.dm, '矩形揭露'); await drag(s.dm, 0, 0, 0, 0); await expect(s.dm.getByText('已揭露 1 格', { exact: true })).toBeVisible(); expect((await (await s.dmContext.request.get(fogPath)).json()).revealed).toEqual([]);
+  await click(s.dm, '矩形揭露'); await drag(s.dm, 0, 0, 0, 0, true); await expect(s.dm.getByText('已揭露 1 格', { exact: true })).toBeVisible(); expect((await (await s.dmContext.request.get(fogPath)).json()).revealed).toEqual([]);
   await click(s.dm, '保存地图遮盖'); await expect(s.dm.getByText('遮盖请求已确认；当前揭露状态已从服务器刷新。', { exact: true })).toBeVisible();
   const revealed = await (await s.dmContext.request.get(fogPath)).json(); expect(revealed.revealed).toEqual([{ x: 0, y: 0 }]);
   const pixels = await safeImage(s.playerContext.request, s.player, endpoint, sceneId, revealed.sceneVersion); expect(pixels).toEqual({ width: 1152, height: 768, public: [30, 170, 44, 255], secret: [0, 0, 0, 255] });
-  await expect(s.player.getByRole('button', { name: new RegExp(publicName) })).toBeEnabled(); await expect(s.player.getByText(hiddenName, { exact: true })).toHaveCount(0);
+  await expect(s.player.getByRole('button', { name: new RegExp(publicName) })).toBeEnabled(); await expect(s.player.getByText(hiddenName, { exact: true })).toHaveCount(0); assertHints(s, assetId, hiddenName);
+  await s.dm.screenshot({ path: info.outputPath('dm-manual-reveal.png'), fullPage: true }); await s.player.screenshot({ path: info.outputPath('player-revealed-safe-map.png'), fullPage: true }); expect(s.errors).toEqual([]);
+});
+
+test('DM Pixi rectangle cover invalidates old image URLs and preserves original-image and cache protections', async ({ sessions: s }, info) => {
+  const { endpoint, sceneId, assetId, hiddenName, publicName, fogPath } = await prepare(s);
+  const before = await (await s.dmContext.request.get(fogPath)).json();
+  // This case has its own real campaign and HTTP reveal precondition; UI reveal
+  // is accepted independently above, keeping each business flow within 60s.
+  const prepared = await post(s.dmContext.request, fogPath, { requestId: randomUUID(), expectedVersion: before.sceneVersion, revealed: [{ x: 0, y: 0 }] }); expect(prepared.ok()).toBeTruthy(); const revealed = await prepared.json();
+  await expect(s.dm.getByText('已揭露 1 格', { exact: true })).toBeVisible();
+  expect((await safeImage(s.playerContext.request, s.player, endpoint, sceneId, revealed.sceneVersion)).public).toEqual([30, 170, 44, 255]);
   for (const id of [assetId, randomUUID()]) { const denied = await s.playerContext.request.get(`${endpoint}/assets/${id}/content`); expect(denied.status()).toBe(403); expect(denied.headers()['cache-control']).toContain('no-store'); }
-  expect((await s.playerContext.request.get(`${endpoint}/scene/map-image?sceneId=${sceneId}&version=${before.version}`)).status()).toBe(409);
-  await click(s.dm, '矩形遮盖'); await drag(s.dm, 0, 0, 0, 0); await click(s.dm, '保存地图遮盖'); await expect(s.dm.getByText('遮盖请求已确认；当前揭露状态已从服务器刷新。', { exact: true })).toBeVisible();
+  expect((await s.playerContext.request.get(`${endpoint}/scene/map-image?sceneId=${sceneId}&version=${before.sceneVersion}`)).status()).toBe(409);
+  await click(s.dm, '矩形遮盖'); await drag(s.dm, 0, 0, 0, 0, true); await click(s.dm, '保存地图遮盖'); await expect(s.dm.getByText('遮盖请求已确认；当前揭露状态已从服务器刷新。', { exact: true })).toBeVisible();
   const covered = await (await s.dmContext.request.get(fogPath)).json(); expect(covered.revealed).toEqual([]); expect((await safeImage(s.playerContext.request, s.player, endpoint, sceneId, covered.sceneVersion, { Range: 'bytes=0-50', 'If-None-Match': '*', 'If-Modified-Since': 'Wed, 21 Oct 2099 07:28:00 GMT' })).public).toEqual([0, 0, 0, 255]);
-  expect((await s.playerContext.request.get(`${endpoint}/scene/map-image?sceneId=${sceneId}&version=${revealed.sceneVersion}`)).status()).toBe(409); assertHints(s, assetId, hiddenName);
+  expect((await s.playerContext.request.get(`${endpoint}/scene/map-image?sceneId=${sceneId}&version=${revealed.sceneVersion}`)).status()).toBe(409); await expect(s.player.getByRole('button', { name: new RegExp(publicName) })).toBeEnabled(); await expect(s.player.getByText(hiddenName, { exact: true })).toHaveCount(0); assertHints(s, assetId, hiddenName);
   await s.dm.screenshot({ path: info.outputPath('dm-manual-fog.png'), fullPage: true }); await s.player.screenshot({ path: info.outputPath('player-covered-safe-map.png'), fullPage: true }); expect(s.errors).toEqual([]);
 });
 

@@ -31,8 +31,27 @@ function point(app: any, x: number, y: number, event = 'pointerup') { app.stage.
 function cell(app: any, x: number, y: number) { act(() => { point(app, x, y, 'pointerdown'); point(app, x, y); }); }
 afterEach(() => { fake.apps.length = 0; fake.textures.length = 0; vi.unstubAllGlobals(); });
 describe('native Pixi interaction lifecycle', () => {
+  it.each(['snapshot', 'image'] as const)('keeps a selected drag across an unchanged same-scene %s refresh while clearing old image pixels', async refresh => {
+    const { app, p, view } = await mount({ mapUrl: 'blob:old' });
+    act(() => { point(app, 2, 3, 'pointerdown'); point(app, 3, 4, 'globalpointermove'); });
+    view.rerender(<MapCanvas {...p} scene={{ ...scene, tokens: scene.tokens.map(t => ({ ...t })) }} mapUrl={refresh === 'image' ? undefined : 'blob:old'} />);
+    act(() => { point(app, 4, 5, 'globalpointermove'); point(app, 4, 5); });
+    expect(p.onMove).toHaveBeenCalledWith(4, 5);
+  });
+  it('keeps a DM rectangle gesture across a same-scene image refresh', async () => {
+    const onRectangle = vi.fn(), { app, p, view } = await mount({ onRectangle, revealed: [], mapUrl: 'blob:old' });
+    fireEvent.click(screen.getByRole('button', { name: '矩形揭露' })); act(() => { point(app, 0, 0, 'pointerdown'); });
+    view.rerender(<MapCanvas {...p} mapUrl={undefined} />); act(() => { point(app, 0, 0); });
+    expect(onRectangle).toHaveBeenCalledWith({ x: 0, y: 0 }, { x: 0, y: 0 }, true);
+  });
+  it.each(['scene', 'version', 'control', 'selection'] as const)('cancels an old drag when its %s changes during a refresh', async change => {
+    const { app, p, view } = await mount(); act(() => { point(app, 2, 3, 'pointerdown'); point(app, 3, 4, 'globalpointermove'); });
+    const next = { ...scene, id: change === 'scene' ? 'other' : 's', tokens: scene.tokens.map(t => ({ ...t, ...(change === 'version' ? { version: 1 } : {}), ...(change === 'control' ? { canMove: false } : {}) })) };
+    view.rerender(<MapCanvas {...p} scene={next} selected={change === 'selection' ? undefined : 't'} />);
+    act(() => { point(app, 4, 5, 'globalpointermove'); point(app, 4, 5); }); expect(p.onMove).not.toHaveBeenCalled();
+  });
   it('previews a selected drag on snapped cells, keeps authoritative coordinates unchanged, and submits only on release', async () => {
-    const { app, p } = await mount(); const layer = app.stage.children[0], unit = layer.children.find((c: any) => c.children?.length === 2);
+    const { app, p } = await mount(); const layer = app.stage.children[0], unit = layer.children.find((c: any) => c.children?.[0]?.children?.length === 2)?.children[0];
     act(() => { point(app, 2, 3, 'pointerdown'); point(app, 4, 5, 'globalpointermove'); });
     expect(unit.position.x).toBe(4.5 * 48); expect(unit.position.y).toBe(5.5 * 48); expect(p.onMove).not.toHaveBeenCalled(); expect(scene.tokens[0]).toMatchObject({ x: 2, y: 3 });
     act(() => { point(app, 4, 5); }); expect(p.onMove).toHaveBeenCalledWith(4, 5); expect(unit.position.x).toBe(2.5 * 48); expect(unit.position.y).toBe(3.5 * 48);

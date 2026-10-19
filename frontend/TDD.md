@@ -181,3 +181,16 @@ P01 浏览器脚本 `e2e/accounts.spec.ts` 使用现有 DM/PLAYER 环境账号�
 - **22:33:49–22:33:58 真实 Chrome GREEN**：协调者启动Vite+安全后端后，外置安全runner执行`npm run test:e2e -- maps.spec.ts`，**3 passed (8.7s)**，60秒/条、零retry。新增三条均独立真实团/CSRF会话：①玩家Pixi选择/吸附drag/click移动、欧氏测距×5、半途reset、pan/zoom/reset；②DM矩形揭露/遮盖显式save，浏览器实际解码安全PNG比较公开绿像素和秘密黑像素，原图/猜ID403、历史URL409、条件/Range200且no-store、隐藏token独立和STOMP无秘密；③坐标fallback实际cover后故意中断玩家snapshot网络，失效立刻清旧图、revoke对象URL且旧blob fetch失败，恢复读取后黑像素正确。未伪造HTTP结果/STOMP或注入session。
 - **22:34:01 最终本地 GREEN**：`npm test` **14文件、148项全部通过**（旧112+新36），`npm run build` TypeScript/Vite通过，主chunk约583.57kB提示保留。新E2E三项本地通过；完整10条、实际重启及新SHA远端Checks由协调者统一记录，不能用此局部结果代替。
 - 新截图在忽略目录：`test-results/maps-real-player-Pixi-supp-47286-t-pan-and-cursor-zoom-reset/{dm-pixi-tabletop,player-pixi-interaction}.png`，`maps-DM-Pixi-rectangle-rev-2642d-e-conditions-stay-protected/{dm-manual-fog,player-covered-safe-map}.png`，以及`maps-coordinate-fog-fallba-97ba0-d-recovers-with-covered-PNG/player-recovered-covered-map.png`。P02e、整个P02及后续工作包仍未完成；未合并/发布。
+
+### P02d 首次远端失败后的交互生命周期修复
+
+- 候选`d593092`的push run39271185130和PR run39271191222：frontend/backend均success，但browser均8通过、2失败。push两条新长流程在约34秒失败：selected drag后仍(2,3)，矩形后无“已揭露1格”。PR则两条均达到60秒：第一已走到测距，期望25.00却只显示起点(4,5)；第二已通过揭露，停在遮盖后的保存动作。原7条和新fallback均通过。本地10通过不能关闭远端失败。
+- CI日志已实际阅读；49MB trace artifact多次因下载reset/timeout未完整取得，未声称trace已证明唯一直接根因。根据代码把安全图片/scene读取与交互effect一起拆掉的问题，先独立实际复现行为，再修复；新SHA仍需重新远端验收。
+- **22:51:42 RED**：`npm test -- src/map-canvas.test.tsx`新增3项实际断言失败：同scene新快照或mapUrl失效穿插pointerdown/up后onMove为0次；DM矩形穿插mapUrl失效后onRectangle为0次。原7项仍通过。另新增4项保护边界：scene、selected、token version、控制变化时必须取消旧drag，防止为了保留手势误用更新后的目标或授权。
+- **23:18:08 RED**：Fog新增后台重验证测试失败，已有草稿在ready=false时的原生手势按钮click被吞，实际仍[]而应有4格。不能只修Canvas闭包而保留这一独立吞编辑问题。
+- 生产修复把稳定同scene交互层、棋子重绘、fog草稿绘制和安全图片资源分开。安全blob更替仍在layout cleanup立即清除sprite并destroy texture/source，不再拆stage handlers、gesture或测距起点；scene几何改变重建交互，selection/控制/token version/位置变化主动取消旧gesture，DM矩形也检查scene version。新增data-interaction-ready仅在stage绑定后出现，data-map-image=ready改为实际Image.onload后出现，E2E等待语义就绪而非睡眠。
+- Fog已有权威版本的本地草稿在背景读期间保持可编辑，save仍等待最新读、pending/uncertain命令仍冻结全部冲突编辑。新草稿保留最初expectedVersion，后台新版本不会覆盖。**23:18:48 GREEN**：两文件28项通过。
+- 追加安全清理边界：原带pending POST的401/403项本已锁定；**23:22:27 RED**新无pending命令的旧403检查发现手势按钮仍enabled。deny现在清version/dirty并由edit显式检查active，独立作者组件也立即锁定本地操作，迟到回调不能写草稿。**23:22:42 GREEN**：两文件29项通过。
+- **23:19:47**全量156项和build通过；**23:20实际production preview**新3条通过(8.8秒)，native pointer按住期间由真实HTTP刷新安全图后再松开仍正确完成drag/reveal。协调者随后完整10条production preview通过(27.4秒)。这些为修复后的本地证据，不替代远端Checks。
+- 为保留每条60秒/零retry并降低CI累计动作成本，将原新前两条分别拆成独立movement、measurement/pan/zoom、UI reveal、UI cover四条；加原fallback后为新5条、整套12条。所有旧业务断言保留，原7条文件不改。cover只把已单独UI验收的揭露前置放入真实CSRF HTTP命令；没有伪造会话或响应。drag、reveal、cover都实际按住native pointer穿插权威读，测距两点间也穿插权威读；不以延长timeout或增加retry通过。
+- **23:24:04最终GREEN**：全量`npm test` **14文件、157项通过**（保留旧112）；TypeScript/Vite build通过，主chunk约585.14kB提示保留。**23:24–25真实production preview GREEN**：`maps.spec.ts`新5条全部通过(11.0秒)，每条约1.6–1.9秒。协调者负责完整12条和新SHA标准Compose/重启/Checks记录。P02e及整个P02依然未完成，不以候选旧SHA或局部绿灯宣称交付验收完成。
