@@ -11,9 +11,12 @@ export function MapCanvas(props: Props) {
   const [ready, setReady] = useState(0), [error, setError] = useState(''), [mode, setMode] = useState<Tool>('move'), [scale, setScale] = useState(1), [measurement, setMeasurement] = useState<string>(''), [interactionScope, setInteractionScope] = useState(''), [loadedUrl, setLoadedUrl] = useState('');
   const scope = `${props.scene.campaignId}/${props.scene.id}/${props.scene.width}/${props.scene.height}/${props.scene.gridSize}`;
   current.current = props; tool.current = mode;
+  // No animations run on this tabletop. Paint only mutations; image invalidation
+  // must paint synchronously so an idle canvas cannot retain revoked pixels.
+  function paint() { renderer.current?.render(); }
   useEffect(() => {
     const app = new Application(); let disposed = false, initialized = false;
-    void app.init({ width: 1152, height: 768, backgroundColor: 0x141e27, antialias: true, resolution: Math.min(window.devicePixelRatio || 1, 2), autoDensity: true }).then(() => {
+    void app.init({ width: 1152, height: 768, backgroundColor: 0x141e27, antialias: true, resolution: Math.min(window.devicePixelRatio || 1, 2), autoDensity: true, autoStart: false }).then(() => {
       initialized = true;
       if (disposed) { app.destroy(true, { children: true }); return; }
       renderer.current = app; host.current?.appendChild(app.canvas); setReady(n => n + 1);
@@ -27,7 +30,7 @@ export function MapCanvas(props: Props) {
     app.renderer.resize(width, height); app.canvas.style.width = '100%'; app.canvas.style.height = 'auto';
     const layer = new Container(), backdrop = new Graphics().rect(0, 0, width, height).fill(0x18232c), grid = new Graphics(), overlay = new Graphics(), draft = new Graphics(), unitsLayer = new Container();
     layer.addChild(backdrop); app.stage.addChild(layer);
-    function applyView() { const v = viewport.current; layer.position.set(v.x, v.y); layer.scale.set(v.scale); setScale(v.scale); }
+    function applyView() { const v = viewport.current; layer.position.set(v.x, v.y); layer.scale.set(v.scale); setScale(v.scale); paint(); }
     applyView(); reset.current = () => { viewport.current = { x: 0, y: 0, scale: 1 }; applyView(); setMeasurement(''); resetInteraction.current(); };
     for (let x = 0; x <= scene.width; x++) grid.moveTo(x * cell, 0).lineTo(x * cell, height);
     for (let y = 0; y <= scene.height; y++) grid.moveTo(0, y * cell).lineTo(width, y * cell);
@@ -61,12 +64,14 @@ export function MapCanvas(props: Props) {
       overlay.clear();
       if (tool.current === 'move' && g.tokenId === current.current.selected && !current.current.disabled) units.get(g.tokenId!)?.position.set((c.x + 0.5) * cell, (c.y + 0.5) * cell);
       if ((tool.current === 'reveal' || tool.current === 'cover') && !current.current.fogLocked) overlay.rect(Math.min(c.x, g.start.x) * cell, Math.min(c.y, g.start.y) * cell, (Math.abs(c.x - g.start.x) + 1) * cell, (Math.abs(c.y - g.start.y) + 1) * cell).stroke({ color: tool.current === 'reveal' ? 0x65c997 : 0xf0b09a, width: 3 });
+      paint();
     };
     const up = (event: import('pixi.js').FederatedPointerEvent) => {
       if (!matchesCurrent()) { cancel(); return; } const g = gesture; gesture = undefined; if (!g) return;
       try { app.canvas.releasePointerCapture(event.pointerId); } catch { /* Already released. */ }
       const c = snapCell(point(event), cell, scene.width, scene.height);
       for (const t of current.current.scene.tokens) units.get(t.id)?.position.set((t.x + 0.5) * cell, (t.y + 0.5) * cell);
+      paint();
       if (!c || g.pan) return;
       if (tool.current === 'measure') {
         if (!measureStart) { measureStart = c; setMeasurement(`起点 (${c.x}, ${c.y})，请选择终点`); }
@@ -76,8 +81,9 @@ export function MapCanvas(props: Props) {
         if (g.tokenId && (!g.moved || g.tokenId !== current.current.selected)) current.current.onSelect(g.tokenId);
         else current.current.onMove(c.x, c.y);
       }
+      paint();
     };
-    const cancel = () => { gesture = undefined; measureStart = undefined; overlay.clear(); for (const t of current.current.scene.tokens) units.get(t.id)?.position.set((t.x + 0.5) * cell, (t.y + 0.5) * cell); };
+    const cancel = () => { gesture = undefined; measureStart = undefined; overlay.clear(); for (const t of current.current.scene.tokens) units.get(t.id)?.position.set((t.x + 0.5) * cell, (t.y + 0.5) * cell); paint(); };
     resetInteraction.current = cancel;
     drawing.current = { layer, unitsLayer, draft, units, checkGesture: () => { if (!matchesCurrent()) cancel(); } };
     const wheel = (event: WheelEvent) => {
@@ -91,6 +97,7 @@ export function MapCanvas(props: Props) {
       drawing.current = undefined; cancel();
       app.canvas.removeEventListener('wheel', wheel); app.stage.off('pointerdown', down).off('globalpointermove', move).off('pointerup', up).off('pointerupoutside', up).off('pointercancel', cancel);
       if (!layer.destroyed) { layer.parent?.removeChild(layer); layer.destroy({ children: true }); }
+      paint();
     };
   }, [scope, ready]);
   // Safe image resources have their own lifetime. Refreshing pixels never removes
@@ -103,11 +110,11 @@ export function MapCanvas(props: Props) {
       if (disposed) return;
       texture = new Texture({ source: new ImageSource({ resource: image, scaleMode: 'nearest' }) });
       sprite = new Sprite(texture); sprite.width = props.scene.width * props.scene.gridSize; sprite.height = props.scene.height * props.scene.gridSize;
-      d.layer.addChildAt(sprite, 1); setLoadedUrl(url);
+      d.layer.addChildAt(sprite, 1); paint(); setLoadedUrl(url);
     };
     image.onerror = () => { if (!disposed) setError('安全地图图片读取失败，请刷新场景。'); };
     image.src = url;
-    return () => { disposed = true; image.onload = null; image.onerror = null; image.src = ''; if (sprite && !sprite.destroyed) { sprite.parent?.removeChild(sprite); sprite.destroy(); } texture?.destroy(true); };
+    return () => { disposed = true; image.onload = null; image.onerror = null; image.src = ''; if (sprite && !sprite.destroyed) { sprite.parent?.removeChild(sprite); sprite.destroy(); } texture?.destroy(true); paint(); };
   }, [props.mapUrl, scope, ready]);
   useLayoutEffect(() => {
     const d = drawing.current; if (!d) return; d.checkGesture();
@@ -119,11 +126,13 @@ export function MapCanvas(props: Props) {
       const initial = new Text({ text: token.name.slice(0, 1), style: { fontFamily: 'sans-serif', fontSize: cell * 0.35, fill: 0x111a21, fontWeight: 'bold' } }); initial.anchor.set(0.5);
       unit.addChild(marker, initial); d.unitsLayer.addChild(unit); d.units.set(token.id, unit);
     }
+    paint();
   }, [props.scene, props.selected, scope, ready]);
   useLayoutEffect(() => {
     const d = drawing.current; if (!d) return; d.draft.clear(); const cell = props.scene.gridSize;
     for (const c of props.revealed ?? []) d.draft.rect(c.x * cell, c.y * cell, cell, cell);
     d.draft.fill({ color: 0x65c997, alpha: 0.12 });
+    paint();
   }, [props.revealed, scope, ready]);
   useLayoutEffect(() => { viewport.current = { x: 0, y: 0, scale: 1 }; reset.current(); setMeasurement(''); }, [props.scene.id]);
   const tools: [Tool, string][] = [['move', '选择与移动'], ['pan', '平移地图'], ['measure', '两点测距'], ...(props.onRectangle ? [['reveal', '矩形揭露'], ['cover', '矩形遮盖']] as [Tool, string][] : [])];

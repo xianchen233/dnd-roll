@@ -1,6 +1,6 @@
 # 继续工作的入口
 
-更新：2026-10-19（Asia/Shanghai）。最新分支、HEAD 和工作区以 `git status --short --branch` / `git log -5 --oneline` 为准。当前沿用 `feat/accounts-and-invitations` 和 [草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，未合并、未发布。
+更新：2026-10-20（Asia/Shanghai）。最新分支、HEAD 和工作区以 `git status --short --branch` / `git log -5 --oneline` 为准。当前沿用 `feat/accounts-and-invitations` 和 [草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，未合并、未发布。
 
 ## 当前入口：P02d 本地完成，等待当前提交 CI
 
@@ -11,19 +11,20 @@ PR39143474706 均 frontend/backend/browser success 后才实施 P02d。先写
 地图默认全遮盖；换图、校准或拆离原子清 fog，单位隐藏独立。旧公开像素无法撤回。
 派生 PNG 重新编码、显式内存流、无磁盘/HTTP 派生缓存，URL 绑定当前场景和版本。
 
-本地最终 **61 unit + 60 真实 PG/HTTP/WS/迁移、157 前端测试/构建、31 HTTP 契约、
-13 真实 Chrome 生产构建（31.7s）**通过。原全部测试保留，旧 7 E2E 未改；14 张 V5 旧表
+本地最终 **61 unit + 60 真实 PG/HTTP/WS/迁移、166 前端测试/构建、31 HTTP 契约、
+13 真实 Chrome 生产构建（30.3s）**通过。原全部测试保留，旧 7 E2E 未改；14 张 V5 旧表
 全部列/行与五个 checksum 自然升级一致。Java+PG 实际停止/同库同素材根启动，
 新会话地图/素材/棋子三个 verify 全通过。详见 verification.md 与两端 TDD.md。
 
-下一可执行步骤：提交推送本地 P02d 变更后，按该 SHA 检查草稿 PR #1 的 push/PR
-全部 Checks，尤其标准 Compose 的 13 流程及三类真实容器重启。首个候选 d593092
-两组前后端通过、browser 8过2失败；已用实际RED/GREEN修复Pixi刷新吞手势/测距及
-fog后台读取吞草稿编辑，再按独立场景拆分新增流程。完整失败与恢复见verification。
-bbdd54b 的两组前后端仍通过，browser仅测距/视图组合超时（11过1失败），最终只拆
-新增E2E为6个独立场景，production未变；13条本地生产复验通过，等待新SHA远端。
-远端尚未运行的检查
-不标通过；失败须保留证据并修复。通过后更新当前交接，才进入 P02e 的独立整体验收。
+下一可执行步骤：提交推送本地修复后，按新 SHA 检查草稿 PR #1 的 push/PR 全部
+Checks，尤其标准 Compose 的 13 流程及三类真实容器重启。d593092 的刷新吞手势/
+草稿编辑问题已有实际RED/GREEN；bbdd54b组合流程超时已拆独立场景。88afda9两组
+前后端通过、browser均12过1失败：push旧素材切图没有激活POST，PR平移/缩放断言
+全部通过但最后截图耗尽总时限；两份trace已取得。场景preflight被背景读取静默吞掉
+有4项实际RED，修复保留原版本、授权拒绝及409。静态Pixi改按需绘制，安全清图同步
+重绘，有2项实际RED/GREEN；测距/视图用例仅打开所需玩家UI，其他仍双端。166项/
+构建及完整13条本地复验通过；旧7文件不改，60秒/条、零retry。详见verification和
+frontend/TDD。远端待执行的检查不标通过；通过后更新交接，才进入 P02e 独立整体验收。
 **P02e、整个 P02 及后续工作包仍未完成**；不合并、不发布。
 
 本次外置工具：`P02dSnapshot.java`、`compare-p02d-snapshots.mjs`、

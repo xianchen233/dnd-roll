@@ -28,7 +28,7 @@ function sourcePng() {
   const pixels = Buffer.alloc(96 * 289); for (let y = 0; y < 96; y++) for (let x = 0; x < 96; x++) { const at = y * 289 + 1 + x * 3; pixels[at] = x < 48 && y < 48 ? 30 : 221; pixels[at + 1] = x < 48 && y < 48 ? 170 : 22; pixels[at + 2] = 44; }
   return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', header), chunk('tEXt', Buffer.from('private\0SECRET_MAP_METADATA')), chunk('IDAT', deflateSync(pixels)), chunk('IEND', Buffer.alloc(0))]);
 }
-async function prepare(s: Sessions) {
+async function prepare(s: Sessions, { dmUI = true } = {}) {
   const dmUsername = required('E2E_DM_USERNAME'), playerUsername = required('E2E_PLAYER_USERNAME');
   expect((await post(s.dmContext.request, '/api/auth/login', { username: dmUsername, password: required('E2E_DM_PASSWORD') })).ok()).toBeTruthy();
   expect((await post(s.playerContext.request, '/api/auth/login', { username: playerUsername, password: required('E2E_PLAYER_PASSWORD') })).ok()).toBeTruthy();
@@ -47,11 +47,20 @@ async function prepare(s: Sessions) {
   const publicResponse = await post(s.dmContext.request, tokenEndpoint, { requestId: randomUUID(), expectedVersion: current.version, name: publicName, x: 2, y: 3, hidden: false, controllers: [dmUsername, playerUsername].sort() }); expect(publicResponse.ok()).toBeTruthy(); const token = (await publicResponse.json()).token;
   current = await (await s.dmContext.request.get(`${endpoint}/scene`)).json();
   expect((await post(s.dmContext.request, tokenEndpoint, { requestId: randomUUID(), expectedVersion: current.version, name: hiddenName, x: 0, y: 0, hidden: true, controllers: [dmUsername] })).ok()).toBeTruthy();
-  await s.dm.goto('/'); await s.player.goto('/'); await expect(s.dm.locator('.topbar-right')).toContainText(dmUsername); await expect(s.player.locator('.topbar-right')).toContainText(playerUsername);
-  await s.dm.getByRole('combobox', { name: '选择战役' }).selectOption(campaignId); await s.player.getByRole('combobox', { name: '选择战役' }).selectOption(campaignId);
-  await expect(s.dm.locator('.connection')).toHaveText('● 实时连接'); await expect(s.player.locator('.connection')).toHaveText('● 实时连接');
-  await expect(s.dm.getByRole('img', { name: '场景网格地图' })).toHaveAttribute('data-interaction-ready', 'ready'); await expect(s.player.getByRole('img', { name: '场景网格地图' })).toHaveAttribute('data-interaction-ready', 'ready');
-  await expect(s.dm.getByRole('img', { name: '场景网格地图' })).toHaveAttribute('data-map-image', 'ready'); await expect(s.player.getByRole('img', { name: '场景网格地图' })).toHaveAttribute('data-map-image', 'ready');
+  // Read-only player interactions need the real DM HTTP setup, but no unused
+  // second Pixi renderer. Dual-client editing/sync remains exercised below.
+  if (dmUI) {
+    await s.dm.goto('/'); await expect(s.dm.locator('.topbar-right')).toContainText(dmUsername);
+    await s.dm.getByRole('combobox', { name: '选择战役' }).selectOption(campaignId);
+    await expect(s.dm.locator('.connection')).toHaveText('● 实时连接');
+    await expect(s.dm.getByRole('img', { name: '场景网格地图' })).toHaveAttribute('data-interaction-ready', 'ready');
+    await expect(s.dm.getByRole('img', { name: '场景网格地图' })).toHaveAttribute('data-map-image', 'ready');
+  }
+  await s.player.goto('/'); await expect(s.player.locator('.topbar-right')).toContainText(playerUsername);
+  await s.player.getByRole('combobox', { name: '选择战役' }).selectOption(campaignId);
+  await expect(s.player.locator('.connection')).toHaveText('● 实时连接');
+  await expect(s.player.getByRole('img', { name: '场景网格地图' })).toHaveAttribute('data-interaction-ready', 'ready');
+  await expect(s.player.getByRole('img', { name: '场景网格地图' })).toHaveAttribute('data-map-image', 'ready');
   await expect(s.player.getByRole('button', { name: new RegExp(publicName) })).toBeEnabled(); await expect(s.player.getByText(hiddenName, { exact: true })).toHaveCount(0);
   return { campaignId, endpoint, sceneId: scene.id as string, assetId, bytes, token, publicName, hiddenName, fogPath: `${endpoint}/scenes/${scene.id}/fog` };
 }
@@ -86,7 +95,7 @@ test('real player Pixi selects, snaps a drag through a same-scene refresh and cl
 });
 
 test('real player Pixi keeps geometric measurement through refresh and resets partial pairs', async ({ sessions: s }, info) => {
-  const { endpoint, hiddenName } = await prepare(s);
+  const { endpoint, hiddenName } = await prepare(s, { dmUI: false });
   await click(s.player, '两点测距'); await cell(s.player, 1, 1);
   const read = s.player.waitForResponse(r => new URL(r.url()).pathname === `${endpoint}/scene` && r.request().method() === 'GET');
   await s.player.getByRole('button', { name: '↻ 刷新场景', exact: true }).evaluate(button => (button as HTMLButtonElement).click()); await read;
@@ -98,7 +107,7 @@ test('real player Pixi keeps geometric measurement through refresh and resets pa
 });
 
 test('real player Pixi pans the map, zooms at the cursor and resets the viewport', async ({ sessions: s }, info) => {
-  const { endpoint, hiddenName } = await prepare(s);
+  const { endpoint, hiddenName } = await prepare(s, { dmUI: false });
   await click(s.player, '平移地图'); const before = await s.player.locator('.map-surface canvas').screenshot(); await drag(s.player, 0, 0, 1, 1); const after = await s.player.locator('.map-surface canvas').screenshot(); expect(after.equals(before)).toBe(false);
   const center = await position(s.player, 8, 6); await s.player.mouse.move(center.x, center.y); await s.player.mouse.wheel(0, -100); await expect(s.player.getByLabel('地图缩放')).toHaveText('120%'); await click(s.player, '重置视图'); await expect(s.player.getByLabel('地图缩放')).toHaveText('100%');
   expect(JSON.stringify(await (await s.playerContext.request.get(`${endpoint}/scene`)).json())).not.toContain(hiddenName);

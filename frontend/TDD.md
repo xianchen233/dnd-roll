@@ -201,3 +201,18 @@ P01 浏览器脚本 `e2e/accounts.spec.ts` 使用现有 DM/PLAYER 环境账号�
 - 本次仅重新划分新增`maps.spec.ts`测试边界：把测距及半途reset，与pan/cursor zoom/viewport reset拆成两个独立真实战役用例。完整保留25.00距离、点间真实HTTP刷新、重置后新起点、pan截图变化、120%滚轮缩放、100%重置、玩家快照无隐藏token和页面错误为空的全部断言。各条仍60秒、0 retry，原7条文件与全部production源码不改。没有为环境速度增加业务timeout、重试、硬等待或删减断言。
 - **2026-10-19 23:49 GREEN**：`npx playwright test --list`确认**13条/6文件**；协调者启动同一真实后端和production preview后，安全runner执行`maps.spec.ts` **6 passed (13.8秒)**。movement 2.2秒、measurement 1.4秒、pan/zoom 1.5秒、reveal 1.8秒、cover 2.3秒、fallback 2.2秒。每条独立团/真实会话与HTTP/STOMP，图片与交互就绪检查保持。此次无生产改动，不重复构建或组件测试；既有157项/生产build结果保留，根完整13条与新SHA CI仍由协调者独立复验，不能用局部六项代替。
 - README同步为新6条、完整13条；P02e与整个P02继续未完成，未合并或发布。
+
+### P02d 88afda9：旧素材验收暴露场景命令 preflight 竞争
+
+- 2026-10-20读取push run39281100563完整browser日志：新增6条均通过，旧`assets.spec.ts:92`切换回原场景后找不到`First scene`标题，10秒可见性断言失败；该条共42.7秒，并未达到60秒总时限。整套12通过、1失败(6.8分钟)。没有修改旧E2E来绕过失败。随后取得artifact12202015061的trace：切图click62845–64789ms，列表GET64381ms、背景列表GET64779ms均200；直到标题等待失败75085ms没有激活POST，76434ms仅fixture清理才发出POST200。直接证据与下述确定复现路径一致，不声称trace能观察JS回调顺序或证明唯一根因。
+- **00:11:34实际RED**：新增`scene-management-race.test.tsx`，使用deferred让新命令preflight读与revision背景读重叠。create/activate各自按preflight先完成或背景先完成两种顺序执行，共4项业务断言失败：预期一次POST且expectedVersion=8，实际0次。旧load用readId同时裁剪UI和调用者返回值，背景读递增readId就使命令自己的成功读取变成undefined，run静默return。并发401/403胜出的2项保护测试原本通过。
+- 最小修复仍仅最新readId更新显示的scene列表，但成功读向命令调用者返回其自身结果。命令保留自己preflight的campaignVersion=8，不因背景版本9而换用新版本；陈旧时由后端明确返回409。API/campaign owner和active检查隔离旧作用域、卸载及任何授权拒绝，不能用保留preflight为理由绕过拒绝。此轮不扩大修改其他组件。场景面板过时的“遮盖后续提供”提示同步改为“地图遮盖在上方地图区编辑并保存”。
+- **00:13:41 GREEN**：新race6项与既有scenes18项共24项通过。随后追加第7项保护测试，模拟后端对preflight版本8明确409，断言只POST一次、不挪用背景9、不盲重试，界面提示冲突并读取当前列表。
+- **00:14:14最终GREEN**：全量`npm test` **15文件、164项通过**，TypeScript/Vite build通过（主chunk约585.23kB提示保留）。原所有测试保留，旧7条E2E文件与新增maps6条都未修改。真实production preview单独执行原样`assets.spec.ts` **1 passed (4.5秒)**，业务流程3.6秒。根完整13条和新SHA push/PR Checks由协调者独立复验；不将本地单项通过或旧SHA绿灯当作交付证据。P02e及整个P02继续未完成，未合并/发布。
+
+### P02d 静态画布按需绘制（2026-10-20）
+
+- 88afda9的PR39281105409完整browser为12通过1失败(10.5m)，唯一pan/zoom达到60秒。取回artifact12201871918：pan截图变化比较、120%缩放、100%重置均已通过；最后缩放expect265609ms结束，snapshot GET265900ms200，最后screenshot265924–269052ms，总预算耗尽于截图。不能描述成平移/缩放业务断言失败。
+- 测距及视图用例仍用真实DM登录/建团/上传/地图/棋子HTTP准备，仅不启动未使用的DM UI；其他四条地图用例仍双端，玩家真实会话/WS/图片/交互ready不变。完整13条本地生产preview通过32.8s。全部业务断言、60秒/条、0 retry及旧7文件保持。
+- 本地已安装Pixi的TickerPlugin源码确认默认autoStart=true；当前静态地图没有动画却持续绘制。**00:38:10实际RED**：两项新组件断言失败，未禁用ticker、图片onload没有显式render。改为autoStart=false并在图片/单位/草稿/指针预览/测距/视图改变时绘制；失效销毁图片后同步render，不能在空闲画布留下旧像素。**00:38:35 GREEN**：Pixi16项通过，既有14项全部保留。
+- 随后全量**15文件166项通过**，TypeScript/Vite构建通过(主chunk585.32kB提示保留)。生产preview完整**13 passed(30.3s)**，包括真实pan截图差异、矩形手势与刷新、秘密像素、旧URL和失败刷新清图；31操作契约检查通过。后端不变，既有61unit+60IT和本机三类真实重启证据保留；新SHA远端完整Checks仍独立验收。P02e和整个P02尚未完成。

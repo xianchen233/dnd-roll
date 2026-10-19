@@ -19,7 +19,7 @@ vi.mock('pixi.js', () => {
   }
   class Graphics extends Container { rect() { return this; } fill() { return this; } stroke() { return this; } moveTo() { return this; } lineTo() { return this; } circle() { return this; } clear() { return this; } }
   class Application {
-    stage = new Container(); canvas = document.createElement('canvas'); renderer = { resize: vi.fn() }; init = vi.fn().mockResolvedValue(undefined); destroy = vi.fn();
+    stage = new Container(); canvas = document.createElement('canvas'); renderer = { resize: vi.fn() }; init = vi.fn().mockResolvedValue(undefined); destroy = vi.fn(); render = vi.fn();
     constructor() { fake.apps.push(this); }
   }
   class Texture { destroy = vi.fn(); constructor(_p: unknown) { fake.textures.push(this); } }
@@ -31,6 +31,21 @@ function point(app: any, x: number, y: number, event = 'pointerup') { app.stage.
 function cell(app: any, x: number, y: number) { act(() => { point(app, x, y, 'pointerdown'); point(app, x, y); }); }
 afterEach(() => { fake.apps.length = 0; fake.textures.length = 0; vi.unstubAllGlobals(); });
 describe('native Pixi interaction lifecycle', () => {
+  it('does not run a continuous ticker for the static tabletop and paints pointer changes explicitly', async () => {
+    const { app } = await mount(); expect(app.init).toHaveBeenCalledWith(expect.objectContaining({ autoStart: false }));
+    expect(app.render).toHaveBeenCalled(); app.render.mockClear();
+    act(() => { point(app, 2, 3, 'pointerdown'); point(app, 4, 5, 'globalpointermove'); }); expect(app.render).toHaveBeenCalled();
+    app.render.mockClear(); act(() => { point(app, 4, 5); }); expect(app.render).toHaveBeenCalled();
+    app.render.mockClear(); fireEvent.click(screen.getByRole('button', { name: '平移地图' })); expect(app.render).toHaveBeenCalled();
+    app.render.mockClear(); fireEvent.wheel(app.canvas, { clientX: 100, clientY: 100, deltaY: -100 }); expect(app.render).toHaveBeenCalled();
+  });
+  it('paints both decoded image delivery and synchronous removal without waiting for a ticker', async () => {
+    const images: any[] = []; vi.stubGlobal('Image', class { onload?: () => void; onerror?: () => void; src = ''; constructor() { images.push(this); } });
+    const { app, p, view } = await mount({ mapUrl: 'blob:old' }); app.render.mockClear();
+    act(() => images[0].onload()); expect(app.render).toHaveBeenCalled(); app.render.mockClear();
+    view.rerender(<MapCanvas {...p} mapUrl={undefined} />); expect(app.render).toHaveBeenCalled();
+    expect(fake.textures[0].destroy).toHaveBeenCalledWith(true);
+  });
   it.each(['snapshot', 'image'] as const)('keeps a selected drag across an unchanged same-scene %s refresh while clearing old image pixels', async refresh => {
     const { app, p, view } = await mount({ mapUrl: 'blob:old' });
     act(() => { point(app, 2, 3, 'pointerdown'); point(app, 3, 4, 'globalpointermove'); });

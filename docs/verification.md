@@ -124,6 +124,56 @@ API 曾长时间停留 queued/in_progress 并间歇 502/timeout，随后读取�
 复验完整 **13 passed（31.7s）**。原七条/生产代码/全部业务断言/时限/retry 均未变。
 本次纯测试拆分不重跑未变的157组件与后端；新SHA远端必须重新确认。
 
+### 88afda9 push：新六流程通过，旧素材切图并发失败
+
+2026-10-20 取回 `88afda98b477df04b713a78ad22b457217aef0d4` 的
+[push39281100563](https://github.com/xianchen233/dnd-roll/actions/runs/39281100563)
+完整 browser 日志：**12 passed、1 failed（6.8m）**。六条新增地图流程及其他旧流程
+通过，唯一失败为原 assets.spec.ts:92：点击切回原场景后 10 秒内无原场景标题，
+不是总时限。此失败不通过修改旧测试或放宽断言关闭；容器重启仍未执行。
+
+审阅 SceneManagement 的新命令 preflight：`load()` 只返回最新 readId 的数据，
+若背景列表读覆盖本次 preflight，会令 run 在无 POST/无错误提示时 return。先用
+deferred 单元场景实际复现，再修复；这是待验证的独立并发路径，未取得 trace 前
+不将其声称为本次 CI 唯一直接原因。PR 日志暂遇 TLS reset/timeout，结果尚待核实。
+
+2026-10-20 00:11:34 新 preflight 竞态测试实际 RED：create/activate 与两种读取
+完成顺序共四项期望一次 POST、实际 0 次，重叠 401/403 的两项保护原本通过。
+00:13:41 聚焦 GREEN，另补服务端 409 不自动换版本/重试的保护；00:14:14 最终
+**15 文件 164 项与生产构建通过**（585.23kB）。旧 assets.spec.ts 原样单项
+**1 passed（4.5s）**；协调者完整生产构建复验 **13 passed（32.3s）**。
+命令获取自己的成功 preflight 版本，UI 仅采用最新 readId；作用域与授权拒绝仍
+胜出。不修改旧七条 E2E、不放宽断言、超时或 retry。
+
+随后经 GitHub 连接器取得 artifact12202015061 的下载文件，保存/解压到外层
+`.tools/p02d-assets-ci`、`p02d-assets-trace`。实际 trace：切图 click 为
+62845–64789ms，其间列表 GET 在 64381ms、后台列表 GET 在 64779ms；直到
+原标题等待失败（75085ms）没有激活 POST。76434ms 才由 fixture 清理发出激活
+POST 且返回200。HTTP列表读均200/约25–35ms，非网络10秒超时。直接证据确认
+点击没有生成命令、并有并发列表读，与组件 RED 复现的路径一致；不把无法观察的
+JS 回调执行顺序或其他所有可能原因描述成已被 trace 唯一证明。
+
+### 88afda9 PR：视图断言已完成，末尾截图耗尽总时限
+
+PR39281105409完整browser日志为 **12 passed、1 failed（10.5m）**，唯一失败为
+平移/缩放测试60秒总时限；前后端success。artifact12201871918取得并解压至外置
+`.tools/p02d-pan-trace`，trace实际完成pan截图比较、120%缩放、100%重置及玩家
+snapshot检查：最后缩放expect265609ms结束，snapshot GET265900ms为200，最后
+页面screenshot265924–269052ms；总测试预算在此耗尽。不是新的像素/手势断言失败。
+
+测距/视图用例保留真实DM HTTP准备及玩家UI，免开未使用的DM图形页面；其他用例
+仍双端，旧七文件与全部业务断言不改。单此优化后完整生产preview **13 passed
+（32.8s）**。进一步检查实际安装的Pixi TickerPlugin默认autoStart=true，静态桌面
+持续渲染，无动画需求；改为显式按需绘制，避免空闲GPU开销，仍需新SHA CI验证影响。
+
+**00:38:10 RED**：新增两项聚焦测试实际失败：初始化未禁用ticker，图片到达未显式
+render。**00:38:35 GREEN**：16项Pixi组件测试通过；初始化autoStart=false，图片、
+棋子、fog草稿、拖动预览、测距和视图变化显式render，图片失效销毁后同步重绘，不能
+因关闭ticker而留住旧像素。随后 **15文件166项全量及TypeScript/Vite构建通过**，
+主chunk585.32kB提示保留。真实Chrome生产preview完整 **13 passed（30.3s）**，
+含pan图像变化、手势刷新、UI揭露/遮盖、失败读取清图与所有旧流程；31契约检查通过。
+这些是本地证据；当前修复SHA的远端Compose及三类容器重启仍必须重新核验。
+
 ## 2026-10-19：P02d续接前的最终基线核验
 
 用户要求将下一阶段交接给下一会话，本次不实施P02d。交接前Git HEAD为

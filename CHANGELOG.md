@@ -55,11 +55,16 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Changed
 
+- Render the static Pixi tabletop only when its image, units, drafts or viewport
+  change. Immediately repaint image removal without waiting for a frame ticker.
 - Default Compose setup to a fixed bootstrap account. Keep sample accounts and
   the original playable campaign available through the optional demo profile.
 
 ### Fixed
 
+- Keep scene create/switch commands from disappearing when a background list read
+  supersedes their preflight. Preserve the command's own expected version and
+  report server conflicts explicitly, while newer reads own the displayed list.
 - Preserve valid Pixi gestures across same-scene snapshot and safe-image refreshes
   while immediately discarding obsolete pixels. Cancel gestures when scene,
   selection, token version or control changes. Keep loaded fog drafts editable
