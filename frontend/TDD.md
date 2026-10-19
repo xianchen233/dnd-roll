@@ -166,3 +166,18 @@ P01 浏览器脚本 `e2e/accounts.spec.ts` 使用现有 DM/PLAYER 环境账号�
 - 随后只读核对 PR trace833，直接原因得到证实：失败 `uncheck` 在 monotonic 240477.847 ms 通过 enabled/stable 检查，240836 ms 后台 tokens/members 开始读取；241011.149 ms 的 action 快照明确目标 checkbox 所属 FIELDSET 已有 `disabled=""` 且 checkbox checked=true，241183.539 ms 才实际 dispatch click。after 快照 FIELDSET 恢复 enabled，但 checkbox 仍 checked，说明后台重验证跨越实际点击窗口并吞掉动作。同一 after 快照重新插回旧确认横幅，before/action 均没有该横幅，第二项也有直接快照证据。HTTP 本身约 7–13 ms；失败来自浏览器异步渲染/事件派发交错，不是后端响应挂死。两项最小修复与 trace 一致，不增加其他生产改动或放宽 E2E。
 - **23:36 实际浏览器 GREEN**：协调者运行修复后的完整 7 条真实 E2E，**7 项全部通过（24.3 秒）**，日志位于仓库外 `.tools/p02c-browser-controls-fixed.log`。保留真实 check/uncheck 及全部权限/秘密字段/历史回执断言，每条 60 秒、零 retry；原四条回归一并通过。后续统一提交的 push/PR Checks 仍须按新 SHA 核验，旧 push 成功不替代本次修复的远端证据。
 - 协调者23:22统一真实Chrome复验 `npm run test:e2e`：**7通过（23.2秒）**，原四条及三个独立P02c用例全部通过，0 retry。拆分与观察对象修正未修改生产代码；新SHA远端Compose/7浏览器/实际容器重启继续单独核验。
+
+## P02d 安全地图、Pixi 交互与手动遮盖（2026-10-19）
+
+先按 AGENTS 读交接/验收/工作包/设计/实施/CONTEXT 和契约，遵循新 `contracts/map-visibility.md`；前端仅改 frontend/**，Git 与根验收由协调者执行。后端秘密像素的实际服务端 RED/PNG/授权/事务证据由 backend/TDD.md 与根 verification.md 记录，前端不把客户端遮罩当秘密边界。
+
+- **22:17:50 实际 RED**：`npm test -- src/map-api.test.ts` 共3项，2项断言失败：map-view 和绑定 scene/version 的 map-image fetch 都缺少 `cache: no-store`；图片403拒绝项通过。随后实现严格安全只读API（凭据、精确路由/版本、no-store）与独立图像生命周期，**22:22:02 GREEN**：map-api/map-store/map-geometry 合计13项通过。
+- MapStore 在每次失效/重读前同步移除旧URL，撤销每个替换/卸载的对象URL；普通迟到响应按generation隔离。Tabletop 将手动刷新、真实失效、重连、周期读及作者确认统一为先清图再读。2项组件检查涵盖手动和共享实时回调，即使scene读取失败仍保持空图，重新读成功才恢复；公开单位继续独立显示，玩家无原图/DM fog请求。
+- **22:25:53 实际 RED**：新增同campaign切scene时旧图片403测试，期望onDenied调用一次，实际0次；新的scene图片仍可显示。**22:26:17 GREEN**：将授权拒绝owner改为campaign生命周期，scene仅隔离普通成功/409/404；同campaign任一迟到401/403清掉最新图和整个桌面，不同campaign旧拒绝仍隔离。7项map生命周期检查通过，含旧图销毁、迟到下载、前campaign隔离、map-view版本不匹配与image409刷新。
+- Fog作者组件13项通过：正反矩形统一canonical集合、坐标fallback、显式save前只改本地草稿、原scene version跨背景更新保留、transport/503精确同body/requestId重试并冻结冲突编辑、409权威重读、receipt历史结果不能覆盖当前状态、两种最新post-ack读完成顺序、最新读失败/旧成功不能误报同步、无额外POST恢复、pre-ack读不能确认、任一旧401/403清草稿并隔离迟到POST、跨scene/campaign卸载隔离。单位隐藏字段从未混入fog请求。
+- **22:28:24 实际 RED**：2项原生Pixi组件断言失败：首次测距起点后重置/切工具，下一次点击误用旧起点，实际分别显示`25.00 距离单位`/`5.00 格`，应开始新起点。统一resetInteraction清gesture/measureStart/overlay后，**22:29:10 GREEN**：2项通过，随后扩至7项全部通过，含selected drag只预览/整数吸附、松开才提交并恢复权威位置、click移动、pending禁止移动、pointer pan、cursor zoom/reset、DM矩形只回调草稿、旧Image.onload隔离及替换/卸载texture/source销毁。
+- Pixi对每张安全blob创建独立ImageSource/Texture，nearest采样，不进入全局Assets/URL缓存；layout cleanup在新状态绘制前移除旧层并destroy(true)纹理源。迟到Image.onload检查disposed。原有图片校准表单仍由DM备团区完成，游玩不获取原图。
+- 保留全部旧112测试和既有7条E2E原样；旧App/accounts/scenes的API替身仅补正常map-view/fog只读接口，不放宽原断言。初次新增测试类型接入错误（可选scene弱类型、ByRoleOptions不支持exact）已修复，环境中`python`不可用改用现有Node写文件；这些不计行为RED。Tabletop测试首次复用同一对象导致React effect未触发，改为像真实JSON读取一样返回新快照对象，亦不计业务RED。
+- **22:33:49–22:33:58 真实 Chrome GREEN**：协调者启动Vite+安全后端后，外置安全runner执行`npm run test:e2e -- maps.spec.ts`，**3 passed (8.7s)**，60秒/条、零retry。新增三条均独立真实团/CSRF会话：①玩家Pixi选择/吸附drag/click移动、欧氏测距×5、半途reset、pan/zoom/reset；②DM矩形揭露/遮盖显式save，浏览器实际解码安全PNG比较公开绿像素和秘密黑像素，原图/猜ID403、历史URL409、条件/Range200且no-store、隐藏token独立和STOMP无秘密；③坐标fallback实际cover后故意中断玩家snapshot网络，失效立刻清旧图、revoke对象URL且旧blob fetch失败，恢复读取后黑像素正确。未伪造HTTP结果/STOMP或注入session。
+- **22:34:01 最终本地 GREEN**：`npm test` **14文件、148项全部通过**（旧112+新36），`npm run build` TypeScript/Vite通过，主chunk约583.57kB提示保留。新E2E三项本地通过；完整10条、实际重启及新SHA远端Checks由协调者统一记录，不能用此局部结果代替。
+- 新截图在忽略目录：`test-results/maps-real-player-Pixi-supp-47286-t-pan-and-cursor-zoom-reset/{dm-pixi-tabletop,player-pixi-interaction}.png`，`maps-DM-Pixi-rectangle-rev-2642d-e-conditions-stay-protected/{dm-manual-fog,player-covered-safe-map}.png`，以及`maps-coordinate-fog-fallba-97ba0-d-recovers-with-covered-PNG/player-recovered-covered-map.png`。P02e、整个P02及后续工作包仍未完成；未合并/发布。

@@ -2,7 +2,32 @@
 
 更新：2026-10-19（Asia/Shanghai）。最新分支、HEAD 和工作区以 `git status --short --branch` / `git log -5 --oneline` 为准。当前沿用 `feat/accounts-and-invitations` 和 [草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，未合并、未发布。
 
-## 交给下一会话：P02d
+## 当前入口：P02d 本地完成，等待当前提交 CI
+
+2026-10-19 本次从 `0bacdab` 开工，干净且与 origin 一致；其 push39143471892 /
+PR39143474706 均 frontend/backend/browser success 后才实施 P02d。先写
+`contracts/map-visibility.md`，实际缺路由/缓存头 RED，额外注入不安全全图输出使
+真实 HTTP 秘密像素断言失败；恢复后实现服务器安全 PNG、手动 fog、V6 和原生 Pixi。
+地图默认全遮盖；换图、校准或拆离原子清 fog，单位隐藏独立。旧公开像素无法撤回。
+派生 PNG 重新编码、显式内存流、无磁盘/HTTP 派生缓存，URL 绑定当前场景和版本。
+
+本地最终 **61 unit + 60 真实 PG/HTTP/WS/迁移、148 前端测试/构建、31 HTTP 契约、
+10 真实 Chrome（31.1s）**通过。原全部测试保留，旧 7 E2E 未改；14 张 V5 旧表
+全部列/行与五个 checksum 自然升级一致。Java+PG 实际停止/同库同素材根启动，
+新会话地图/素材/棋子三个 verify 全通过。详见 verification.md 与两端 TDD.md。
+
+下一可执行步骤：提交推送本地 P02d 变更后，按该 SHA 检查草稿 PR #1 的 push/PR
+全部 Checks，尤其标准 Compose 的 10 流程及三类真实容器重启。远端尚未运行的检查
+不标通过；失败须保留证据并修复。通过后更新当前交接，才进入 P02e 的独立整体验收。
+**P02e、整个 P02 及后续工作包仍未完成**；不合并、不发布。
+
+本次外置工具：`P02dSnapshot.java`、`compare-p02d-snapshots.mjs`、
+`p02d-before-v6.json` / `p02d-after-v6.json`、`run-p02d-browser.ps1`；
+三个新重启证据为 `p02d-map-restart-evidence.json`、`p02d-asset-restart-evidence.json`、
+`p02d-token-restart-evidence.json`。复用此前账号、DB、JDK、Maven、私有素材根；
+仓库新增 `scripts/check-map-restart.mjs`。进程最终状态在结束前再次记录，不能复用旧 PID。
+
+## 原 P02c 交接基线（历史记录）
 
 2026-10-19交接前再次核验：`a3e7f7ba9c2b66349e38df8f2c84ae087c9b60c0`工作区干净、与origin一致；[push39142300219](https://github.com/xianchen233/dnd-roll/actions/runs/39142300219)与[PR39142302856](https://github.com/xianchen233/dnd-roll/actions/runs/39142302856)均completed/success，frontend/backend/browser全绿。这是P02c最终交接HEAD的独立证据，不只引用代码5160c0f。以下本次仅补交接文档；其新HEAD Checks由下一会话开工时独立核对，不能将a3e7f7b绿灯当作新文档SHA结果。
 

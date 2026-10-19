@@ -22,3 +22,7 @@ export interface AuthoredToken { id: string; name: string; x: number; y: number;
 export interface AuthoredTokens { sceneId: string; sceneVersion: number; tokens: AuthoredToken[] }
 export interface TokenCommand extends VersionedCommand { name: string; x: number; y: number; hidden: boolean; controllers: string[] }
 export interface TokenReceipt { sceneId: string; sceneVersion: number; token: AuthoredToken }
+export interface MapView { sceneId: string; sceneVersion: number; map: { distancePerCell: number } | null }
+export interface Cell { x: number; y: number }
+export interface Fog { sceneId: string; sceneVersion: number; revealed: Cell[] }
+export interface FogCommand extends VersionedCommand { revealed: Cell[] }

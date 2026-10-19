@@ -7,3 +7,4 @@
 .token-checkbox input { width: auto; margin: 0; }
 .authored-tokens strong, .authored-tokens small { display: block; }
 .authored-tokens small { color: #8a9ca7; overflow-wrap: anywhere; }
+.map-tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:12px 0}.map-tools button{padding:7px 10px;font-size:12px}.map-tools button[aria-pressed=true]{border-color:#c49d5e;color:#dfc591}.map-tools output{margin-left:auto;color:#c9ad78}.map-measurement{display:block;margin:12px 0;color:#dfc591}.fog-management fieldset{border:1px solid var(--panel-line);margin:14px 0;border-radius:6px}.fog-management{margin:14px 0}.map-surface canvas{user-select:none}

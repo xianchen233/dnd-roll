@@ -1,5 +1,75 @@
 # 阶段验收记录
 
+## P02d 开工核对（2026-10-19）
+
+当前分支 `feat/accounts-and-invitations`，开工 HEAD
+`0bacdab378e18886f78fdcd4199937f17c48ac87`，工作区干净，fetch 后与 origin
+一致。草稿 PR #1 仍 open/draft、base main；按这个 SHA 独立核对
+[push39143471892](https://github.com/xianchen233/dnd-roll/actions/runs/39143471892) 与
+[PR39143474706](https://github.com/xianchen233/dnd-roll/actions/runs/39143474706)，两者
+completed/success，frontend/backend/browser 全部 success。
+
+先写 `contracts/map-visibility.md`：默认全遮盖、服务端重新编码玩家安全 PNG、
+当前 scene/version URL、逐次授权与 no-store、DM 独立 fog 回执和校准重置遮盖；
+再次遮盖不能撤回之前已下载的公开像素。单位隐藏/控制保持独立。按工作包先协调
+契约后分工 backend/frontend/contracts，IT 库串行独占。后续实际 RED/GREEN 另记；
+P02d 实施中，P02e 与整个 P02 未完成。
+
+### P02d 实际 RED 与安全故障注入
+
+- 契约检查 22:19:37 实际 exit 1：缺少 map-view/map-image/GET fog/POST fog
+  四个操作；补齐后 `node scripts/check-contracts.mjs` 31 操作通过，原 27 操作
+  和断言保留。这是聚焦契约检查，不冒充完整 OpenAPI validator。
+- 后端 22:20:21：原 56 unit 通过，真实 `MapVisibilityIT` 两项断言失败；
+  map-view 预期 200 实际 404，匿名地图响应缺约定的 private 标头。缺路由使后续
+  像素断言未执行，此 RED 不声称既有实现已经泄漏图像。22:22:47 首轮 56 unit
+  加两项真实 HTTP/PNG 验收通过，随后继续扩展边界覆盖。
+- 22:27:01 临时故障注入绕过 `revealed` 过滤，真实 HTTP PNG 的遮盖像素断言
+  失败：预期 `0xff000000`，得到源色 `0xff12ab34`。Maven 明确 1 failure、
+  0 errors/skips；`finally` 随即恢复安全实现。用于证明测试能抓住泄漏，故障
+  实现不提交；恢复后必须重新全量构建，不能复用故障前产物。
+- 22:28:34 内存缓存探针实际 RED：启用 ImageIO 默认磁盘缓存并令缓存目录
+  失效，生产 render 经 FileCacheImageInputStream 失败；测试解码器显式走内存，
+  排除测试自身污染。改用显式 MemoryCache 输入/输出流，不修改全局缓存开关。
+  Java 默认缓存行为可查 [JDK 25 ImageIO API](https://docs.oracle.com/en/java/javase/25/docs/api/java.desktop/javax/imageio/ImageIO.html#setUseCache(boolean))。
+- 前端先实际运行新地图 API 测试：三项中两项断言失败，证明 map-view/image
+  尚未设置 `cache: no-store`。后续缓存生命周期、fog 和 Pixi 结果见最终验收；
+  不能把类型错误、环境失败或只列出 E2E 当作行为 RED/GREEN。
+
+### P02d 本地完整验收（2026-10-19）
+
+- 22:31:55 全量 Maven `-Pintegration verify -B -ntp`（同交接外置 JDK25、
+  Maven 和 m2，专用真实 PG）：**61 unit + 60 IT 通过**，0 失败/错误/跳过，
+  原 56 unit + 50 IT 全保留。新增 PNG 全像素/校准/alpha/metadata/内存流 unit，
+  9 项 HTTP/PG/WS 及 V6 迁移 IT；读源图期间的 latch 验证 cover 等待同团锁。
+  fog 的鉴权、严格 JSON、原回执、全局 actor 请求竞争、共享版本、原子重置及
+  即时/延迟故障回滚均覆盖。22:33:24 清除全部 TEST_DATABASE_* 后单独 `mvn test`
+  **61 unit 通过**。实现阶段读流重复关闭失败已修成显式 reader/dispose，未放宽断言。
+- 前端最终 **14 文件 148 测试通过**，原 112 项保留，TypeScript/Vite 构建通过；
+  约 583.57kB 主 chunk 提示保留。两个授权和测距边界有实际 RED/GREEN，见两端
+  TDD。单位隐藏与 fog 独立；玩家图片只来自安全接口，纹理不进入全局素材缓存。
+- 22:34–35 协调者 `npm run test:e2e` 真实 Chrome **10 passed（31.1s）**，
+  原 7 条文件原样保留，新增 3 条；60 秒/条、零 retry。无 HTTP/STOMP 业务 mock。
+  DM/玩家双会话实际操作选择、drag 预览/吸附/确认、点击移动、光标缩放、平移、
+  测距、矩形和坐标揭露/遮盖；解码 PNG 比较公开色与秘密黑色，源 metadata 不携带。
+  用实际 STOMP 失效加 snapshot 网络中断验证先清图、revoke blob、恢复后黑图。
+- 启动新安全 JAR，自然升级既有 V5 浏览器库至 V6；外置 `P02dSnapshot.java`
+  与 `compare-p02d-snapshots.mjs` 比较 **14 张旧表全部列/行及 V1–V5 checksum
+  完全一致**，非仅比较数量。素材根沿用 `.tools/browser-assets`，未重建旧库。
+- 三个 seed 后核对实际 Java CommandLine、PG data/PID 与 pg_ctl status，真正停止
+  Java 和 PostgreSQL，再以同库/同素材根启动新进程。新会话执行地图、素材、棋子
+  三个 verify 全部 PASS：fog/scene 版本/历史回执/安全 PNG SHA-256 保持，旧揭露
+  回执不能恢复像素、旧 URL 409、撤权 403、退出 401；原素材与棋子验收继续通过。
+  批量命令曾被自动审批拒绝，未执行；分步重新核实身份后停止/重启成功，无遗留阻塞。
+- 已查看 DM/player 截图：完整 24×16 画布、主持矩形和表单可用；玩家全遮盖图为黑色，
+  公开单位仍可见，隐藏单位与 DM 作者/素材区不出现。截图在忽略的 `test-results/maps-*`。
+
+日志在仓库外 `.tools/p02d-backend-full-verify.log`、`p02d-browser-full.log`，证据
+快照/三份重启回执也在外层 `.tools`，不提交运行时、凭据、战役数据或二进制图片。
+本地无 Docker，当前提交的标准 Compose/10 浏览器/三类容器重启验证须等新 SHA
+远端 CI，不能用基线绿灯代替。**P02e 与整个 P02 仍未完成**；TLS、触屏、容量、
+完整素材一致备份与异机恢复仍按原工作包保留。再次遮盖无法撤回之前已保存的公开像素。
+
 ## 2026-10-19：P02d续接前的最终基线核验
 
 用户要求将下一阶段交接给下一会话，本次不实施P02d。交接前Git HEAD为

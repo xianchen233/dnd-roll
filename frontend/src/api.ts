@@ -1,7 +1,20 @@
 import type { Asset, Assets, Campaign, CreatedInvitation, Csrf, Identity, Invitations, InvitePreview, MapConfiguration, Members, Move, Scene, SceneMap, Scenes, SceneReceipt, Token, VersionedCommand } from './types';
-import type { AuthoredTokens, TokenCommand, TokenReceipt } from './types';
+import type { AuthoredTokens, TokenCommand, TokenReceipt, MapView, Fog, FogCommand } from './types';
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
 export class Api {
+  async mapView(id: string): Promise<MapView> {
+    const response = await this.request(`/api/campaigns/${encodeURIComponent(id)}/scene/map-view`, { credentials: 'include', cache: 'no-store' });
+    await this.check(response); return response.json();
+  }
+  async mapImage(id: string, sceneId: string, version: number): Promise<Blob> {
+    const response = await this.request(`/api/campaigns/${encodeURIComponent(id)}/scene/map-image?sceneId=${encodeURIComponent(sceneId)}&version=${version}`, { credentials: 'include', cache: 'no-store' });
+    await this.check(response); return response.blob();
+  }
+  async fog(id: string, sceneId: string): Promise<Fog> {
+    const response = await this.request(`/api/campaigns/${encodeURIComponent(id)}/scenes/${encodeURIComponent(sceneId)}/fog`, { credentials: 'include', cache: 'no-store' });
+    await this.check(response); return response.json();
+  }
+  saveFog(id: string, sceneId: string, body: FogCommand): Promise<Fog> { return this.post(`/campaigns/${encodeURIComponent(id)}/scenes/${encodeURIComponent(sceneId)}/fog`, body); }
   private csrf?: Csrf;
   constructor(private request: typeof fetch = globalThis.fetch.bind(globalThis)) {}
   private async call<T>(path: string, method = 'GET', body?: unknown): Promise<T> {

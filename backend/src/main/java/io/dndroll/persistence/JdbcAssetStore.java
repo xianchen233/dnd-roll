@@ -43,6 +43,7 @@ public class JdbcAssetStore implements AssetService.Store {
         return rows.isEmpty() ? null : rows.getFirst();
     }
     public MapResult setMap(UUID campaign, UUID scene, MapConfig map) {
+        jdbc.update("delete from scene_revealed_cell where campaign_id=? and scene_id=?", campaign, scene);
         if (map == null) jdbc.update("delete from scene_map where campaign_id=? and scene_id=?", campaign, scene);
         else jdbc.update("insert into scene_map(campaign_id,scene_id,asset_id,grid_size,offset_x,offset_y,distance_per_cell) values (?,?,?,?,?,?,?) on conflict (scene_id) do update set asset_id=excluded.asset_id,grid_size=excluded.grid_size,offset_x=excluded.offset_x,offset_y=excluded.offset_y,distance_per_cell=excluded.distance_per_cell",
             campaign, scene, map.assetId(), map.gridSize(), map.offsetX(), map.offsetY(), map.distancePerCell());

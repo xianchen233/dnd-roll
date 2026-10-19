@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const read = (path) => readFile(new URL(path, import.meta.url), 'utf8');
-const [apiText, eventText, readme, accounts, scenes, assets, tokens] = await Promise.all([
+const [apiText, eventText, readme, accounts, scenes, assets, tokens, mapVisibility] = await Promise.all([
   read('../contracts/openapi.json'),
   read('../contracts/scene-events.schema.json'),
   read('../contracts/README.md'),
@@ -10,6 +10,7 @@ const [apiText, eventText, readme, accounts, scenes, assets, tokens] = await Pro
   read('../contracts/scenes.md'),
   read('../contracts/assets.md'),
   read('../contracts/tokens.md'),
+  read('../contracts/map-visibility.md'),
 ]);
 const api = JSON.parse(apiText);
 const event = JSON.parse(eventText);
@@ -87,8 +88,8 @@ assert.equal(api.openapi, '3.1.0');
 assert.equal(api.jsonSchemaDialect, 'https://json-schema.org/draft/2020-12/schema');
 assert.equal(event.$schema, api.jsonSchemaDialect);
 checkRefs(api);
-const documentedOperations = [...`${readme}\n${accounts}\n${scenes}\n${assets}\n${tokens}`.matchAll(/(?:`|### )(GET|POST) (\/api[^` \r\n]*)/g)]
-  .map(([, method, path]) => `${method} ${path}`);
+const documentedOperations = [...`${readme}\n${accounts}\n${scenes}\n${assets}\n${tokens}\n${mapVisibility}`.matchAll(/(?:`|### )(GET|POST) (\/api[^` \r\n]*)/g)]
+  .map(([, method, path]) => `${method} ${path.split('?')[0]}`);
 const actualOperations = Object.entries(api.paths).flatMap(([path, item]) =>
   Object.keys(item).filter((method) => ['get', 'post'].includes(method))
     .map((method) => `${method.toUpperCase()} ${path}`));
@@ -525,4 +526,127 @@ for (const secret of ['hidden', 'controllers', 'hiddenTokenIds', 'hiddenCount', 
   assert.throws(() => validate(event, { type: 'SCENE_CHANGED', campaignId: id, [secret]: 'secret' }));
   assert.throws(() => validate(schemas.ApiError, { code: 'NOT_FOUND', message: 'Unavailable', [secret]: 'secret' }));
 }
-console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; all M1/P01/P02a/P02b assertions retained; P02c DM-only authoring, strict Unicode/configuration/controller sets, token receipts/shared versions/revocation/migration policies, and unchanged secret-free snapshots/STOMP events. This is a focused contract checker, not a general OpenAPI validator.`);
+const currentMapView = '/api/campaigns/{campaignId}/scene/map-view';
+const currentMapImage = '/api/campaigns/{campaignId}/scene/map-image';
+const fogPath = '/api/campaigns/{campaignId}/scenes/{sceneId}/fog';
+const mapOperations = [[currentMapView, 'get'], [currentMapImage, 'get'], [fogPath, 'get'], [fogPath, 'post']];
+for (const [path, method] of mapOperations) {
+  const operation = api.paths[path][method];
+  for (const status of ['400', '401', '403']) assert.ok(operation.responses[status]);
+  for (const response of Object.values(operation.responses)) {
+    const headers = resolve(response).headers;
+    assert.equal(headers['Cache-Control'].required, true);
+    assert.equal(headers['Cache-Control'].schema.const, 'no-store, private');
+    assert.equal(headers['X-Content-Type-Options'].required, true);
+    assert.equal(headers['X-Content-Type-Options'].schema.const, 'nosniff');
+    for (const name of ['ETag', 'Last-Modified', 'Location', 'Content-Range', 'Accept-Ranges']) assert.equal(headers[name], undefined);
+  }
+  for (const status of ['206', '301', '302', '303', '304', '307', '308']) assert.equal(operation.responses[status], undefined);
+}
+const sharedMap = responseSchema(currentMapView, 'get', '200');
+assert.deepEqual(sharedMap, schemas.CurrentMapView);
+assert.deepEqual(sharedMap.required, ['sceneId', 'sceneVersion', 'map']);
+assert.deepEqual(Object.keys(sharedMap.properties), sharedMap.required);
+assert.equal(sharedMap.additionalProperties, false);
+assert.deepEqual(sharedMap.properties.map.anyOf, [{ $ref: '#/components/schemas/SharedMapConfiguration' }, { type: 'null' }]);
+assert.deepEqual(schemas.SharedMapConfiguration.required, ['distancePerCell']);
+assert.deepEqual(Object.keys(schemas.SharedMapConfiguration.properties), ['distancePerCell']);
+assert.equal(schemas.SharedMapConfiguration.additionalProperties, false);
+assert.match(api.paths[currentMapView].get.description, /current members.*403.*current scene/i);
+const safeImage = api.paths[currentMapImage].get;
+const imageQueries = safeImage.parameters.map(resolve);
+assert.deepEqual(imageQueries.map(({ name, in: location, required }) => ({ name, in: location, required })), [
+  { name: 'sceneId', in: 'query', required: true }, { name: 'version', in: 'query', required: true },
+]);
+assert.equal(resolve(imageQueries[0].schema).format, 'uuid');
+assert.deepEqual(resolve(imageQueries[1].schema), schemas.Version);
+for (const invalid of [null, -1, 0.5, '0', NaN, Infinity]) assert.throws(() => validate(imageQueries[1].schema, invalid));
+for (const invalid of [null, '', 'bad', 0]) assert.throws(() => validate(imageQueries[0].schema, invalid));
+assert.deepEqual(Object.keys(safeImage.responses['200'].content), ['image/png']);
+assert.deepEqual(safeImage.responses['200'].content['image/png'].schema, { type: 'string', format: 'binary' });
+for (const status of ['404', '409', '503']) assert.ok(safeImage.responses[status]);
+assert.match(resolve(safeImage.responses['409']).description, /VERSION_CONFLICT/);
+assert.match(resolve(safeImage.responses['503']).description, /ASSET_UNAVAILABLE.*never.*path/i);
+assert.match(safeImage.description, /membership first.*current scene.*404.*exact.*version.*409.*attached map.*404/i);
+for (const method of ['get', 'post']) {
+  const operation = api.paths[fogPath][method];
+  assert.equal(operation['x-required-role'], 'DM');
+  assert.match(operation.description, /current DM.*before.*target.*replay.*PLAYER.*403.*foreign.*404/i);
+  assert.match(operation.description, /inactive.*without.*activat/i);
+  assert.ok(operation.responses['404']);
+  assert.deepEqual(responseSchema(fogPath, method, '200'), schemas.SceneFog);
+}
+const fogCommandOperation = api.paths[fogPath].post;
+assert.deepEqual(requestSchema(fogPath), schemas.FogCommandRequest);
+assert.equal(fogCommandOperation['x-version'], 'target scene version shared with moves/maps/token authoring');
+assert.deepEqual(fogCommandOperation['x-grid-bounds'], { x: '0 <= x < scene.width', y: '0 <= y < scene.height', maxItems: 'scene.width * scene.height' });
+assert.equal(fogCommandOperation['x-idempotency'].namespace, 'fog-commands');
+assert.deepEqual(fogCommandOperation['x-idempotency'].key, ['sessionActor', 'requestId']);
+assert.deepEqual(fogCommandOperation['x-idempotency'].payload, ['campaignId', 'sceneId', 'expectedVersion', 'canonicalRevealed']);
+assert.match(fogCommandOperation['x-idempotency'].authorization, /current DM.*target ownership.*before.*replay/i);
+assert.match(fogCommandOperation['x-idempotency'].samePayload, /original.*before.*stale.*no.*event/i);
+assert.match(fogCommandOperation['x-idempotency'].differentPayload, /409 IDEMPOTENCY_CONFLICT/);
+assert.match(resolve(fogCommandOperation.responses['409']).description, /VERSION_CONFLICT.*IDEMPOTENCY_CONFLICT/);
+for (const [schema, required] of [[schemas.FogCell, ['x', 'y']], [schemas.SceneFog, ['sceneId', 'sceneVersion', 'revealed']],
+  [schemas.FogCommandRequest, ['requestId', 'expectedVersion', 'revealed']]]) {
+  assert.deepEqual(schema.required, required);
+  assert.deepEqual(Object.keys(schema.properties), required);
+  assert.equal(schema.additionalProperties, false);
+}
+for (const schema of [schemas.SceneFog, schemas.FogCommandRequest]) {
+  const revealedSchema = resolve(schema.properties.revealed);
+  assert.equal(revealedSchema.uniqueItems, true);
+  assert.equal(revealedSchema.minItems, 0);
+  assert.equal(revealedSchema['x-maxItemsFromScene'], 'scene.width * scene.height');
+  assert.deepEqual(resolve(revealedSchema.items), schemas.FogCell);
+}
+const fogPolicy = api['x-map-visibility-policy'];
+for (const [key, pattern] of [
+  ['pixels', /width.*gridSize.*height.*gridSize.*nearest.neighbor.*opaque black.*alpha.*fresh PNG.*metadata/i],
+  ['sampling', /offsetX.*floor.*map.gridSize.*scene.gridSize.*offsetY.*out.of.source.*black/i],
+  ['visibility', /default.*covered.*revealed.*never.*original bytes.*DM.*full.*unit.*independent/i],
+  ['authorization', /every.*membership.*current scene.*version.*campaign lock.*no historical.*role/i],
+  ['cache', /no.store.*nosniff.*no ETag.*Last.Modified.*304.*Range.*206.*redirect.*no.*derivative cache.*disk/i],
+  ['originals', /DM.only.*guessed.*foreign.*no.store.*never.*static/i],
+  ['reCover', /cannot.*retract.*previously.*saved.*authorized before.*finish/i],
+  ['versions', /map.*assignment.*calibration.*detach.*reset.*covered.*once.*token.*unchanged/i],
+  ['fog', /distinct.*in.bounds.*y then x.*without.*map/i],
+  ['locking', /actor.*campaign.*one effect.*one winner/i],
+  ['atomicity', /state.*version.*receipt.*atomically.*historical.*never.*restore/i],
+  ['realtime', /after.commit.*SCENE_CHANGED.*type.*campaignId.*no.*pixels.*fog.*URLs/i],
+  ['migration', /V6.*V1.*V5.*checksums.*rows/i],
+  ['clientLifecycle', /no.store.*remove.*before.*revoke.*textures.*401.*403.*late.*post.ack/i],
+]) assert.match(fogPolicy[key], pattern);
+const safeMapView = { sceneId: id, sceneVersion: 0, map: { distancePerCell: 5 } };
+const fogState = { sceneId: id, sceneVersion: 1, revealed: [{ x: 1, y: 2 }] };
+const fogCommand = { requestId: id, expectedVersion: 0, revealed: [{ x: 1, y: 2 }] };
+for (const [schema, value] of [[schemas.CurrentMapView, safeMapView], [schemas.CurrentMapView, { ...safeMapView, map: null }],
+  [schemas.SceneFog, fogState], [schemas.SceneFog, { ...fogState, revealed: [] }], [schemas.FogCommandRequest, fogCommand],
+  [schemas.FogCommandRequest, { ...fogCommand, revealed: [] }]]) validate(schema, value);
+for (const [schema, value] of [[schemas.CurrentMapView, safeMapView], [schemas.SharedMapConfiguration, safeMapView.map],
+  [schemas.FogCell, fogCommand.revealed[0]], [schemas.SceneFog, fogState], [schemas.FogCommandRequest, fogCommand]]) {
+  for (const key of schema.required) {
+    const partial = { ...value }; delete partial[key];
+    assert.throws(() => validate(schema, partial));
+    if (key !== 'map') assert.throws(() => validate(schema, { ...value, [key]: null }));
+  }
+  assert.throws(() => validate(schema, { ...value, unexpected: 'secret' }));
+}
+for (const cell of [null, {}, { x: 0 }, { x: -1, y: 0 }, { x: 0.5, y: 0 }, { x: 0, y: '0' }, { x: 0, y: 0, hidden: true }]) {
+  assert.throws(() => validate(schemas.FogCommandRequest, { ...fogCommand, revealed: [cell] }));
+}
+for (const invalid of [{ ...fogCommand, revealed: null }, { ...fogCommand, revealed: [fogCommand.revealed[0], fogCommand.revealed[0]] },
+  { ...fogCommand, expectedVersion: -1 },
+  { ...fogCommand, expectedVersion: 1.5 }, { ...fogCommand, requestId: 'bad' }, { ...fogCommand, actor: 'dm' }]) {
+  assert.throws(() => validate(schemas.FogCommandRequest, invalid));
+}
+for (const distancePerCell of [0, 10001, NaN, Infinity, '5']) {
+  assert.throws(() => validate(schemas.SharedMapConfiguration, { distancePerCell }));
+}
+for (const secret of ['assetId', 'gridSize', 'offsetX', 'offsetY', 'width', 'height', 'storageKey', 'originalUrl', 'revealed', 'pixels', 'imageUrl', 'fog']) {
+  assert.throws(() => validate(schemas.CurrentMapView, { ...safeMapView, [secret]: 'secret' }));
+  assert.throws(() => validate(schemas.CurrentMapView, { ...safeMapView, map: { ...safeMapView.map, [secret]: 'secret' } }));
+  assert.throws(() => validate(event, { type: 'SCENE_CHANGED', campaignId: id, [secret]: 'secret' }));
+  assert.throws(() => validate(schemas.ApiError, { code: 'NOT_FOUND', message: 'Unavailable', [secret]: 'secret' }));
+}
+console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; all M1/P01/P02a/P02b/P02c assertions retained; P02d strict safe-map/fog schemas, authenticated no-store PNG delivery, exact queries, shared versions/durable receipts, no secret payloads or reusable caches. This is a focused contract checker, not a general OpenAPI validator.`);

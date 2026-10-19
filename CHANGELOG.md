@@ -11,6 +11,14 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Added
 
+- Add server-rendered current-map PNGs and DM manual cell reveal/cover with
+  durable fog receipts and a V6 migration preserving earlier data. Maps start
+  fully covered; map replacement, calibration and detach reset revealed cells.
+- Add native Pixi pan, cursor-centered zoom/reset, snapped token drag previews,
+  two-point geometric measurement and DM rectangular reveal/cover drafts, while
+  retaining numeric movement and visibility controls as independent behaviors.
+- Add decoded secret-pixel checks and a real-service restart acceptance script
+  for fog, image versions and historical receipts, alongside existing checks.
 - Add DM token creation and complete configuration of names, grid positions,
   visibility and multiple current-member controllers, with a dedicated authoring
   panel, API and durable token command receipts. Keep shared movement payloads
@@ -43,7 +51,7 @@ and successful CI runs do not by themselves constitute a release.
   receipts. Preserve logical grids, existing scenes, tokens and earlier receipts.
 - Add a dedicated Compose asset volume and a real HTTP acceptance script for
   checking file hashes, map references and receipts across application/database
-  restart. Player image revelation and Pixi map interaction remain P02d.
+  restart.
 
 ### Changed
 
@@ -82,6 +90,15 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Security
 
+- Replace covered map samples with opaque black on the server and freshly encode
+  player PNGs without source metadata or transparent hidden RGB values. Keep
+  original downloads DM-only and token hiding independent of map revelation.
+- Bind image reads to current membership, scene and exact scene version under
+  the campaign lock; reject historical URLs and disable HTTP and derivative
+  caching. Re-covering affects future delivery; previously saved public pixels
+  cannot be retracted.
+- Clear displayed images before refresh and revoke object URLs and Pixi textures
+  on invalidation, scope changes or access denial; isolate late image responses.
 - Recheck current DM and target ownership before token receipt replay; historical
   authoring receipts never restore old configuration or control grants. Keep
   hidden flags and controller lists confined to DM authoring endpoints.

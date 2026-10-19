@@ -1,3 +1,4 @@
+import { withSafeMapReads } from './test-map-api';
 import React from 'react';
 import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
@@ -11,7 +12,7 @@ describe('tabletop interface', () => {
     const posted = new Promise(yes => { resolve = yes; });
     const token = { id: 'a', name: '游侠', x: 2, y: 3, version: 0, canMove: true }, scene = { id: 's', campaignId: 'c', name: '林地', width: 24, height: 16, gridSize: 48, version: 0, tokens: [token] };
     const api = { getCsrf: vi.fn().mockResolvedValue({}), me: vi.fn().mockResolvedValue({ username: 'player' }), campaigns: vi.fn().mockResolvedValue([{ id: 'c', name: '长夜', role: 'PLAYER' }]), scene: vi.fn().mockResolvedValue(scene), tokens: vi.fn(), members: vi.fn(), move: vi.fn().mockReturnValue(posted) };
-    render(<App api={api as unknown as Api} />); fireEvent.click(await screen.findByRole('button', { name: /游侠/ }));
+    render(<App api={withSafeMapReads(api) as unknown as Api} />); fireEvent.click(await screen.findByRole('button', { name: /游侠/ }));
     fireEvent.change(screen.getByLabelText('目标 X'), { target: { value: '4' } }); fireEvent.change(screen.getByLabelText('目标 Y'), { target: { value: '5' } }); fireEvent.click(screen.getByRole('button', { name: '确认移动' }));
     await waitFor(() => expect(api.move).toHaveBeenCalledTimes(1));
     api.scene.mockResolvedValue({ ...scene, version: 1, tokens: reason === 'hidden' ? [] : [{ ...token, version: 1, canMove: false }] }); fireEvent.click(screen.getByRole('button', { name: '↻ 刷新场景' }));
@@ -24,7 +25,7 @@ describe('tabletop interface', () => {
   });
   it('renders only permission-filtered server tokens and disables uncontrolled units', async () => {
     const api = { getCsrf: vi.fn().mockResolvedValue({}), me: vi.fn().mockResolvedValue({ username: 'player' }), campaigns: vi.fn().mockResolvedValue([{ id: 'c', name: '长夜', role: 'PLAYER' }]), scene: vi.fn().mockResolvedValue({ id: 's', campaignId: 'c', name: '林地', width: 24, height: 16, gridSize: 48, version: 0, tokens: [{ id: 'a', name: '游侠', x: 2, y: 3, version: 0, canMove: true }, { id: 'b', name: '守卫', x: 8, y: 4, version: 0, canMove: false }] }) };
-    render(<App api={api as unknown as Api} />);
+    render(<App api={withSafeMapReads(api) as unknown as Api} />);
     expect(await screen.findByRole('button', { name: /游侠/ })).toBeEnabled();
     expect(screen.getByRole('button', { name: /守卫/ })).toBeDisabled();
     expect(screen.queryByText('隐藏敌人')).not.toBeInTheDocument();
@@ -33,7 +34,7 @@ describe('tabletop interface', () => {
   });
   it('shows a login error and does not enter a fake local campaign', async () => {
     const api = { getCsrf: vi.fn().mockResolvedValue({}), me: vi.fn().mockRejectedValue(new ApiError(401, '未登录')), login: vi.fn().mockRejectedValue(new Error('账号或密码错误')) };
-    render(<App api={api as unknown as Api} />);
+    render(<App api={withSafeMapReads(api) as unknown as Api} />);
     await screen.findByLabelText('账号');
     fireEvent.change(screen.getByLabelText('账号'), { target: { value: 'player' } });
     fireEvent.change(screen.getByLabelText('密码'), { target: { value: 'runtime-password' } });

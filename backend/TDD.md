@@ -98,3 +98,85 @@ Final remote acceptance: code `5160c0fdbb98a9bb189193f1ec8735d004ffb978` passes 
 - Added eight real PG/HTTP/WS tests for authoring, multi-control, hide/reveal, current authorization before retries, member removal/rejoin and stale forms, strict fields, receipt namespace/fingerprints, inactive preparation, concurrent same-request/version/cross-campaign commands, transaction rollback and secret-free after-commit invalidations. Added isolated V4→V5 migration/data/checksum/FK test. Execution is serialized by the coordinator; these IT results remain pending until actually run. Real process restart/browser acceptance belongs to coordinator verification, not this unit result.
 - Coordinator serialized real-PG execution: **22:52:16** focused `mvn '-Dmaven.repo.local=D:/workspace/dnd/.tools/m2' -Pintegration '-Dit.test=TokensIT,TokenMigrationIT' verify -B -ntp` passed **56 unit + 9 new IT**, zero failures/errors/skips. **22:54:39** full `mvn '-Dmaven.repo.local=D:/workspace/dnd/.tools/m2' -Pintegration verify -B -ntp` passed **56 unit + 50 real PG/HTTP/WS IT**, zero failures/errors/skips, with all prior 41 IT retained. Final full run includes Java-canonical controller sorting independent of PostgreSQL collation, 80-Unicode-code-point legacy username acceptance, null/empty controllers rejection and preservation of another controller during member removal. Target reports confirm `TokensIT` 8/8 and `TokenMigrationIT` 1/1. Database was never used concurrently by agents.
 - Remaining coordinator acceptance at this point: existing V4 browser database natural upgrade comparison, five real-browser flows, actual Java/PostgreSQL restart and current-SHA remote CI. These are not implied by the successful Maven checks; final actual results belong in root verification/continuation records.
+
+## P02d (2026-10-19): safe map delivery and manual fog
+
+Read AGENTS, continuation/verification/work-packages and required design/contracts,
+including `contracts/map-visibility.md`, before changing production behavior.
+22:17:58 baseline `mvn '-Dmaven.repo.local=D:/workspace/dnd/.tools/m2' test -B -ntp`:
+56 unit tests pass without database environment variables.
+22:20:21 `mvn '-Dmaven.repo.local=D:/workspace/dnd/.tools/m2'
+'-Dit.test=MapVisibilityIT' -Pintegration verify -B -ntp` against dedicated real
+PostgreSQL: 56 unit pass; 2 new HTTP assertion failures, no compilation/context
+errors. Player-safe map-view expected 200 but returned 404; anonymous private
+response expected `no-store, private` but returned Spring's default cache header.
+The missing route prevents the subsequent PNG pixel assertions from running;
+this RED is explicitly a missing-delivery/header RED, not evidence of an existing
+original-image leak. The test also specifies decoded black/revealed/secret pixels,
+original/guessed URLs, stale URL invalidation, conditional and Range behavior.
+
+22:22:47 first GREEN: original 56 unit + 2 real HTTP PNG tests pass.
+22:26:02 expanded GREEN: 60 unit + 9 real PG/HTTP/WS/migration tests pass.
+22:27:01 deliberately injected a temporary unsafe mutation bypassing `revealed`
+in `SafeMapImage`, then executed only MovementTest +
+`MapVisibilityIT#playerGetsOnlyFreshBlackPixelsAndSourceRoutesCannotBypassFog`.
+The real HTTP PNG assertion fails: covered pixel expected opaque black
+`0xff000000` (-16777216), got source color `0xff12ab34` (-15553740).
+This is a fault-injection test proving the pixel assertion detects leakage, not
+a claim the baseline had a working unsafe image route. A PowerShell `finally`
+restored the safe implementation immediately after the Maven failure. Its shell
+exit is 0 because of the restoring finally; Maven clearly reports BUILD FAILURE,
+1 assertion failure, 0 errors/skips. Final safe rebuild remains required.
+
+QA found Java ImageIO's default global disk caching. 22:27:56 and 22:28:34
+`mvn ... '-Dtest=SafeMapImageTest#renderingNeverUsesImageIoDiskCacheEvenWhenGlobalCachingIsEnabled' test`
+both produce 1 actual assertion failure (no errors/skips): under global cache=true
+and an invalidated cache directory, render attempts FileCacheImageInputStream and
+throws `Not a directory!`. The test decoder was made explicitly memory-only before
+the second RED, ensuring it cannot cause the failing production render assertion.
+Implementation now uses explicit MemoryCacheImageInputStream and
+MemoryCacheImageOutputStream; it never changes ImageIO's process-wide cache flag.
+22:29:50 the first full verify stopped in the new renderer unit suite (61 tests,
+2 failures/2 errors). ImageIO.read(ImageInputStream) automatically closes its
+input; enclosing try-with-resources then attempted a second close. Replaced that
+convenience read with an explicit disposed ImageReader while retaining the owned
+memory stream, and corrected the independent test decoder similarly. IT did not
+run in that failed attempt. The final full verify below supersedes this attempt.
+
+**22:31:55 final full GREEN:**
+`mvn '-Dmaven.repo.local=D:/workspace/dnd/.tools/m2' -Pintegration verify -B -ntp`
+against the dedicated real PostgreSQL 18.6 database: **61 unit + 60 integration
+tests passed, zero failures/errors/skips; BUILD SUCCESS**, executable safe jar
+rebuilt after the fault injection was removed. The original 56 unit + 50 IT
+remain intact. New coverage is 5 pure renderer tests, 9 MapVisibilityIT cases and
+one isolated V5-to-V6 FogMigrationIT. Full external log is
+`D:/workspace/dnd/.tools/p02d-backend-full-verify.log` (not committed).
+
+Renderer assertions decode every covered/public boundary pixel, check negative
+offsets and unequal grid scaling, opaque-black alpha flattening, text metadata
+removal even when fully revealed, and rendering with global caching enabled but
+an unavailable cache directory. Real HTTP verifies no source metadata/URLs in
+shared map-view, original and guessed source denial, membership/role revocation,
+cross-campaign/unknown/inactive scene isolation, current scene-version binding,
+no-store/nosniff failures, conditional/Range full 200, stale image 409, and absent
+map image 404. Fog cases cover strict JSON/canonical cells/current DM before
+replay, historic receipts without restoration, independent namespaces, single
+effect concurrent retries, same-version and global actor-key races, inactive
+preparation and atomic reset on all successful map changes. Immediate and
+deferred receipt failures roll back fog/map/version/receipts. A latch-controlled
+source read proves rendering holds the campaign lock while a concurrent cover
+waits; afterward the old URL conflicts and new fog applies. Real native STOMP
+contains only the unchanged two-field invalidation, and replay emits no event.
+Hidden tokens and controllers are unchanged by reveal/cover/map reset.
+
+FogMigrationIT compares every original column/row of all 14 V5 tables and the
+V1–V5 migration checksums, starts existing maps fully covered, and rejects a
+cross-campaign revealed-cell FK. Earlier TokenMigrationIT explicitly targets V5
+as the other historical migration tests target their original boundary; all its
+old assertions remain. Browser/process restart and current-SHA remote CI belong
+to the coordinator's separate evidence. P02e and the whole P02 remain incomplete.
+
+**22:33:24 database-free regression GREEN:** removed all TEST_DATABASE_* values
+from the process environment and ran `mvn ... test -B -ntp`: **61 unit tests pass**,
+zero failures/errors/skips, no Spring context/database/network required. External
+log: `D:/workspace/dnd/.tools/p02d-backend-unit-no-db.log`.

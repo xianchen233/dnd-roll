@@ -1,3 +1,4 @@
+import { withSafeMapReads } from './test-map-api';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -7,7 +8,7 @@ vi.mock('./MapCanvas', () => ({ MapCanvas: () => <div>地图替身</div> }));
 vi.mock('./realtime', () => ({ connectRealtime: () => () => {} }));
 const campaign = { id: 'c', name: '新冒险', role: 'DM' };
 const scene = { id: 's', campaignId: 'c', name: '空白场景', width: 24, height: 16, gridSize: 48, version: 0, tokens: [] };
-function setup<T extends object>(extra: T) { return { tokens: vi.fn().mockResolvedValue({ sceneId: 's', sceneVersion: 3, tokens: [] }), getCsrf: vi.fn().mockResolvedValue({}), me: vi.fn().mockResolvedValue({ username: 'dm' }), campaigns: vi.fn().mockResolvedValue([campaign]), scene: vi.fn().mockResolvedValue(scene), scenes: vi.fn().mockResolvedValue({ campaignVersion: 2, currentSceneId: 's', scenes: [{ id: 's', name: '空白场景' }] }), members: vi.fn().mockResolvedValue({ campaignVersion: 2, members: [{ username: 'dm', role: 'DM' }, { username: 'guest', role: 'PLAYER' }] }), invitations: vi.fn().mockResolvedValue({ campaignVersion: 2, invitations: [{ id: 'i', status: 'ACTIVE', expiresAt: '2026-10-25T00:00:00Z', createdBy: 'dm', usedBy: null }] }), ...extra }; }
+function setup<T extends object>(extra: T) { return withSafeMapReads({ tokens: vi.fn().mockResolvedValue({ sceneId: 's', sceneVersion: 3, tokens: [] }), getCsrf: vi.fn().mockResolvedValue({}), me: vi.fn().mockResolvedValue({ username: 'dm' }), campaigns: vi.fn().mockResolvedValue([campaign]), scene: vi.fn().mockResolvedValue(scene), scenes: vi.fn().mockResolvedValue({ campaignVersion: 2, currentSceneId: 's', scenes: [{ id: 's', name: '空白场景' }] }), members: vi.fn().mockResolvedValue({ campaignVersion: 2, members: [{ username: 'dm', role: 'DM' }, { username: 'guest', role: 'PLAYER' }] }), invitations: vi.fn().mockResolvedValue({ campaignVersion: 2, invitations: [{ id: 'i', status: 'ACTIVE', expiresAt: '2026-10-25T00:00:00Z', createdBy: 'dm', usedBy: null }] }), ...extra }); }
 afterEach(() => window.history.replaceState(null, '', '/'));
 describe('accounts and invitations', () => {
   it('recovers a lost registration response through login and same-actor accept even when preview is unavailable', async () => {
