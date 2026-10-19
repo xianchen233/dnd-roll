@@ -1,5 +1,28 @@
 # 阶段验收记录
 
+## P02d 最终代码验收（2026-10-20）
+
+`7f539cf7640f54f07087bffbd1e9bc8b012a79ed` 的
+[push39287462278](https://github.com/xianchen233/dnd-roll/actions/runs/39287462278) 与
+[PR39287472000](https://github.com/xianchen233/dnd-roll/actions/runs/39287472000) 均
+completed/success，六个frontend/backend/browser job全部success，PR保持open/draft。
+完整日志确认166前端测试/构建、31契约、61unit+60真实PG/HTTP/WS/迁移全通过。
+两组标准Compose实际浏览器均 **13 passed（push1.5m、PR1.1m）**，60秒/条、零retry；
+旧7条文件原样保留，源码修复了刷新手势、fog草稿及场景命令预读竞争，静态Pixi按需绘制。
+
+两组browser均实际执行素材/棋子/地图三个seed，随后重启db与backend，再用新会话
+执行三个verify全部PASS。地图重新校验fog/version/持久回执及掩盖PNG SHA-256；
+过期URL、历史揭露重放、撤权及logout不能取得秘密像素。原素材SHA/校准/回执、棋子
+共享控制/隐藏/撤销和成员重加入边界也全部PASS。外置完整日志job-118178549125.log /
+job-118178591379.log保留；初次失败和各次实际RED/GREEN见下文，没有删除失败证据。
+
+本地最终生产preview13通过30.3s，166前端/构建及31契约通过；后端61+60、14旧表
+全部列/行与V1–V5 checksum自然升级比较、Java+PG真实重启证据保留。已人工复查
+按需绘制后的DM/玩家截图：完整网格、黑色遮盖、公开单位独立，玩家无隐藏单位及作者区。
+本机Java/Vite/PG按实际命令行和data目录核对后停止，55432/8080/5173无监听，数据
+及素材保留。P02d完成；**P02e、整个P02仍未完成**，下一包做独立整体验收，未合并/发布。
+本段只为代码7f539cf的结果；接续时仍独立核对当前Git/PR HEAD及其全部Checks，含文档提交。
+
 ## P02d 开工核对（2026-10-19）
 
 当前分支 `feat/accounts-and-invitations`，开工 HEAD

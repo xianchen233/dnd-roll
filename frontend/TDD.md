@@ -216,3 +216,4 @@ P01 浏览器脚本 `e2e/accounts.spec.ts` 使用现有 DM/PLAYER 环境账号�
 - 测距及视图用例仍用真实DM登录/建团/上传/地图/棋子HTTP准备，仅不启动未使用的DM UI；其他四条地图用例仍双端，玩家真实会话/WS/图片/交互ready不变。完整13条本地生产preview通过32.8s。全部业务断言、60秒/条、0 retry及旧7文件保持。
 - 本地已安装Pixi的TickerPlugin源码确认默认autoStart=true；当前静态地图没有动画却持续绘制。**00:38:10实际RED**：两项新组件断言失败，未禁用ticker、图片onload没有显式render。改为autoStart=false并在图片/单位/草稿/指针预览/测距/视图改变时绘制；失效销毁图片后同步render，不能在空闲画布留下旧像素。**00:38:35 GREEN**：Pixi16项通过，既有14项全部保留。
 - 随后全量**15文件166项通过**，TypeScript/Vite构建通过(主chunk585.32kB提示保留)。生产preview完整**13 passed(30.3s)**，包括真实pan截图差异、矩形手势与刷新、秘密像素、旧URL和失败刷新清图；31操作契约检查通过。后端不变，既有61unit+60IT和本机三类真实重启证据保留；新SHA远端完整Checks仍独立验收。P02e和整个P02尚未完成。
+- 协调者随后独立核验代码`7f539cf`的push39287462278/PR39287472000均全部success：166前端、61unit+60IT、标准Compose13流程及素材/棋子/安全地图三类真实容器重启全部通过，完整证据见docs/verification.md。P02d完成，P02e和整个P02仍未完成，未合并/发布。

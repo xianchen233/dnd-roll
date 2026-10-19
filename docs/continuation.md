@@ -2,7 +2,7 @@
 
 更新：2026-10-20（Asia/Shanghai）。最新分支、HEAD 和工作区以 `git status --short --branch` / `git log -5 --oneline` 为准。当前沿用 `feat/accounts-and-invitations` 和 [草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，未合并、未发布。
 
-## 当前入口：P02d 本地完成，等待当前提交 CI
+## 当前入口：P02d 已完成，下一工作包为 P02e
 
 2026-10-19 本次从 `0bacdab` 开工，干净且与 origin 一致；其 push39143471892 /
 PR39143474706 均 frontend/backend/browser success 后才实施 P02d。先写
@@ -16,22 +16,31 @@ PR39143474706 均 frontend/backend/browser success 后才实施 P02d。先写
 全部列/行与五个 checksum 自然升级一致。Java+PG 实际停止/同库同素材根启动，
 新会话地图/素材/棋子三个 verify 全通过。详见 verification.md 与两端 TDD.md。
 
-下一可执行步骤：提交推送本地修复后，按新 SHA 检查草稿 PR #1 的 push/PR 全部
-Checks，尤其标准 Compose 的 13 流程及三类真实容器重启。d593092 的刷新吞手势/
-草稿编辑问题已有实际RED/GREEN；bbdd54b组合流程超时已拆独立场景。88afda9两组
+代码 `7f539cf7640f54f07087bffbd1e9bc8b012a79ed` 的
+[push39287462278](https://github.com/xianchen233/dnd-roll/actions/runs/39287462278) 与
+[PR39287472000](https://github.com/xianchen233/dnd-roll/actions/runs/39287472000) 均
+completed/success，frontend/backend/browser 全绿。两组标准 Compose 分别13 passed
+（push1.5m、PR1.1m）；素材/棋子/地图三个seed、实际db/backend重启和三个verify均PASS。
+地图verify重新登录校验fog/version/回执及掩盖PNG哈希，旧URL、历史揭露、撤权和退出
+不能取得秘密像素。本段是该代码SHA证据；接续时仍独立核对当前HEAD，含文档提交。
+
+d593092 的刷新吞手势/草稿编辑问题已有实际RED/GREEN；bbdd54b组合流程超时已拆独立场景。88afda9两组
 前后端通过、browser均12过1失败：push旧素材切图没有激活POST，PR平移/缩放断言
 全部通过但最后截图耗尽总时限；两份trace已取得。场景preflight被背景读取静默吞掉
 有4项实际RED，修复保留原版本、授权拒绝及409。静态Pixi改按需绘制，安全清图同步
 重绘，有2项实际RED/GREEN；测距/视图用例仅打开所需玩家UI，其他仍双端。166项/
 构建及完整13条本地复验通过；旧7文件不改，60秒/条、零retry。详见verification和
-frontend/TDD。远端待执行的检查不标通过；通过后更新交接，才进入 P02e 独立整体验收。
+frontend/TDD。下一可执行步骤：核对Git与当前HEAD Checks后，按work-packages的P02e
+制定独立整体验收组合，实际验证跨场景fog保存、校准重置、双端撤权/重连/失败恢复及
+进程重启；保留全部既有测试、独立回执与单位隐藏边界，不重复开发P02a/b/c/d。
 **P02e、整个 P02 及后续工作包仍未完成**；不合并、不发布。
 
 本次外置工具：`P02dSnapshot.java`、`compare-p02d-snapshots.mjs`、
 `p02d-before-v6.json` / `p02d-after-v6.json`、`run-p02d-browser.ps1`；
 三个新重启证据为 `p02d-map-restart-evidence.json`、`p02d-asset-restart-evidence.json`、
 `p02d-token-restart-evidence.json`。复用此前账号、DB、JDK、Maven、私有素材根；
-仓库新增 `scripts/check-map-restart.mjs`。进程最终状态在结束前再次记录，不能复用旧 PID。
+仓库新增 `scripts/check-map-restart.mjs`。本次验收Java/Vite/PostgreSQL已按实际命令行
+和data目录核对后停止，55432/8080/5173无监听，数据库/素材保留；不能复用旧PID。
 
 ## 原 P02c 交接基线（历史记录）
 
@@ -43,7 +52,7 @@ P02d先固定玩家安全图像/手动揭露的契约，再实际运行秘密像
 
 继续维护CHANGELOG Unreleased和实际RED/GREEN/验收/交接；沿用当前分支与草稿PR #1，不合并、不发布。P02d完成后才进入P02e整体验收，不能提前标整个P02完成。本机Java/Vite/PG已停止，凭据与运行时均在外层.tools；重启前核对端口和进程身份，不依赖旧代理或本聊天历史。
 
-## 本轮状态与下一步
+## P02a/b/c 历史状态与当时下一步
 
 - **P01 已完成，禁止重复开发。** P02a 开工起点 `d9a0393` 工作区干净、与 origin 一致；其 [push CI](https://github.com/xianchen233/dnd-roll/actions/runs/39127654306) 与 [PR CI](https://github.com/xianchen233/dnd-roll/actions/runs/39127657531) 均 completed/success，核对后才开工 P02a。
 - **P02a 已完成并通过本地及远端完整 CI。** 代码提交 `8836abbcca9a28a2e130770cb9839e0136f51fcf` 的 [push CI](https://github.com/xianchen233/dnd-roll/actions/runs/39129943816) 与 [PR CI](https://github.com/xianchen233/dnd-roll/actions/runs/39129946834) 均 frontend/backend/browser success，含标准 Compose 部署和全部三条真实浏览器流程。 契约先写 `contracts/scenes.md`，实际 RED/GREEN 见两端 TDD.md 与 verification.md。37 后端 unit、28 真实 PG/HTTP/WS、59 前端测试、构建、19 HTTP 操作契约、3 条真实 Chrome 流程、V2→V3 旧数据比较及真实 Java 进程重启全部通过。
