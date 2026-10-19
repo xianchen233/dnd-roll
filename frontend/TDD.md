@@ -194,3 +194,10 @@ P01 浏览器脚本 `e2e/accounts.spec.ts` 使用现有 DM/PLAYER 环境账号�
 - **23:19:47**全量156项和build通过；**23:20实际production preview**新3条通过(8.8秒)，native pointer按住期间由真实HTTP刷新安全图后再松开仍正确完成drag/reveal。协调者随后完整10条production preview通过(27.4秒)。这些为修复后的本地证据，不替代远端Checks。
 - 为保留每条60秒/零retry并降低CI累计动作成本，将原新前两条分别拆成独立movement、measurement/pan/zoom、UI reveal、UI cover四条；加原fallback后为新5条、整套12条。所有旧业务断言保留，原7条文件不改。cover只把已单独UI验收的揭露前置放入真实CSRF HTTP命令；没有伪造会话或响应。drag、reveal、cover都实际按住native pointer穿插权威读，测距两点间也穿插权威读；不以延长timeout或增加retry通过。
 - **23:24:04最终GREEN**：全量`npm test` **14文件、157项通过**（保留旧112）；TypeScript/Vite build通过，主chunk约585.14kB提示保留。**23:24–25真实production preview GREEN**：`maps.spec.ts`新5条全部通过(11.0秒)，每条约1.6–1.9秒。协调者负责完整12条和新SHA标准Compose/重启/Checks记录。P02e及整个P02依然未完成，不以候选旧SHA或局部绿灯宣称交付验收完成。
+
+### P02d bbdd54b：测距与视图操作继续拆分
+
+- `bbdd54b` 两组完整job日志已实际读取：frontend/backend均success，browser均11通过、1失败。PR日志`job-118146963326.log`记录7.5分钟总耗时，唯一测距/平移/缩放长流程达到60秒，停在旧`:97 position()`准备zoom；因此测距、跨刷新保留起点、半途重置和平移断言已通过。push日志`job-118146945011.log`记录9.5分钟总耗时，同一测试达到60秒，停在旧`:96 drag()`中的position/boundingBox准备平移；push此时可确认测距/刷新/半途重置已通过，不能声称平移断言已完成。没有新增秘密像素、授权或手势业务断言失败。状态API长时间错误地保持in_progress，此处采用完整job日志结论，后续新SHA仍独立检查。
+- 本次仅重新划分新增`maps.spec.ts`测试边界：把测距及半途reset，与pan/cursor zoom/viewport reset拆成两个独立真实战役用例。完整保留25.00距离、点间真实HTTP刷新、重置后新起点、pan截图变化、120%滚轮缩放、100%重置、玩家快照无隐藏token和页面错误为空的全部断言。各条仍60秒、0 retry，原7条文件与全部production源码不改。没有为环境速度增加业务timeout、重试、硬等待或删减断言。
+- **2026-10-19 23:49 GREEN**：`npx playwright test --list`确认**13条/6文件**；协调者启动同一真实后端和production preview后，安全runner执行`maps.spec.ts` **6 passed (13.8秒)**。movement 2.2秒、measurement 1.4秒、pan/zoom 1.5秒、reveal 1.8秒、cover 2.3秒、fallback 2.2秒。每条独立团/真实会话与HTTP/STOMP，图片与交互就绪检查保持。此次无生产改动，不重复构建或组件测试；既有157项/生产build结果保留，根完整13条与新SHA CI仍由协调者独立复验，不能用局部六项代替。
+- README同步为新6条、完整13条；P02e与整个P02继续未完成，未合并或发布。

@@ -85,7 +85,7 @@ test('real player Pixi selects, snaps a drag through a same-scene refresh and cl
   await s.player.screenshot({ path: info.outputPath('player-pixi-movement.png'), fullPage: true }); await s.dm.screenshot({ path: info.outputPath('dm-pixi-tabletop.png'), fullPage: true }); expect(s.errors).toEqual([]);
 });
 
-test('real player Pixi keeps geometric measurement through refresh, resets partial pairs, pans and cursor-zooms', async ({ sessions: s }, info) => {
+test('real player Pixi keeps geometric measurement through refresh and resets partial pairs', async ({ sessions: s }, info) => {
   const { endpoint, hiddenName } = await prepare(s);
   await click(s.player, '两点测距'); await cell(s.player, 1, 1);
   const read = s.player.waitForResponse(r => new URL(r.url()).pathname === `${endpoint}/scene` && r.request().method() === 'GET');
@@ -93,6 +93,12 @@ test('real player Pixi keeps geometric measurement through refresh, resets parti
   await expect(s.player.getByRole('img', { name: '场景网格地图' })).toHaveAttribute('data-map-image', 'ready');
   await cell(s.player, 4, 5); await expect(s.player.getByLabel('测距结果')).toHaveText('25.00 距离单位');
   await cell(s.player, 1, 1); await click(s.player, '重置视图'); await cell(s.player, 4, 5); await expect(s.player.getByLabel('测距结果')).toContainText('起点 (4, 5)');
+  expect(JSON.stringify(await (await s.playerContext.request.get(`${endpoint}/scene`)).json())).not.toContain(hiddenName);
+  await s.player.screenshot({ path: info.outputPath('player-pixi-measurement.png'), fullPage: true }); expect(s.errors).toEqual([]);
+});
+
+test('real player Pixi pans the map, zooms at the cursor and resets the viewport', async ({ sessions: s }, info) => {
+  const { endpoint, hiddenName } = await prepare(s);
   await click(s.player, '平移地图'); const before = await s.player.locator('.map-surface canvas').screenshot(); await drag(s.player, 0, 0, 1, 1); const after = await s.player.locator('.map-surface canvas').screenshot(); expect(after.equals(before)).toBe(false);
   const center = await position(s.player, 8, 6); await s.player.mouse.move(center.x, center.y); await s.player.mouse.wheel(0, -100); await expect(s.player.getByLabel('地图缩放')).toHaveText('120%'); await click(s.player, '重置视图'); await expect(s.player.getByLabel('地图缩放')).toHaveText('100%');
   expect(JSON.stringify(await (await s.playerContext.request.get(`${endpoint}/scene`)).json())).not.toContain(hiddenName);
