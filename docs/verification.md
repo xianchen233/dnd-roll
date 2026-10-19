@@ -8,7 +8,7 @@
 completed/success，六个frontend/backend/browser job全部success，PR保持open/draft。
 完整日志确认166前端测试/构建、31契约、61unit+60真实PG/HTTP/WS/迁移全通过。
 两组标准Compose实际浏览器均 **13 passed（push1.5m、PR1.1m）**，60秒/条、零retry；
-旧7条文件原样保留，源码修复了刷新手势、fog草稿及场景命令预读竞争，静态Pixi按需绘制。
+旧5个E2E文件（7条流程）原样保留，源码修复了刷新手势、fog草稿及场景命令预读竞争，静态Pixi按需绘制。
 
 两组browser均实际执行素材/棋子/地图三个seed，随后重启db与backend，再用新会话
 执行三个verify全部PASS。地图重新校验fog/version/持久回执及掩盖PNG SHA-256；
@@ -72,7 +72,7 @@ P02d 实施中，P02e 与整个 P02 未完成。
   约 583.57kB 主 chunk 提示保留。两个授权和测距边界有实际 RED/GREEN，见两端
   TDD。单位隐藏与 fog 独立；玩家图片只来自安全接口，纹理不进入全局素材缓存。
 - 22:34–35 协调者 `npm run test:e2e` 真实 Chrome **10 passed（31.1s）**，
-  原 7 条文件原样保留，新增 3 条；60 秒/条、零 retry。无 HTTP/STOMP 业务 mock。
+  原5个E2E文件（7条流程）原样保留，新增 3 条；60 秒/条、零 retry。无 HTTP/STOMP 业务 mock。
   DM/玩家双会话实际操作选择、drag 预览/吸附/确认、点击移动、光标缩放、平移、
   测距、矩形和坐标揭露/遮盖；解码 PNG 比较公开色与秘密黑色，源 metadata 不携带。
   用实际 STOMP 失效加 snapshot 网络中断验证先清图、revoke blob、恢复后黑图。
@@ -185,7 +185,7 @@ snapshot检查：最后缩放expect265609ms结束，snapshot GET265900ms为200�
 页面screenshot265924–269052ms；总测试预算在此耗尽。不是新的像素/手势断言失败。
 
 测距/视图用例保留真实DM HTTP准备及玩家UI，免开未使用的DM图形页面；其他用例
-仍双端，旧七文件与全部业务断言不改。单此优化后完整生产preview **13 passed
+仍双端，旧5个E2E文件与全部业务断言不改。单此优化后完整生产preview **13 passed
 （32.8s）**。进一步检查实际安装的Pixi TickerPlugin默认autoStart=true，静态桌面
 持续渲染，无动画需求；改为显式按需绘制，避免空闲GPU开销，仍需新SHA CI验证影响。
 
