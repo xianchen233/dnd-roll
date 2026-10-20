@@ -18,7 +18,8 @@ and successful CI runs do not by themselves constitute a release.
   and temporary movement grants. Exploration remains free; out-of-turn dice and
   actions remain available. Duration/effect resolution remains explicit DM work.
 - Add a Chinese combat workspace, exact uncertain-request retries and filtered
-  journals. P06 complete acceptance remains pending; no release is made.
+  journals, with complete P06 local and exact-SHA push/PR acceptance. No release
+  is made; RP, campaign notes and consistent backup/restore remain later work.
 
 - Add server-owned persistent dice with bounded expressions, every raw die and
   kept/discarded result, saved calculation/name/actor sources, DM-only rolls and

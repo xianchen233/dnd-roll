@@ -365,3 +365,8 @@ P04代码a7ef388的push39460581794/PR39460588799六job全success，逐份日志�
   sheet and turn/history/receipt snapshots deepEqual. Current hiding denies old
   replay. Logs p06-delivered-restart-{seed,verify}.log and process/evidence JSON
   outside repo. Exact delivered-SHA push/PR CI still pending.
+- Code d23c592 push39477351204/PR39477361622 all six jobs passed; both backend
+  logs81 units+100 real IT, zero failure/error/skip; both standard Compose35
+  browsers and all eight actual db/backend restart groups passed. Six complete
+  logs independently fetched/checked. P06 complete; completion-document HEAD
+  still requires its own exact-SHA checks.

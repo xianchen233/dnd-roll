@@ -1,7 +1,8 @@
 # P06: manual combat and linked corrections
 
-Status: implemented; local complete acceptance passed; exact-SHA push/PR CI
-pending. P01–P05 remain complete. Rules and manual boundaries:
+Status: P06a–e completed, 2026-10-21; code d23c592 passed local and exact-SHA
+push/PR CI. P01–P05 remain complete; P07–P10/A and M2 remain incomplete.
+Rules and manual boundaries:
 [5R evidence](../docs/research/combat-5r.md). No automatic attack resolution.
 
 Ordered slices: a action/target/server-roll association; b DM verdict, explicit

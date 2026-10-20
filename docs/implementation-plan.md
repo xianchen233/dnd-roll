@@ -6,7 +6,12 @@
 
 ## 本轮当前状态（2026-10-21）
 
-**P01–P05均已完成；P06已进入手动战斗/更正与整体验收，P06e/P06/M2及P07–P10/A仍未完成。**
+**P01–P06均已完成；下一包P07未开工，M2及P07–P10/A仍未完成。**
+P06代码d23c592的push39477351204/PR39477361622六job/完整日志独立核验全绿：
+81unit+100真实IT、201前端/构建、65契约、标准Compose35浏览器及八组真实容器重启；
+本地无库81、完整同等验收、28旧表全部原列/行/10checksum及八组Java/PG重启均通过。
+契约contracts/combat.md、依据docs/research/combat-5r.md，实际失败/修复见verification。
+完成文档新HEAD另核对，不合并、不发布；下面保留P06开发时的历史状态。
 P06契约`contracts/combat.md`，来源`docs/research/combat-5r.md`。最终81unit+100IT、
 独立无库81、201前端/构建、65契约、完整35真实浏览器、28旧表/10checksum及八组
 实际Java/PG重启已通过；精确代码SHA push及PR CI仍待完成，不提前关闭。实际RED、

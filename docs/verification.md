@@ -1,5 +1,36 @@
 # 阶段验收记录
 
+## P06 完成：精确代码 SHA 本地与双 CI 全通过（2026-10-21）
+
+代码 **d23c592c677fbaeeda2a3108c516410e411ef95a** 的
+[push39477351204](https://github.com/xianchen233/dnd-roll/actions/runs/39477351204) 与
+[PR39477361622](https://github.com/xianchen233/dnd-roll/actions/runs/39477361622)
+均completed/success，frontend/backend/browser六job全绿，PR #1 open/draft/main。
+逐份重新获取六份完整日志，剥除ANSI色码后核对实际结果，不拿旧SHA或本地结果替代：
+
+- 两组后端均81unit+100真实PG/HTTP/WS/迁移，零失败/错误/跳过。
+- 两组前端均201测试、生产构建与65契约通过。
+- 两组标准Compose完整35浏览器通过（push2.4m/PR2.2m），原31保留，60秒/条、零retry。
+- 两组均八组seed→实际db/backend容器Restarting→八组新会话verify，16条PASS。
+  战斗来源/逐骰/实际操作者/手动应用/后续独立变化/关联更正/角色值/回合及历史/
+  原回执均完整保留；重试不能重复扣除，当前隐藏仍拒绝旧请求。
+
+完整日志外置p06-job-118816637467/118816675072（后端）、118816637929/118816675450
+（前端）、118816637756/118816675405（浏览器）；汇总p06-ci-d23c592c677fbaeeda2a3108c516410e411ef95a.json。
+CI日志摘要首次因ANSI色码使正则未匹配201而退出，原日志已含201通过；剥除色码后
+六份均严格核对成功，p06-code-ci-verified.log。不将解析失败当CI失败。
+
+本地最终81无库unit、81+100完整后端、201前端/构建、65契约、串行35生产浏览器、
+28旧表原列/行/10checksum、八组实际Java/PG重启也全部通过。原始RED/环境准备/
+旧class时间戳/不可变空列表/并行seed干扰及修复记录完整保留于下文和两端TDD。
+
+**P06a–e/整个P06完成；P01–P05保持完成；M2、P07–P10/A仍未完成。**
+最终按实际CommandLine/data核对并停止Java/production preview/PG；55432/8080/5173
+无监听，数据库、素材及私有证据保留。未合并、未发布。随后完成状态文档的新HEAD
+也独立核验push/PR；不能拿d23c592绿灯替代新提交。
+
+以下为P06本地验收/开发历史。
+
 ## P06 本地完整验收通过，代码 SHA 双 CI 待核验（2026-10-21）
 
 最终p06-backend-final-2.log：**81unit+100真实IT，零失败/错误/跳过**；独立清除

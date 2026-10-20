@@ -73,3 +73,24 @@ imports await that campaign's DM review and never carry old grants/overrides/his
 multiple cards, sources/history, DM overrides/expiry, committed response loss with
 precise retry, native socket offline/reconnect and cross-campaign structured transfer.
 No business API or STOMP response is mocked; transport failures are identified.
+
+## Sourced content, dice and manual combat (P04–P06)
+
+Character fields offer licensed content search, source/version/admission filters
+and explicit server preview/fill. **打开掷骰与先攻** provides server-owned rolls,
+saved shortcuts, DM-only dice and explicitly confirmed independent-character
+initiative. Lookup/fill and dice do not apply effects or spend resources.
+
+**打开手动战斗与更正** selects saved attack/source/target, links an existing server
+attack or damage roll, records a manual DM verdict and explicitly applies final
+HP/temp HP/resource values. Corrections link the original event using current
+character versions; original and later operations remain. Current controllers end
+turns, while DMs skip/switch/reorder/stop or temporarily grant out-of-turn movement.
+Exploration stays free; out-of-turn rolls/actions remain available. DM duration
+confirmation stays in character sheets. Private journals are server-filtered.
+
+The complete suite has35 real production-browser cases, including four P06 cases;
+all31 earlier cases remain unchanged. Run browser acceptance and restart seeds
+serially: they share test accounts, and member removal closes that account's
+sockets. Native offline tests verify real close/new CONNECTED, never fabricated
+STOMP. Actual failures, RED/GREEN and exact-SHA CI are in docs/verification.md.

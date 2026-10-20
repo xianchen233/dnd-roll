@@ -1,6 +1,44 @@
 # 继续工作的入口
 
-## 当前入口：P06 本地完整验收通过，代码 SHA 双 CI 待核验
+## 当前入口：P06 已完成；下一包 P07 尚未开工
+
+更新2026-10-21（Asia/Shanghai）。沿用feat/accounts-and-invitations/
+[草稿PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，不合并、不发布。
+最新HEAD/工作区以Git实际状态为准；完成状态文档新HEAD也须独立核验push/PR。
+
+P06代码 **d23c592c677fbaeeda2a3108c516410e411ef95a** 的
+[push39477351204](https://github.com/xianchen233/dnd-roll/actions/runs/39477351204) 与
+[PR39477361622](https://github.com/xianchen233/dnd-roll/actions/runs/39477361622)
+六job均success；已逐份获取日志确认81unit+100真实IT、201前端/构建、65契约、
+两组标准Compose35浏览器及八组实际db/backend容器重启全部PASS。PR open/draft/main。
+本地独立81无库、最终81+100、201/构建、65、串行35流程、28旧表/10checksum及八组
+实际Java/PG重启亦通过。完整RED/环境/失败修复见verification与两端TDD。
+
+**P01–P06完成；整个M2、P07–P10/A仍未完成。** 契约contracts/combat.md，依据
+docs/research/combat-5r.md。行动/目标/投骰关联、DM命中及显式生命/临时生命/资源
+应用、当前版本关联更正、独立角色回合/跳过/切换/重排/移动放行与来源历史已交付。
+探索自由，公开战斗移动需棋子+角色控制及当前回合/放行；全隐藏遭遇不泄露状态/
+hint或锁探索。回合外投骰/行动不封禁；状态到期仍P03显式DM确认。没有自动命中、
+抗性/重击/死亡/专注/效果与资源联动，不冒称完整规则自动执行。
+
+下一可执行步骤：按AGENTS先读本页、verification/work-packages及必读产品/路线/
+CONTEXT/契约，独立核对Git、远端及最新HEAD（含完成文档）的push/PR Checks。
+然后进入 **P07 RP时间线与机器人**：先固定文字/图片/引用、实际操作者与发言身份
+快照、编辑历史、搜索分页/导出和共用角色/投骰/行动入口的契约与有序切片，实际
+RED→最小实现→GREEN→完整验收；引用/搜索/导出/附件必须沿用当前权限，不泄露
+私密骰子、行动或DM资料。P01–P06不重做；长期记录不因备份轮换清理。保留P08–P10/A
+和容量/触屏/TLS/一致备份异机恢复门槛。继续原分支/草稿PR #1，不合并、不发布。
+
+运行时/凭据/私有证据均在外.tools，凭据仅内存。最终日志p06-backend-final-2.log、
+p06-unit-delivered.log、p06-frontend-final.log、p06-build-final.log、p06-browser-delivered.log；
+八组p06-delivered-*-restart-evidence.json及p06-delivered-restart-{seed,verify}.log；
+前后进程身份p06-delivered-process-evidence.json，最终停止核对p06-stopped-processes.json。
+JAR p06-acceptance.jar，脚本start-p06-backend.ps1/run-p06-delivered-restart.ps1可复用，
+但新seed须换新证据前缀（wx拒覆盖）；不要与浏览器并跑共享账号的撤权seed。
+Java/preview/PG已按实际CommandLine/data停止，三端口无监听；数据素材保留，不复用旧PID。
+PG启动huge_pages=off并分步操作。以下为P06及更早开发历史，不作为当前下一步。
+
+## 历史：P06 本地完整验收通过，代码 SHA 双 CI 待核验
 
 更新2026-10-21（Asia/Shanghai）。原分支feat/accounts-and-invitations/草稿PR #1，
 不合并、不发布。开工HEAD d4e1068的push39469353602/PR39469359789六job/完整日志
@@ -24,7 +62,7 @@ PR并核验该代码SHA push/PR六job/标准Compose35流程/八组重启全通�
 完成状态文档的新HEAD也独立核验。后续P07–P10/A、容量/触屏/TLS及完整备份异机
 恢复仍未完成，不静默丢弃。以下为P05及更早历史入口。
 
-## 当前入口：P05 已完成；下一包 P06 尚未开工
+## 历史：P05 已完成；下一包 P06 尚未开工
 
 更新：2026-10-21（Asia/Shanghai）。继续 `feat/accounts-and-invitations` /
 [草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，未合并、未发布。
