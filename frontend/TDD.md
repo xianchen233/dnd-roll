@@ -217,3 +217,12 @@ P01 浏览器脚本 `e2e/accounts.spec.ts` 使用现有 DM/PLAYER 环境账号�
 - 本地已安装Pixi的TickerPlugin源码确认默认autoStart=true；当前静态地图没有动画却持续绘制。**00:38:10实际RED**：两项新组件断言失败，未禁用ticker、图片onload没有显式render。改为autoStart=false并在图片/单位/草稿/指针预览/测距/视图改变时绘制；失效销毁图片后同步render，不能在空闲画布留下旧像素。**00:38:35 GREEN**：Pixi16项通过，既有14项全部保留。
 - 随后全量**15文件166项通过**，TypeScript/Vite构建通过(主chunk585.32kB提示保留)。生产preview完整**13 passed(30.3s)**，包括真实pan截图差异、矩形手势与刷新、秘密像素、旧URL和失败刷新清图；31操作契约检查通过。后端不变，既有61unit+60IT和本机三类真实重启证据保留；新SHA远端完整Checks仍独立验收。P02e和整个P02尚未完成。
 - 协调者随后独立核验代码`7f539cf`的push39287462278/PR39287472000均全部success：166前端、61unit+60IT、标准Compose13流程及素材/棋子/安全地图三类真实容器重启全部通过，完整证据见docs/verification.md。P02d完成，P02e和整个P02仍未完成，未合并/发布。
+
+### P02e 独立组合验收（2026-10-20）
+
+- 按 `contracts/p02-acceptance.md` 新增独立 `e2e/acceptance.spec.ts` 四条，原六个E2E文件及13条业务流程原样保留，每条60秒、零retry。全部会话经真实CSRF/login取得，独立建团/邀请/PNG上传/地图/棋子前置均调用实际HTTP，无伪造session、状态响应或STOMP。
+- 双端切换两个分别有校准/不同fog的场景，再返回逐项比较原场景快照与fog/version；玩家不能列举备团/读取非当前图。真实DM表单校准后fog原子全盖，解码玩家PNG确认两格均为不透明黑，公开棋子仍可控制、隐藏单位不进入玩家快照。
+- 真实 `BrowserContext.setOffline(true/false)` 并断言 `navigator.onLine`：玩家离线移动产生可重试请求，DM切图并遮盖；上线重读当前场景/PNG，旧选择/重试消失、旧blob已撤销。另一独立团离线撤控，上线按钮禁用/选择清除且旧移动回执403；再次离线移除成员，上线地图清空，旧快照/已知派生图/原图路径均403。
+- 响应故障注入与实际离线分开：`route.fetch`先让真实fog POST提交，再abort丢响应；明确保存待确认原body。另条实际cover提交后，历史retry与原JSON完全一致、不推进最新version或恢复已揭露像素；retry返回后临时阻断fog GET，界面保持“请求已确认；刷新失败，遮盖尚未同步”，解除故障并刷新后才显示同步确认。
+- 首轮2过2失败属于测试准备/等待错误：offline移动只填X未填required Y，失败时DOM实际显示Y空、仍为“已读取服务器状态”，未出现移动待确认；fog重试按钮先渲染disabled，`toBeVisible`不足以等待`route.fetch`提交结果。补填Y并等待enabled后第二轮3过1失败：预先阻断GET使背景重读将ready置false，重试按钮按约定禁用；改为retry POST真实取得回执后才启用GET故障。没有生产代码修复，以上不冒充业务RED；初轮/第二轮日志由外置 `.tools/p02e-browser-initial.log` / `p02e-browser-second.log` 保存。
+- 最终 `../.tools/run-p02d-browser.ps1 -Spec e2e/acceptance.spec.ts` 对真实打包后端及生产preview **4 passed (11.9s)**，单项2.1/1.5/4.9/1.6秒。日志 `.tools/p02e-browser-third.log`。新截图位于忽略的test-results四个用例输出，页面错误均为空；本轮是新增验收覆盖，无生产变更、不虚构RED。完整17条、真实PG/进程重启及当前SHA标准Compose/远端Checks由协调者独立运行，未以本局部通过提前关闭P02e/P02。

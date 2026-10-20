@@ -2,7 +2,25 @@
 
 更新：2026-10-20（Asia/Shanghai）。最新分支、HEAD 和工作区以 `git status --short --branch` / `git log -5 --oneline` 为准。当前沿用 `feat/accounts-and-invitations` 和 [草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，未合并、未发布。
 
-## 当前入口：P02d 已完成，下一工作包为 P02e
+## 当前入口：P02e 整体验收进行中
+
+2026-10-20 从 `3c834b4` 干净工作区开工，fetch 后与 origin 一致；该 SHA 的
+push39289292710 / PR39289302976 六个 job 全部 success，PR #1 仍 open/draft。
+先写 `contracts/p02-acceptance.md`，只组合既有功能，保留全部旧测试。
+本轮 61 无数据库 unit、166 前端测试/生产构建、31 契约以及最终后端
+61 unit + 61 真实 PG/HTTP/WS/迁移已通过；新增真实 HTTP 跨场景组合首次即通过，
+不伪造 RED。协调者完整真实 Chrome 生产 preview **17 passed（40.7s）**，
+原六个 E2E 文件及13流程未改；真实双端离线/撤权/提交后响应丢失精确重试通过。
+四组（原素材/棋子/地图 + 新两场景组合）实际 Java+PG 停止/同库同素材根重启，
+seed/verify 全 PASS；详情、首两轮测试准备失败及边界见 verification。
+当前变更 SHA 的完整远端 Compose/Checks 仍待推送核实，**P02e 和整个 P02 仍未完成**。
+下一步提交推送原分支并核实该 SHA 的 push/PR 全量CI，全部通过后才更新完成状态。
+外置 `.tools/run-p02e-restart.ps1` 注入已有测试凭据调用四组脚本，证据/日志以
+`p02e-`前缀在同目录。新仓库脚本 `scripts/check-p02-restart.mjs`，验收契约
+`contracts/p02-acceptance.md`；无新 API/迁移/生产行为。验收 Java/production preview/PG
+已逐一核实实际 CommandLine/data 目录后停止，55432/8080/5173 无监听，数据与素材保留。
+
+## P02d 已完成的历史交接
 
 2026-10-19 本次从 `0bacdab` 开工，干净且与 origin 一致；其 push39143471892 /
 PR39143474706 均 frontend/backend/browser success 后才实施 P02d。先写

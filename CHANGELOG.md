@@ -11,6 +11,12 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Added
 
+- Add integrated P02 acceptance for two-scene fog/calibration and independent
+  token visibility/control, with a real-service restart check retaining both
+  scenes, original/safe image hashes, versions and historical command receipts.
+- Add real two-client browser acceptance for offline scene/fog recovery,
+  control/member revocation and committed-but-lost fog responses. Verify exact
+  retries preserve later cover and require a successful fresh read to synchronize.
 - Add server-rendered current-map PNGs and DM manual cell reveal/cover with
   durable fog receipts and a V6 migration preserving earlier data. Maps start
   fully covered; map replacement, calibration and detach reset revealed cells.

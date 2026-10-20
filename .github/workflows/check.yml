@@ -92,11 +92,12 @@ jobs:
           curl --fail --retry 40 --retry-delay 3 --retry-all-errors --max-time 5 --retry-max-time 120 http://localhost:8080/api/auth/csrf > /dev/null
       - run: npm run test:e2e
         working-directory: frontend
-      - name: Persist assets, token permissions and safe map visibility across backend and PostgreSQL restart
+      - name: Persist assets, tokens and both scenes across backend and PostgreSQL restart
         run: |
           node scripts/check-asset-restart.mjs seed "$RUNNER_TEMP/asset-restart.json"
           node scripts/check-token-restart.mjs seed "$RUNNER_TEMP/token-restart.json"
           node scripts/check-map-restart.mjs seed "$RUNNER_TEMP/map-restart.json"
+          node scripts/check-p02-restart.mjs seed "$RUNNER_TEMP/p02-restart.json"
           docker compose -f deploy/compose.yaml restart db
           docker compose -f deploy/compose.yaml up -d --wait db
           docker compose -f deploy/compose.yaml restart backend
@@ -104,6 +105,7 @@ jobs:
           node scripts/check-asset-restart.mjs verify "$RUNNER_TEMP/asset-restart.json"
           node scripts/check-token-restart.mjs verify "$RUNNER_TEMP/token-restart.json"
           node scripts/check-map-restart.mjs verify "$RUNNER_TEMP/map-restart.json"
+          node scripts/check-p02-restart.mjs verify "$RUNNER_TEMP/p02-restart.json"
       - name: Save container logs
         if: always()
         run: docker compose -f deploy/compose.yaml logs --no-color > compose.log

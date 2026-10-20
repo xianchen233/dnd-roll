@@ -283,4 +283,81 @@ class MapVisibilityIT {
         }finally{release.countDown();}
         assertEquals(0,dm.read(fogPath(id,s)).get("revealed").size());assertEquals(409,download(player,imagePath(id,s,2)).statusCode());png(download(player,imagePath(id,s,3)));
     }
+
+    @Test void integratedSceneReturnCalibrationAndRevocationPreserveIndependentFogAndHistoricalReceipts() throws Exception {
+        var dm=owner();var id=campaign(dm);var player=member(id,"PLAYER");var a=scene(dm,id);
+        try {
+            var source=new BufferedImage(16,8,BufferedImage.TYPE_INT_RGB);
+            for(int y=0;y<8;y++)for(int x=0;x<16;x++)source.setRGB(x,y,x<8?0xff12ab34:0xffed23cd);
+            var bytes=new ByteArrayOutputStream();ImageIO.write(source,"png",bytes);
+            var asset=UUID.fromString(tree(upload(dm,id,UUID.randomUUID(),0,bytes.toByteArray(),"image/png"),200).get("asset").get("id").asString());
+            var b=UUID.fromString(tree(dm.post(base(id)+"/scenes",createBody(UUID.randomUUID(),1,"Independent map B")),200).get("id").asString());
+            var originalMap=Map.of("assetId",asset,"gridSize",8,"offsetX",0,"offsetY",0,"distancePerCell",5.0);
+            tree(dm.post(mapPath(id,a),mapCommand(UUID.randomUUID(),0,originalMap)),200);
+            var mapB=mapCommand(UUID.randomUUID(),0,originalMap);
+            var mapBReceipt=tree(dm.post(mapPath(id,b),mapB),200);
+            var tokenBody=Map.<String,Object>of("requestId",UUID.randomUUID(),"expectedVersion",1,"name","Public independent token","x",0,"y",0,"hidden",false,"controllers",List.of(player.username));
+            var tokenPath=base(id)+"/scenes/"+a+"/tokens";
+            var tokenReceipt=tree(dm.post(tokenPath,tokenBody),200);
+            var tokenId=tokenReceipt.get("token").get("id").asString();
+            tree(dm.post(tokenPath,Map.of("requestId",UUID.randomUUID(),"expectedVersion",2,"name","Never public hidden token","x",0,"y",0,"hidden",true,"controllers",List.of())),200);
+            var fogA=fog(UUID.randomUUID(),3,List.of(cell(0,0)));
+            tree(dm.post(fogPath(id,a),fogA),200);
+            var fogB=fog(UUID.randomUUID(),1,List.of(cell(1,0)));
+            var fogBReceipt=tree(dm.post(fogPath(id,b),fogB),200);
+            assertEquals(a,scene(dm,id),"Preparing B must not activate it");
+            error(player.get(base(id)+"/scenes"),403,"FORBIDDEN");
+            var movePath=base(id)+"/tokens/"+tokenId+"/moves";
+            var move=Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"x",2,"y",3);
+            tree(player.post(movePath,move),200);
+            var preservedA=dm.read(fogPath(id,a));
+            assertEquals(5,preservedA.get("sceneVersion").asLong());
+            var snapshotA=player.read(base(id)+"/scene");
+            assertEquals(1,snapshotA.get("tokens").size());
+            assertEquals(2,snapshotA.get("tokens").get(0).get("x").asInt());
+            var beforeSwitch=png(download(player,imagePath(id,a,5)));
+            assertEquals(0xff12ab34,beforeSwitch.getRGB(20,20));assertEquals(0xff000000,beforeSwitch.getRGB(68,20));
+
+            var activateB=command(2);var activateBReceipt=tree(dm.post(base(id)+"/scenes/"+b+"/activate",activateB),200);
+            error(player.get(imagePath(id,a,5)),404,"NOT_FOUND");
+            var visibleB=png(download(player,imagePath(id,b,2)));
+            assertEquals(0xff000000,visibleB.getRGB(20,20));assertEquals(0xffed23cd,visibleB.getRGB(68,20));
+            var recalibrated=Map.of("assetId",asset,"gridSize",8,"offsetX",8,"offsetY",0,"distancePerCell",10.0);
+            error(dm.post(mapPath(id,b),mapCommand(UUID.randomUUID(),1,recalibrated)),409,"VERSION_CONFLICT");
+            assertEquals(fogBReceipt,dm.read(fogPath(id,b)),"Rejected calibration cannot clear B fog");
+            tree(dm.post(mapPath(id,b),mapCommand(UUID.randomUUID(),2,recalibrated)),200);
+            var resetB=dm.read(fogPath(id,b));assertEquals(3,resetB.get("sceneVersion").asLong());assertEquals(0,resetB.get("revealed").size());
+            assertEquals(0xff000000,png(download(player,imagePath(id,b,3))).getRGB(68,20));
+            assertEquals(mapBReceipt,tree(dm.post(mapPath(id,b),mapB),200));
+            assertEquals(fogBReceipt,tree(dm.post(fogPath(id,b),fogB),200));
+            assertEquals(resetB,dm.read(fogPath(id,b)),"Historical receipts cannot reveal or recalibrate B");
+            assertEquals(8,dm.read(mapPath(id,b)).get("map").get("offsetX").asInt());
+
+            tree(dm.post(base(id)+"/scenes/"+a+"/activate",command(3)),200);
+            assertEquals(snapshotA,player.read(base(id)+"/scene"));assertEquals(preservedA,dm.read(fogPath(id,a)));
+            assertEquals(0xff12ab34,png(download(player,imagePath(id,a,5))).getRGB(20,20));
+            assertEquals(activateBReceipt,tree(dm.post(base(id)+"/scenes/"+b+"/activate",activateB),200));
+            assertEquals(a,scene(dm,id),"Historical activation cannot switch the group back to B");
+            var revoke=Map.<String,Object>of("requestId",UUID.randomUUID(),"expectedVersion",1,"name","Public independent token","x",2,"y",3,"hidden",false,"controllers",List.of());
+            tree(dm.post(tokenPath+"/"+tokenId,revoke),200);
+            error(player.post(movePath,move),403,"FORBIDDEN");
+            assertEquals(tokenReceipt,tree(dm.post(tokenPath,tokenBody),200));
+            var current=player.read(base(id)+"/scene");assertEquals(6,current.get("version").asLong());
+            assertEquals(1,current.get("tokens").size());assertFalse(current.get("tokens").get(0).get("canMove").asBoolean());
+            assertEquals(preservedA.get("revealed"),dm.read(fogPath(id,a)).get("revealed"));
+            var knownImage=imagePath(id,a,6);assertEquals(0xff12ab34,png(download(player,knownImage)).getRGB(20,20));
+            assertEquals(204,dm.post(base(id)+"/members/"+player.username+"/remove",command(4)).statusCode());
+            for(String path:List.of(base(id)+"/scene",viewPath(id),knownImage,contentPath(id,asset))) {
+                var denied=player.get(path);error(denied,403,"FORBIDDEN");
+                if(!path.endsWith("/scene"))privateHeaders(denied);
+            }
+            error(player.post(movePath,move),403,"FORBIDDEN");
+            var reconnected=new Browser();reconnected.login(player.username);
+            var denied=reconnected.get(knownImage);error(denied,403,"FORBIDDEN");privateHeaders(denied);
+            assertEquals(resetB,dm.read(fogPath(id,b)),"A control and membership changes leave unrelated B state intact");
+        } finally {
+            // The shared fixture predates token authoring; remove these receipts before its campaign cleanup.
+            jdbc.update("delete from token_command_receipt where campaign_id=?",id);
+        }
+    }
 }

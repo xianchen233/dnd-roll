@@ -1,5 +1,60 @@
 # 阶段验收记录
 
+## P02e 开工与本地验收（2026-10-20）
+
+开工 HEAD `3c834b4315361dfc8077bb638cd517183576d917`，工作区干净，fetch 后与
+origin 一致，继续 `feat/accounts-and-invitations` / open draft PR #1、base main。
+独立核对 [push39289292710](https://github.com/xianchen233/dnd-roll/actions/runs/39289292710)
+与 [PR39289302976](https://github.com/xianchen233/dnd-roll/actions/runs/39289302976)，
+当前 SHA 的 frontend/backend/browser 六 job 全部 completed/success。
+
+先写 `contracts/p02-acceptance.md`，组合既有契约而不增加 API/迁移/规则行为。
+按工作包分工后端真实 HTTP 组合、前端真实双端离线/响应故障、协调者跨场景实际
+进程重启/文档/CI；IT 库串行独占，浏览器使用另一个专用数据库。全部旧测试保留。
+
+- 清除 TEST_DATABASE_* 的独立 `mvn test`：**61 unit 通过**，日志外置
+  `.tools/p02e-unit-no-db.log`；完整前端 **166 测试及生产构建通过**，
+  `.tools/p02e-frontend.log` / `p02e-build.log`，主 chunk 585.32kB 提示保留。
+- 新增真实 HTTP 组合验收首次通过，未伪造行为 RED：两场景不同 fog/PNG、A 保存
+  移动/隐藏/控制，B stale 校准 409 不清 fog / 成功校准原子全盖，历史 map/fog/
+  activate/token 回执不恢复，撤控后旧 move 回执 403，移除后现有及新登录会话的
+  已知原图/安全图 URL 拒绝。21:50:18 完整 `mvn -Pintegration verify -B -ntp`
+  **61 unit + 61 真实 PG/HTTP/WS/迁移通过**，零失败/错误/跳过；旧 MapVisibilityIT
+  九项内容未改，新增独立一项。日志 `.tools/p02e-backend-full.log`，详见 backend/TDD.md。
+- 新增 `check-p02-restart.mjs` 与全部既有 asset/token/map 脚本的四组 seed 实际
+  PASS，专用证据 `.tools/p02e-{asset,token,map,p02}-restart-evidence.json`。
+  新脚本跨两张配图场景保存不同 fog/校准/移动/共享/隐藏/独立回执；重放前后完整
+  比较两场景 tokens/fog/map，避免遍历空集合漏掉误删除或错误撤销 DM 控制。
+
+新增浏览器首次 2 过 2 测试准备失败：离线移动未填 required Y，失败 DOM 显示 Y
+为空、仍“已读取服务器状态”；fog 重试按钮刚出现仍 disabled，等待 visible 早于
+实际提交结束。补齐 Y/等待 enabled 后第二轮 3 过 1 失败：过早注入 GET 故障使
+背景验证将 ready 置 false，重试按约定禁用。改在 retry POST 取得原回执后再阻断 GET。
+无生产修复，不冒充行为 RED；首两轮文本日志在 `.tools/p02e-browser-initial.log` /
+`p02e-browser-second.log`，初始 trace 被后续 Playwright 清理覆盖，不能声称仍保留。
+第三轮新增四条 **4 passed（11.9s）**，详见 frontend/TDD.md。
+
+协调者独立执行完整生产 preview / 真实 Chrome：**17 passed（40.7s）**，原六个
+E2E 文件/13 流程逐字保留，60 秒/条、0 retry。新增双客户端切图与校准、实际
+context offline/online 后场景/fog/旧选择/重试/图片恢复、离线撤控/成员撤销和
+已提交 fog 响应丢失的精确重试；后者故障注入先实际提交，后来 cover 不被历史回执
+恢复，读失败明确尚未同步，恢复新读后才确认。日志 `.tools/p02e-browser-full.log`。
+人工查看四张截图：完整玩家网格及公开单位、重连后的当前场景、撤权后清空地图、
+DM 历史 retry 后当前全盖提示；玩家无隐藏资料或作者区。
+
+四组 seed 后按实际 Java CommandLine、PG data/PID 和 `pg_ctl status`核实进程；
+外置 `restart-p02b-services.ps1` 真正停止/重启 Java 与 PostgreSQL，同库同私有素材根。
+新会话四组 **verify 全 PASS**，日志 `.tools/p02e-restart-seed.log` /
+`p02e-restart-verify.log`。两场景完整 tokens/fog/map、原图及安全 PNG SHA-256/像素、
+移动与独立命令回执、历史激活/校准/揭露不恢复、双场景撤权/重加入和旧 URL/logout
+边界均通过；其他三组旧脚本不改。没有新迁移或生产源码变更，原全量迁移测试保留。
+验收 Java/preview/PG 已核对 CommandLine/data 后停止，55432/8080/5173 无监听；
+数据库、私有素材、忽略的截图与外置日志/回执证据保留，不能复用旧 PID。
+
+31 契约、两个新增 mjs 的语法及 `git diff --check`通过。当前变更 SHA 的远端
+标准 Compose/17 浏览器/四组实际容器重启及全部 Checks 仍待推送核实；本地无 Docker，
+不能用旧 SHA 绿灯代替。**P02e 与整个 P02 未完成**，不合并/发布。
+
 ## P02d 最终代码验收（2026-10-20）
 
 `7f539cf7640f54f07087bffbd1e9bc8b012a79ed` 的

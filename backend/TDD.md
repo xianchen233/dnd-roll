@@ -180,3 +180,36 @@ to the coordinator's separate evidence. P02e and the whole P02 remain incomplete
 from the process environment and ran `mvn ... test -B -ntp`: **61 unit tests pass**,
 zero failures/errors/skips, no Spring context/database/network required. External
 log: `D:/workspace/dnd/.tools/p02d-backend-unit-no-db.log`.
+
+## P02e integrated acceptance (2026-10-20)
+
+The independent composition contract is `contracts/p02-acceptance.md`. No new
+production behavior or migration was required. A tenth `MapVisibilityIT` case
+combines two scenes with different fog, actual decoded public/secret PNG pixels,
+hidden/public tokens, a confirmed player move, scene return, rejected and accepted
+calibration, and historical map/fog/activation/token receipts. It verifies that
+rejected calibration leaves fog intact, accepted calibration clears only its own
+scene's fog, historical confirmations never restore earlier state, control
+revocation rejects an old successful movement receipt, and membership removal
+denies known original/derived image URLs to both the existing session and a fresh
+login. All nine existing map cases are unchanged.
+
+**21:48:37 focused acceptance PASS:**
+`mvn -f backend/pom.xml '-Dmaven.repo.local=D:/workspace/dnd/.tools/m2'
+-Pintegration
+'-Dit.test=MapVisibilityIT#integratedSceneReturnCalibrationAndRevocationPreserveIndependentFogAndHistoricalReceipts'
+verify -B -ntp` ran **61 unit tests + 1 focused real PostgreSQL/HTTP test**, with
+zero failures/errors/skips and BUILD SUCCESS (37.600s). The new composition
+passed on its first execution against the existing behavior; this is added
+acceptance coverage, not a claimed behavioral RED. External log:
+`D:/workspace/dnd/.tools/p02e-backend-focused.log`.
+
+**21:50:18 full regression PASS:**
+`mvn -f backend/pom.xml '-Dmaven.repo.local=D:/workspace/dnd/.tools/m2'
+-Pintegration verify -B -ntp` completed in 1m15s: **61 unit + 61 real
+PostgreSQL/HTTP/WebSocket/migration tests**, zero failures/errors/skips,
+BUILD SUCCESS. This preserves the previous 61 units and 60 integration tests,
+adds the single composition above and rebuilds the packaged application.
+External log: `D:/workspace/dnd/.tools/p02e-backend-full.log`.
+Browser, actual process restart and exact-SHA CI remain separate coordinator
+gates; these backend results alone do not mark P02e/P02 complete.
