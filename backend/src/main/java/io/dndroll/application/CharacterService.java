@@ -79,6 +79,7 @@ public final class CharacterService {
     public Ack link(UUID c,UUID id,String actor,UUID request,long expected,UUID token,long tokenVersion,String reason){return execute("LINK",c,id,actor,request,expected,List.of(token,tokenVersion,reason),reason,(card,role)->{
         AccountPolicy.version(card.version(),expected);CharacterSheet.number(tokenVersion,0,Long.MAX_VALUE);store.link(c,id,token,tokenVersion);return next(card,card.sheet());
     });}
+    public Ack fillContent(UUID c,UUID id,String actor,UUID request,long expected,Object payload,String reason,java.util.function.Function<CharacterSheet,CharacterSheet> fill){return execute("CONTENT_FILL",c,id,actor,request,expected,payload,reason,(card,role)->{AccountPolicy.version(card.version(),expected);return next(card,fill.apply(card.sheet()));});}
     private interface Mutation{Card apply(Card card,Role role);}
     private Ack execute(String kind,UUID c,UUID id,String actor,UUID request,long expected,Object payload,String reason,Mutation change){
         if(request==null||expected<0||payload==null)throw CharacterSheet.invalid();CharacterSheet.text(reason,1000,true);

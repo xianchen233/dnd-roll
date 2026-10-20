@@ -1,5 +1,15 @@
 # 继续工作的入口
 
+## 当前入口：P04 正在验收；P01/P02/P03 已完成
+
+2026-10-21 从d19d40a开工，独立核对该SHA的push39454060276/PR39454069467
+六job全部成功；仍为原分支feat/accounts-and-invitations /草稿PR #1，未合并/发布。
+P04契约contracts/content.md；规则与许可核对docs/research/content-5r.md。
+当前代码、实际RED/GREEN与最终待办以verification最新节和Git实际状态为准。
+P04a–d已实现，P04e完整验收及新SHA双CI进行中；不得提前标P04或M2完成。
+以下P03交接入口为本轮开始时的历史记录。
+
+
 ## 当前入口：P03 已完成；下一包 P04 尚未开工
 
 交接更新：2026-10-21（Asia/Shanghai）；P03代码验收于2026-10-20完成。

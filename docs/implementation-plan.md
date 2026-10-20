@@ -4,6 +4,12 @@
 
 续接入口：[当前交接状态](continuation.md) → [实际验收结果](verification.md) → [完整工作包与依赖](work-packages.md)。用户特别要求：任务超出聊天上下文后，必须能凭仓库文件继续推进。
 
+## 本轮当前状态（2026-10-21）
+
+P04a–d已按 `contracts/content.md` 完成代码，实际RED/GREEN见两端TDD；P04e完整
+验收进行中，须新代码SHA的push/PR六job全通过才关闭P04。原P01/P02/P03保持完成，
+不重做。下述“P04尚未开工”为本轮之前的历史基线；最新结果见verification和continuation。
+
 ## 工作阶段
 
 | 阶段 | 工作 | 完成条件 |

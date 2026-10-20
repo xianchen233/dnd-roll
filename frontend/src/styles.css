@@ -37,3 +37,9 @@
 .expiry-reminder { padding: 12px; background: #ffedc2; color: #714a16; }
 .character-transfer,.character-access { border-top: 1px solid #e4d9c8; padding-top: 18px; margin-top: 20px; }
 @media(max-width:760px) { .character-workspace { margin: 10px; padding: 15px; }.character-layout { grid-template-columns: 1fr; }.character-layout nav { border-right: 0; border-bottom: 1px solid #e4d9c8; }.sheet-object { grid-template-columns: 1fr; } }
+.content-panel { margin: 1rem 0; padding: 1rem; border: 1px solid #53677f; border-radius: .5rem; }
+.content-panel fieldset { margin: .75rem 0; display: flex; flex-wrap: wrap; gap: .7rem; }
+.content-panel label { display: flex; flex-direction: column; gap: .25rem; }
+.content-results { padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit,minmax(260px,1fr)); gap: .8rem; }
+.content-results li { padding: .8rem; background: #f3eee4; border: 1px solid #ded0bd; border-radius: .4rem; overflow-wrap: anywhere; }
+.content-panel pre { max-height: 22rem; overflow: auto; font-size: .8rem; }

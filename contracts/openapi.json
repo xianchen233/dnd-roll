@@ -3579,6 +3579,552 @@
           "differentPayload": "409 IDEMPOTENCY_CONFLICT"
         }
       }
+    },
+    "/api/campaigns/{campaignId}/content": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "campaignId",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "searchContent",
+        "responses": {
+          "200": {
+            "description": "Current authorized result; no-store, private",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentCatalog"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input, missing session/current permission or version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid input, missing session/current permission or version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Invalid input, missing session/current permission or version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Invalid input, missing session/current permission or version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 0,
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "",
+                "SPECIES",
+                "BACKGROUND",
+                "FEATURE",
+                "SPELL",
+                "ITEM",
+                "ATTACK",
+                "RULE"
+              ]
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 0,
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "rules",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "",
+                "5R",
+                "2014",
+                "CUSTOM"
+              ]
+            }
+          },
+          {
+            "name": "admitted",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "",
+                "true",
+                "false"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "/api/campaigns/{campaignId}/content/custom": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "campaignId",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "publishContent",
+        "responses": {
+          "200": {
+            "description": "Current authorized result; no-store, private",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharacterAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input, missing session/current permission or version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid input, missing session/current permission or version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Invalid input, missing session/current permission or version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Invalid input, missing session/current permission or version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Invalid input, missing session/current permission or version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomContentRequest"
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "namespace": "content-commands",
+          "authorization": "Current membership, visibility, control and admission before replay",
+          "samePayload": "Original acknowledgement before stale version; no effect",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT"
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/content/settings": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "campaignId",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "setContentAdmission",
+        "responses": {
+          "200": {
+            "description": "Current authorized result; no-store, private",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharacterAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input, missing session/current permission or version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid input, missing session/current permission or version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Invalid input, missing session/current permission or version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Invalid input, missing session/current permission or version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Invalid input, missing session/current permission or version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentSettingsRequest"
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "namespace": "content-commands",
+          "authorization": "Current membership, visibility, control and admission before replay",
+          "samePayload": "Original acknowledgement before stale version; no effect",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT"
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/characters/{id}/content-preview": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "campaignId",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "previewContent",
+        "responses": {
+          "200": {
+            "description": "Current authorized result; no-store, private",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentPreview"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input, missing session/current permission or version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid input, missing session/current permission or version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Invalid input, missing session/current permission or version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Invalid input, missing session/current permission or version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Invalid input, missing session/current permission or version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentPreviewRequest"
+              }
+            }
+          }
+        },
+        "x-character-permission": "Current DM/controller only; current content admission independent of character control",
+        "x-read-only": true
+      }
+    },
+    "/api/campaigns/{campaignId}/characters/{id}/content": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "campaignId",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "fillContent",
+        "responses": {
+          "200": {
+            "description": "Current authorized result; no-store, private",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharacterAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input, missing session/current permission or version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid input, missing session/current permission or version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Invalid input, missing session/current permission or version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Invalid input, missing session/current permission or version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Invalid input, missing session/current permission or version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentFillRequest"
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "namespace": "character-commands",
+          "authorization": "Current membership, visibility, control and admission before receipt replay",
+          "samePayload": "Original acknowledgement before stale checks; no mutation or event",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT"
+        },
+        "x-character-permission": "Current DM/controller only; current content admission independent of character control"
+      }
     }
   },
   "components": {
@@ -6339,6 +6885,462 @@
             "format": "uuid"
           },
           "tokenVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        }
+      },
+      "ContentSource": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "book",
+          "revision",
+          "rules",
+          "detail"
+        ],
+        "properties": {
+          "book": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "revision": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "rules": {
+            "type": "string",
+            "enum": [
+              "5R",
+              "2014",
+              "CUSTOM"
+            ]
+          },
+          "detail": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 500
+          }
+        }
+      },
+      "ContentData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "aliases",
+          "type",
+          "source",
+          "description",
+          "spellLevel",
+          "dice",
+          "damageType",
+          "rights"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "maxItems": 20
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "SPECIES",
+              "BACKGROUND",
+              "FEATURE",
+              "SPELL",
+              "ITEM",
+              "ATTACK",
+              "RULE"
+            ]
+          },
+          "source": {
+            "$ref": "#/components/schemas/ContentSource"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 5000
+          },
+          "spellLevel": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9
+          },
+          "dice": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 100
+          },
+          "damageType": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 100
+          },
+          "rights": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        }
+      },
+      "ContentEntry": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "aliases",
+          "type",
+          "source",
+          "description",
+          "spellLevel",
+          "dice",
+          "damageType",
+          "rights",
+          "license",
+          "attribution",
+          "changes",
+          "admitted",
+          "support"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "maxItems": 20
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "SPECIES",
+              "BACKGROUND",
+              "FEATURE",
+              "SPELL",
+              "ITEM",
+              "ATTACK",
+              "RULE"
+            ]
+          },
+          "source": {
+            "$ref": "#/components/schemas/ContentSource"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 5000
+          },
+          "spellLevel": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9
+          },
+          "dice": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 100
+          },
+          "damageType": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 100
+          },
+          "rights": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "license": {
+            "type": "string",
+            "enum": [
+              "CC-BY-4.0",
+              "CAMPAIGN"
+            ]
+          },
+          "attribution": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "changes": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "admitted": {
+            "type": "boolean"
+          },
+          "support": {
+            "type": "string",
+            "enum": [
+              "DESCRIPTION"
+            ]
+          }
+        }
+      },
+      "ContentCatalog": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "campaignVersion",
+          "mode",
+          "approvedIds",
+          "entries",
+          "total",
+          "structured",
+          "automated"
+        ],
+        "properties": {
+          "campaignVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "REVIEW",
+              "FREE"
+            ]
+          },
+          "approvedIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 500,
+            "uniqueItems": true
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContentEntry"
+            },
+            "maxItems": 510
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 510
+          },
+          "structured": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 510
+          },
+          "automated": {
+            "type": "integer",
+            "const": 0
+          }
+        }
+      },
+      "CustomContentRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "entry"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "entry": {
+            "$ref": "#/components/schemas/ContentData"
+          }
+        }
+      },
+      "ContentSettingsRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "mode",
+          "approvedIds"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "REVIEW",
+              "FREE"
+            ]
+          },
+          "approvedIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 500,
+            "uniqueItems": true
+          }
+        }
+      },
+      "ContentPreviewRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expectedVersion",
+          "entryId",
+          "ability",
+          "castingId"
+        ],
+        "properties": {
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "entryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ability": {
+            "type": "string",
+            "enum": [
+              "STR",
+              "DEX",
+              "CON",
+              "INT",
+              "WIS",
+              "CHA"
+            ]
+          },
+          "castingId": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 100
+          }
+        }
+      },
+      "ContentPreview": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "entryId",
+          "expectedVersion",
+          "policyVersion",
+          "sheet",
+          "warning"
+        ],
+        "properties": {
+          "entryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "policyVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "sheet": {
+            "$ref": "#/components/schemas/CharacterSheet"
+          },
+          "warning": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        }
+      },
+      "ContentFillRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "entryId",
+          "ability",
+          "castingId",
+          "policyVersion",
+          "reason"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "entryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ability": {
+            "type": "string",
+            "enum": [
+              "STR",
+              "DEX",
+              "CON",
+              "INT",
+              "WIS",
+              "CHA"
+            ]
+          },
+          "castingId": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 100
+          },
+          "policyVersion": {
             "type": "integer",
             "minimum": 0,
             "maximum": 9007199254740991

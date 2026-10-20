@@ -94,6 +94,13 @@ assert.equal(api.openapi, '3.1.0');
 assert.equal(api.jsonSchemaDialect, 'https://json-schema.org/draft/2020-12/schema');
 assert.equal(event.$schema, api.jsonSchemaDialect);
 checkRefs(api);
+for (const [path, method] of [
+  ['/api/campaigns/{campaignId}/content','get'],
+  ['/api/campaigns/{campaignId}/content/custom','post'],
+  ['/api/campaigns/{campaignId}/content/settings','post'],
+  ['/api/campaigns/{campaignId}/characters/{id}/content-preview','post'],
+  ['/api/campaigns/{campaignId}/characters/{id}/content','post'],
+]) assert.ok(api.paths[path]?.[method], `P04 operation missing: ${method} ${path}`);
 const documentedOperations = [...`${readme}\n${accounts}\n${scenes}\n${assets}\n${tokens}\n${mapVisibility}\n${characters}`.matchAll(/(?:`|### )(GET|POST) (\/api[^` \r\n]*)/g)]
   .map(([, method, path]) => `${method} ${path.split('?')[0]}`);
 const actualOperations = Object.entries(api.paths).flatMap(([path, item]) =>
@@ -674,7 +681,7 @@ for (const field of ['hp', 'maxHp', 'resources', 'notes', 'controllers', 'sheet'
 for (const path of Object.keys(api.paths).filter(p => p.includes('/characters'))) {
   for (const [method, op] of Object.entries(api.paths[path]).filter(([method]) => ['get', 'post'].includes(method))) {
     assert.ok(op['x-character-permission']);
-    if (method === 'post') { assert.equal(op['x-idempotency'].namespace, 'character-commands'); assert.match(op['x-idempotency'].authorization, /before receipt replay/); assert.match(op['x-idempotency'].samePayload, /before stale.*no mutation or event/); }
+    if (method === 'post' && !path.endsWith('/content-preview')) { assert.equal(op['x-idempotency'].namespace, 'character-commands'); assert.match(op['x-idempotency'].authorization, /before receipt replay/); assert.match(op['x-idempotency'].samePayload, /before stale.*no mutation or event/); }
   }
 }
 assert.deepEqual(schemas.CharacterSource.properties.rules.enum, ['5R', '2014', 'CUSTOM']);
@@ -685,4 +692,17 @@ assert.match(api['x-character-policy'].authorization, /creation\/copy\/import.*c
 for (const value of [0, 31, 1.5, '12', null]) assert.throws(() => validate(schemas.CharacterSheet, { ...characterExample.sheet, abilities: { ...characterExample.sheet.abilities, STR: value } }));
 for (const value of [null, -1, 4, 0.5]) assert.throws(() => validate(schemas.CharacterCombat, { ...characterExample.sheet.combat, deathFailures: value }));
 assert.throws(() => validate(schemas.CharacterDocument, { ...characterExample, formatVersion: 2 }));
-console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; all 31 existing operations/assertions retained; P03 strict nested sheets/transfer, sourced calculations, DM overrides, independent resource identity, authorization before replay and no private summary fields. Focused checker, not a general OpenAPI validator.`);
+assert.equal(api.paths['/api/campaigns/{campaignId}/characters/{id}/content-preview'].post['x-read-only'], true);
+const seed = JSON.parse(await read('../backend/src/main/resources/content/srd-selection.json'));
+assert.equal(new Set(seed.map(e => e.id)).size, seed.length);
+for (const e of seed) {
+  validate(schemas.ContentData, e.data);
+  assert.equal(e.builtin, true); assert.equal(e.license, 'CC-BY-4.0');
+  assert.match(e.attribution, /Wizards of the Coast LLC/); assert.match(e.attribution, /creativecommons.org/);
+  assert.ok(e.changes.length); assert.equal(e.data.source.rules, '5R');
+}
+const sample={requestId:id,expectedVersion:0,entry:seed[0].data};
+validate(schemas.CustomContentRequest,sample);
+for (const field of Object.keys(sample.entry)) { const broken=structuredClone(sample); delete broken.entry[field]; assert.throws(()=>validate(schemas.CustomContentRequest,broken)); }
+assert.throws(()=>validate(schemas.ContentFillRequest,{requestId:id,expectedVersion:0,policyVersion:0,entryId:id,ability:'STR',castingId:'',reason:'chosen',sheet:characterExample.sheet}));
+console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; all 45 previous operations retained; P04 licensed seed, strict commands, read-only preview and separate admission. Focused checker, not a general OpenAPI validator.`);

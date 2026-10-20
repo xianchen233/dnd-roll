@@ -51,3 +51,12 @@ boundaries across both clients, disconnection, revocation and real service resta
 typed sheets, sources/calculations, histories, resources, conditions, transfer and
 map placement references. A token configuration does not constitute a character card.
 The synthetic [version 1 example](character.example.json) contains no private data.
+
+[P04 searchable content and explicit fill](content.md) adds licensed selected SRD
+data, immutable campaign entries, separate admission and authoritative previews.
+
+`GET /api/campaigns/{campaignId}/content`
+`POST /api/campaigns/{campaignId}/content/custom`
+`POST /api/campaigns/{campaignId}/content/settings`
+`POST /api/campaigns/{campaignId}/characters/{id}/content-preview`
+`POST /api/campaigns/{campaignId}/characters/{id}/content`

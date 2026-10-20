@@ -252,3 +252,31 @@ PR39452563178六job全success；完整日志确认65unit+75IT、177前端/构建
 标准Compose23浏览器与五组实际db/backend重启全PASS。至此P03完成；整个M2及P04–P10/A
 未完成。上文pending/失败均为历史真实时点，由最终证据关闭，未伪造RED或跳过检查。
 完成状态文档后续HEAD仍独立核对，见docs/verification.md与continuation.md。
+
+
+## P04 实际 RED/GREEN（2026-10-21，Asia/Shanghai）
+
+- 开工 d19d40a 本地/origin/PR 一致、clean；独立认证读取 push39454060276 /
+  PR39454069467 的六个 job completed/success，PR #1 open/draft/main。
+- 00:21:21 聚焦真实 HTTP：新检索预期200实际404，1 assertion RED；
+  p04-http-red.log。00:22:44 扩展四场景4 assertion RED，均停在缺入口前置，
+  不声称后续断言也已执行；p04-http-all-red.log。
+- 00:25:20 同四场景 GREEN；65unit+4ContentIT，通过版本/许可搜索、独立准入、
+  预览无变更、单次填入、精确重试、旧策略冲突、双请求并发与隐藏后旧回执拒绝。
+- 第一轮完整69unit+80真实IT通过（含4纯填卡单测及V7→V8全表原列/行/checksum）。
+  独立清TEST_DATABASE_*的69unit亦通过。证据 p04-backend-full.log / p04-unit-no-db.log。
+- 00:38:07 开放署名随角色导出丢失的新增单测实际 RED（5项中1失败），
+  p04-export-attribution-red.log；最小修复在Source.detail附原署名与修改说明。
+- DM隐式权限不能把未批准条目显示成全团已准入：真实HTTP实际false/true RED，
+  p04-admission-label-actual-red.log；目录改为报告团策略，执行端单独允许DM覆盖。
+- 最后增加真实deferred receipt commit故障回滚、自定义发布撤权后回执拒绝、
+  两个不同同版本填卡命令单胜；这些是新增覆盖，不虚构初次失败。
+
+环境准备失败单列：首次pg_ctl漏huge_pages=off致1314，未进入HTTP；修正后另取得
+实际404 RED。署名RED尚未修复时的首轮准入测试被unit挡住，不算准入RED；后一次
+运行中JAR被Windows占用导致repackage失败，也不是行为RED。停止已核实进程后重跑。
+最终计数/完整浏览器/实际重启与精确SHA双CI以docs/verification.md为准。
+
+最终Source署名与准入修复后完整70unit+82IT通过；独立清库环境70unit通过。
+V8迁移保留全部20张旧表原列/行和七checksum。最终日志p04-backend-final.log /
+p04-unit-no-db-final.log；最后新增两项真实HTTP并发/提交故障亦通过。

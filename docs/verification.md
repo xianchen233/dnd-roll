@@ -1,5 +1,49 @@
 # 阶段验收记录
 
+## P04 本地最终验收通过，精确SHA远端CI待核对（2026-10-21）
+
+P04a–d已实现；P04e本地门槛通过，须提交代码SHA的push/PR六job成功后才关闭P04。
+原P01/P02/P03完成状态不变；未合并、未发布，整个M2与P05–P10/A仍未完成。
+
+| 检查 | 实际结果与仓库外证据 |
+| --- | --- |
+| 无数据库单测 | 最终70通过，清除TEST_DATABASE_*；p04-unit-no-db-final.log |
+| 真实后端全量 | 最终70unit+82真实PG/HTTP/WS/迁移，0失败/错误/跳过；p04-backend-final.log |
+| 前端/生产构建 | 17文件186通过，TS/Vite通过；p04-frontend-final-3.log / p04-build-final-3.log；主chunk约623kB提示保留 |
+| 契约 | 50 HTTP操作，全部45旧操作/schema逐项deepEqual保持；新严格字段、来源与许可、只读预览和独立准入检查通过 |
+| 真实Chrome | 最终生产构建27 passed（1.2m），原23全部保留、60秒/条、零retry；p04-browser-full-final.log |
+| V7→V8迁移 | ContentMigrationIT逐表保留20张旧表全部原列/行和七checksum，包含既有角色/控制/历史/回执；空目录采用默认策略，无批量改卡 |
+| 真实服务重启 | 最终新JAR的原五组+新content组seed→实际Java/PG停止/同库同私有素材根启动→六组新会话verify；p04-delivered-restart-{seed,verify}.log，p04-delivered-*-restart-evidence.json |
+| 视觉与静态 | 人工查看真实content-search.png的完整10条目录与筛选/来源/许可/选项；git diff --check及新脚本node --check通过 |
+
+新content重启组比较目录、两份不可变修订、准入、完整卡与来源、历史、版本和原发布/
+策略/填卡回执；切回审核不改旧卡；取消准入/移除成员后旧回执不能重填或读取目录。
+最终Java/PG前后PID证据p04-process-evidence.json；浏览器JAR复制到.tools避免Windows
+重打包占用。先前一次seed撞到保留证据文件的wx保护（EEXIST），没有覆盖原证据；
+换全新p04-delivered前缀后完整重跑，前一次重启也已完成但不代替最后源码复验。
+
+追加审查RED：Source导出署名丢失、DM隐式权限误显示全团准入，均已实际复现并最小
+修复；最终70+82覆盖通过。deferred receipt commit故障验证发布/版本/回执全部回滚；
+两个不同同版本填卡命令一胜一409、相同重试单效、过期策略无历史残留均通过。
+最终增加一项前端DM准入测试初次定位匹配到option和正文两处，限定目录断言后186通过；
+这是测试定位准备问题，不计作新行为RED。其他真实失败记录见两端TDD与下段。
+
+范围：仅十条SRD5.2.1精选、有限字段填卡和团内自定义；不是完整SRD或自动建卡/规则
+执行器。商业索引/译本不打包；完整来源署名与修改说明随开放填卡Source保留到导出。
+生命/属性/熟练/精通/升级选择仍手动；投骰、战斗、触屏、容量、TLS、完整备份/异机恢复
+未因P04而标完成。最终远端结果待下次追加，不以旧P03或开工SHA绿灯替代。
+
+## P04 开工与历史过程（2026-10-21）
+
+开工HEAD d19d40a02b988be0f12e84fc6adb6d5a624b6f1d clean、fetch后与origin一致；
+独立认证API核对push39454060276/PR39454069467六job全部completed/success；
+PR #1 open/draft、base main。P01/P02/P03保持完成，不重复开发。
+
+已先固定contracts/content.md及docs/research/content-5r.md，执行真实RED/GREEN，
+证据见两端TDD及仓库外.tools/p04-*。P04a–d代码已实现，P04e最终验收/精确SHA双CI
+进行中；P04和整个M2尚未关闭。最终结果继续追加本节，不复用P03绿灯。
+
+
 ## P03 完成：本地与精确代码 SHA 双 CI 全通过
 
 验收日期：2026-10-20（Asia/Shanghai）。代码提交

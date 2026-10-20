@@ -11,6 +11,15 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Added
 
+- Add a searchable, attributed selection of ten SRD 5.2.1 entries, immutable
+  campaign custom entries and explicit 5R/2014/custom source identities. Search,
+  structured fill and execution coverage are reported separately.
+- Add independent DM review/free content admission, server character-fill previews
+  and versioned, retry-safe fill with retained sources/history. V8 persists custom
+  content, admission settings and receipts; catalog changes never rewrite sheets.
+- Add Chinese catalog filters, provenance/licensing details, explicit preview and
+  reusable campaign custom entries. Filling does not grant proficiency/mastery,
+  apply choices/effects, spend resources or execute dice.
 - Add independent 5R character sheets with all six field groups, multiple
   characters per player, sourced server calculations, reasoned DM overrides,
   immutable edit history and revocation-safe character control.

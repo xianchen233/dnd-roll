@@ -46,7 +46,7 @@ public class CharacterController {
     // rather than UTF-16 characters, before the transaction can hit its size CHECK.
     private long padding(JsonNode n){long size=n.isObject()?Math.max(0,2L*n.size()-1):n.isArray()?Math.max(0,n.size()-1):0;if(n.isContainer())for(JsonNode v:n)size+=padding(v);return size;}
     /** Require every nested record field, including primitive 0/false: no silent defaults. */
-    private void shape(JsonNode n,Type type){
+    static void shape(JsonNode n,Type type){
         if(n==null||n.isNull())throw CharacterSheet.invalid();
         if(type instanceof ParameterizedType p){
             var args=p.getActualTypeArguments();if(p.getRawType()==List.class){if(!n.isArray()||n.size()>500)throw CharacterSheet.invalid();n.forEach(v->shape(v,args[0]));}

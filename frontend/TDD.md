@@ -255,3 +255,28 @@ PR39452563178六job全success；完整日志确认65unit+75IT、177前端/构建
 标准Compose23浏览器与五组实际db/backend重启全PASS。至此P03完成；整个M2及P04–P10/A
 未完成。上文pending/失败均为历史真实时点，由最终证据关闭，未伪造RED或跳过检查。
 完成状态文档后续HEAD仍独立核对，见docs/verification.md与continuation.md。
+
+
+## P04 规则检索与填卡（2026-10-21）
+
+00:25:36 先写 saved character workspace 的6项测试并实际运行：6 failed，
+均缺少“规则检索与填卡”入口，p04-frontend-red.log；不把未走到的后续断言当RED。
+接入ContentPanel、客户端和服务器预览后00:27:24六项GREEN；
+全量183通过。类型检查曾因误用Testing Library role exact选项失败，修正为受支持
+调用；一次编辑脚本cwd错误未改文件，单列准备故障，未当行为失败。
+
+真实Chrome首轮4场景：2passed、2failed，精确getByLabel等待条目类型/自定义体系
+select超时；trace外置保留。显式aria-label后00:35四条11.5秒全部通过，未改timeout、
+业务断言或retry。涵盖SRD许可与DEX明确选择/预览/不执行效果、玩家发布2014兼容
+条目/DM准入/快照、已提交丢响应的原body重试及失败读恢复、真实offline加原生
+WebSocket close/新CONNECTED后已提交隐藏撤权。增加精确accessible-name覆盖首次
+即通过，不虚构为单测RED；最终全量计数见verification。
+
+旧P01/P02/P03的全部测试和23条浏览器文件保留；新P04是独立e2e/content.spec.ts。
+规则管理不确定命令保存原body；填卡沿用P03命令状态机，ACK后最新权威读取才同步。
+草稿/切团/切角色/撤权/刷新隔离旧检索和预览；只允许服务器确定的字段变化。
+
+最终17文件186通过、TS/Vite生产构建通过；原23+新4共27真实Chrome生产流程全部
+通过（1.2m），p04-frontend-final-3.log / p04-build-final-3.log /
+p04-browser-full-final.log。新增DM准入断言初次匹配option与正文两处，限定目录
+查询后通过，不计作行为RED。新公开目录采用原浅色面板并人工检查截图。

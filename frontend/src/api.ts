@@ -1,8 +1,14 @@
 import type { Asset, Assets, Campaign, CreatedInvitation, Csrf, Identity, Invitations, InvitePreview, MapConfiguration, Members, Move, Scene, SceneMap, Scenes, SceneReceipt, Token, VersionedCommand } from './types';
 import type { AuthoredTokens, TokenCommand, TokenReceipt, MapView, Fog, FogCommand } from './types';
 import type { CharacterList, CharacterDetail, CharacterAck, CharacterAccess, CharacterHistory, CharacterDocument, Sheet } from './characters';
+import type { Catalog,ContentData,ContentFilters,ContentChoice,ContentPreview,ContentFill } from './content';
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
 export class Api {
+  content(id:string,filters:ContentFilters):Promise<Catalog>{return this.call(`/campaigns/${encodeURIComponent(id)}/content?${new URLSearchParams(filters)}`);}
+  publishContent(id:string,body:VersionedCommand & {entry:ContentData}):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(id)}/content/custom`,body);}
+  contentSettings(id:string,body:VersionedCommand & {mode:string;approvedIds:string[]}):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(id)}/content/settings`,body);}
+  previewContent(id:string,characterId:string,body:ContentChoice):Promise<ContentPreview>{return this.post(`${this.characterPath(id,characterId)}/content-preview`,body);}
+  fillContent(id:string,characterId:string,body:ContentFill):Promise<CharacterAck>{return this.post(`${this.characterPath(id,characterId)}/content`,body);}
   characters(id: string): Promise<CharacterList> { return this.call(`/campaigns/${encodeURIComponent(id)}/characters`); }
   character(id: string, characterId: string): Promise<CharacterDetail> { return this.call(this.characterPath(id, characterId)); }
   createCharacter(id: string, body: VersionedCommand & { sheet: Sheet }): Promise<CharacterAck> { return this.post(`/campaigns/${encodeURIComponent(id)}/characters`, body); }
