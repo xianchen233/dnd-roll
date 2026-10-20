@@ -34,9 +34,10 @@ P04–P10/A仍未完成，检索、投骰、战斗、容量/触屏/TLS/完整备
 
 ## 当前分工
 
-2026-10-21：P03 从 b1f2c5f 开工后已完成，见 `contracts/characters.md` 与
-`work-packages.md` 的 P03a–e 有序子包。旧“P03尚未开工”段落为P02交接历史；
-P03所有门槛已通过；P04及整个M2仍未完成，完成文档新HEAD的Checks也须独立核对。
+2026-10-21：P03与P04的全部门槛已通过，见 `contracts/characters.md`、
+`contracts/content.md` 及 `work-packages.md` 的有序子包。旧“P03/P04尚未开工”
+段落分别是此前交接的历史；当前下一包为P05，整个M2仍未完成，完成文档新HEAD的
+Checks也须独立核对。
 
 | 负责方 | 目录与责任 | 依赖 |
 | --- | --- | --- |
