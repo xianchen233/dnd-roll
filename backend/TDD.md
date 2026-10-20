@@ -284,3 +284,33 @@ p04-unit-no-db-final.log；最后新增两项真实HTTP并发/提交故障亦通
 P04代码a7ef388的push39460581794/PR39460588799六job全success，逐份日志确认
 70unit+82IT、186前端/构建、50契约、两组标准Compose27浏览器及六组实际db/backend
 重启全PASS；P04至此完成。完成状态文档后续HEAD另核对，不将旧SHA冒称新SHA结果。
+# P05 — 2026-10-21 (Asia/Shanghai), in progress
+
+- 01:11 `mvn -Dtest=DiceTest test` with external JDK25/Maven cache: 4 tests,
+  3 assertion failures + empty-result access error against the compileable stub;
+  `.tools/p05-dice-red.log`. Minimum bounded parser/entropy implementation then
+  same command 4 passed, `.tools/p05-dice-green.log` (01:11:50).
+- 01:13 `-Pintegration -Dit.test=DiceIT verify`: 74 units passed; three new real
+  HTTP tests failed expected200/actual404 at missing `/rolls`. Later assertions
+  were not yet executed. `.tools/p05-http-red.log`.
+- First implementation rerun: all three behavior tests passed their assertions,
+  but two fixture teardowns failed because the new durable roll FK prevented
+  deleting their source cards. Fixed fixture cleanup to remove only its own rolls
+  before cards; this run is NOT a full pass. `.tools/p05-http-green.log`.
+- Initiative tests added before implementation: p05-initiative-red.log original
+  3 HTTP passed/new 2 missing-route failures; then p05-initiative-green.log all 5
+  passed. Additional deterministic entropy tests verify one group draw, stable
+  candidate ties and complete validation before drawing; added as regressions.
+- First complete p05-backend-full-2.log: 77 units + 88 real integration passed.
+  Three additional HTTP regressions cover visible-before-limit pagination,
+  control-only revocation, initiative commit rollback and DM downgrade; focused
+  p05-backend-focused-2.log 77 units + 8 DiceIT passed.
+- p05-backend-final.log: 77 units passed, 30/91 IT context startup errors from
+  local PG `too many clients` while the acceptance Java and cached test pools ran
+  together. Kept failure, stopped verified acceptance Java, no assertion/timeout
+  weakening: p05-backend-delivered.log final **77 units + 91 real IT passed**, no
+  failure/error/skip. Independent no-DB 77 units passed (p05-unit-no-db.log).
+- DiceMigrationIT preserves every original column/row of all 23 V8 tables and
+  all eight checksums, validates same-campaign roll source FK. Seven groups around
+  actual packaged-Java/PostgreSQL stop/restart passed with new sessions;
+  p05-restart-{seed,verify}.log and p05-process-evidence.json outside the repo.

@@ -284,3 +284,29 @@ p04-browser-full-final.log。新增DM准入断言初次匹配option与正文两�
 P04代码a7ef388的push39460581794/PR39460588799六job全success，逐份日志确认
 70unit+82IT、186前端/构建、50契约、两组标准Compose27浏览器及六组实际db/backend
 重启全PASS；P04至此完成。完成状态文档后续HEAD另核对，不将旧SHA冒称新SHA结果。
+# P05 — 2026-10-21 (Asia/Shanghai), in progress
+
+- 01:19:46 `npm test -- --run src/dice.test.tsx`: 7 failed against the empty
+  workspace; missing controls/behavior. One deliberately rejected pending fixture
+  promise was unobserved by the stub (separate runner error), not a passing check.
+  `.tools/p05-frontend-red.log`.
+- Minimum workspace: 6 passed/1 assertion selected both an option and breakdown;
+  scope to the breakdown text, then 7 passed. `npm run build` initially rejected
+  unsupported Testing Library `exact` option in test helper; remove option, no
+  behavior/timeout/retry changes. Full 193 tests and production build passed.
+- First real production Chrome P05 suite: 3 passed/1 failed. Actual offline +
+  native socket close + new CONNECTED exposed source404: Promise.all discarded
+  the new filtered feed, leaving the old record until another poll. No mock/retry
+  or relaxed assertion used. `.tools/p05-browser-first.log` and retained trace.
+- 01:28:59 focused regression: 1 failed/7 passed, old record remained after
+  selected source became hidden. `.tools/p05-hidden-source-red.log`. On source404
+  immediately clear feed/cards/initiative/history and selected source, then start
+  a fresh source-free authoritative read. Same test 8 passed (01:29:19), production
+  build passed; `.tools/p05-hidden-source-green.log`, `.tools/p05-build-2.log`.
+- History details regression p05-history-ui-red.log: 1 failed/8 passed; minimum
+  DM-only earlier-snapshot breakdown then 9 passed. Final whole frontend 195 tests
+  + production build passed (p05-frontend-delivered.log/p05-build-delivered.log).
+- Full production Chrome 31 passed (1.4m), original 27 files/scenarios retained;
+  after history UI addition all 4 P05 flows passed again (11.4s). Every scenario
+  retains 60 seconds/zero retries. p05-browser-full.log/p05-browser-delivered.log.
+  Exact delivered SHA Compose suite/CI still checked independently, see verification.

@@ -1,6 +1,40 @@
 # 继续工作的入口
 
-## 当前入口：P04 已完成；下一包 P05 尚未开工
+## 当前入口：P05 已实现；最终整体验收/精确 SHA 双 CI 进行中
+
+更新：2026-10-21（Asia/Shanghai）。沿用 `feat/accounts-and-invitations` /
+[草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，不合并、不发布。
+开工独立fetch及认证API核对HEAD **963ddd74750644b33fdfddd661e24d7977e806c5**：
+本地/origin/PR一致、clean；push39461677478/PR39461684085六job均completed/success，
+PR open/draft、base main。P01–P04保持完成，不重复开发。
+
+P05契约 `contracts/dice-initiative.md`，规则来源 `docs/research/dice-initiative-5r.md`。
+已实现服务端SecureRandom、受限表达式/逐骰取舍与来源快照、暗骰和当前权限过滤、
+按钮/命令共用持久回执；5R独立角色参战、显式怪物分组、突袭劣势、候选/手动确认
+次序与DM历史，V9/V10保留旧资料。不会执行回合/伤害/资源（P06）。
+
+实际TDD见两端TDD及verification：骰子4断言RED→GREEN，真实HTTP缺路由RED→
+GREEN，先攻2缺路由RED→GREEN；前端7入口RED→GREEN，真实offline重连暴露旧
+公开记录残留，新增组件断言RED→立即清空/重新读GREEN；历史详情追加RED→GREEN。
+独立无库77unit、195前端/构建、58契约（旧50操作/全部schema deepEqual）、完整31
+浏览器（原27保留）和历史UI追加后4条再次复验均通过。首次完整77unit+88IT通过；
+追加3IT聚焦8通过。一次全量因同时运行验收Java而耗尽本机PG连接，30项上下文无法
+启动；停止验收Java后串行最终 **77unit+91IT全部通过**，未弱化断言或略过检查。
+
+七组seed→实际Java/PG停止/同库同素材根启动→新会话verify均PASS；证据
+`.tools/p05-final-*-restart-evidence.json`、`p05-restart-{seed,verify}.log`与
+`p05-process-evidence.json`（真实CommandLine、前后不同ID）。最终JAR在.tools/
+p05-acceptance.jar，启动脚本start-p05-backend.ps1。任何进程操作前重新核对身份。
+credentials只在内存注入，不打印；所有日志/运行时/私有证据在仓库外.tools。
+
+下一可执行步骤：检查新代码和实际状态记录后提交推送
+原分支；独立核验代码SHA的push/PR六job/标准Compose31浏览器/七组容器重启全PASS，
+然后才关闭P05并更新本页/verification/work-packages/implementation-plan及原草稿PR。
+**P05e、P05与M2尚未完成**；后续P06–P10/A不丢弃。完成文档的新HEAD也独立核验。
+
+以下为P04完成交接时的历史入口，不作为当前下一步。
+
+## 历史入口：P04 已完成；下一包 P05 尚未开工
 
 更新：2026-10-21（Asia/Shanghai）。继续 `feat/accounts-and-invitations` /
 [草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，未合并、未发布。

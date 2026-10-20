@@ -2,8 +2,16 @@ import type { Asset, Assets, Campaign, CreatedInvitation, Csrf, Identity, Invita
 import type { AuthoredTokens, TokenCommand, TokenReceipt, MapView, Fog, FogCommand } from './types';
 import type { CharacterList, CharacterDetail, CharacterAck, CharacterAccess, CharacterHistory, CharacterDocument, Sheet } from './characters';
 import type { Catalog,ContentData,ContentFilters,ContentChoice,ContentPreview,ContentFill } from './content';
+import type {DiceCommand,DiceTextCommand,Roll,RollList,Initiative,InitiativeGenerate,InitiativeConfirm,InitiativeHistory} from './dice';
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
 export class Api {
+  rolls(id:string,before=''):Promise<RollList>{return this.call(`/campaigns/${encodeURIComponent(id)}/rolls${before?`?before=${encodeURIComponent(before)}`:''}`);}
+  roll(id:string,body:DiceCommand):Promise<Roll>{return this.post(`/campaigns/${encodeURIComponent(id)}/rolls`,body);}
+  rollCommand(id:string,body:DiceTextCommand):Promise<Roll>{return this.post(`/campaigns/${encodeURIComponent(id)}/roll-commands`,body);}
+  initiative(id:string):Promise<Initiative>{return this.call(`/campaigns/${encodeURIComponent(id)}/initiative`);}
+  generateInitiative(id:string,body:InitiativeGenerate):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(id)}/initiative`,body);}
+  confirmInitiative(id:string,body:InitiativeConfirm):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(id)}/initiative/confirm`,body);}
+  initiativeHistory(id:string):Promise<InitiativeHistory[]>{return this.call(`/campaigns/${encodeURIComponent(id)}/initiative/history`);}
   content(id:string,filters:ContentFilters):Promise<Catalog>{return this.call(`/campaigns/${encodeURIComponent(id)}/content?${new URLSearchParams(filters)}`);}
   publishContent(id:string,body:VersionedCommand & {entry:ContentData}):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(id)}/content/custom`,body);}
   contentSettings(id:string,body:VersionedCommand & {mode:string;approvedIds:string[]}):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(id)}/content/settings`,body);}

@@ -60,3 +60,15 @@ data, immutable campaign entries, separate admission and authoritative previews.
 `POST /api/campaigns/{campaignId}/content/settings`
 `POST /api/campaigns/{campaignId}/characters/{id}/content-preview`
 `POST /api/campaigns/{campaignId}/characters/{id}/content`
+
+[P05 dice and 5R initiative](dice-initiative.md) adds server-owned immutable rolls,
+DM-only dice, shared command/button behavior and explicit initiative confirmation.
+
+`GET /api/campaigns/{campaignId}/rolls`
+`GET /api/campaigns/{campaignId}/rolls/{id}`
+`POST /api/campaigns/{campaignId}/rolls`
+`POST /api/campaigns/{campaignId}/roll-commands`
+`GET /api/campaigns/{campaignId}/initiative`
+`POST /api/campaigns/{campaignId}/initiative`
+`POST /api/campaigns/{campaignId}/initiative/confirm`
+`GET /api/campaigns/{campaignId}/initiative/history`

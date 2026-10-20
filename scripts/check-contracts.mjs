@@ -705,4 +705,15 @@ const sample={requestId:id,expectedVersion:0,entry:seed[0].data};
 validate(schemas.CustomContentRequest,sample);
 for (const field of Object.keys(sample.entry)) { const broken=structuredClone(sample); delete broken.entry[field]; assert.throws(()=>validate(schemas.CustomContentRequest,broken)); }
 assert.throws(()=>validate(schemas.ContentFillRequest,{requestId:id,expectedVersion:0,policyVersion:0,entryId:id,ability:'STR',castingId:'',reason:'chosen',sheet:characterExample.sheet}));
-console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; all 45 previous operations retained; P04 licensed seed, strict commands, read-only preview and separate admission. Focused checker, not a general OpenAPI validator.`);
+const diceCommand={requestId:id,expectedVersion:0,characterId:'',key:'EXPRESSION',expression:'2d6+3',visibility:'PUBLIC',advantage:[],disadvantage:[]};
+validate(schemas.DiceCommand,diceCommand);
+for(const field of Object.keys(diceCommand)){const broken={...diceCommand};delete broken[field];assert.throws(()=>validate(schemas.DiceCommand,broken));assert.throws(()=>validate(schemas.DiceCommand,{...diceCommand,[field]:null}));}
+for(const field of ['actor','total','result','dice','kept'])assert.throws(()=>validate(schemas.DiceCommand,{...diceCommand,[field]:20}));
+assert.throws(()=>validate(schemas.DiceCommand,{...diceCommand,expectedVersion:0.5}));
+assert.throws(()=>validate(schemas.DiceCommand,{...diceCommand,visibility:'PLAYER'}));
+assert.throws(()=>validate(schemas.DiceCommand,{...diceCommand,advantage:['']}));
+const publicInitiative={status:'CONFIRMED',entries:[{characterId:id,name:'Visible hero',total:15}]};validate(schemas.InitiativePublicState,publicInitiative);
+for(const secret of ['version','group','surprised','result','calculation','hidden','position','count']){assert.throws(()=>validate(schemas.InitiativePublicState,{...publicInitiative,[secret]:'secret'}));assert.throws(()=>validate(schemas.InitiativePublicEntry,{...publicInitiative.entries[0],[secret]:'secret'}));}
+assert.equal(api.paths['/api/campaigns/{campaignId}/rolls'].post['x-idempotency'].namespace,api.paths['/api/campaigns/{campaignId}/roll-commands'].post['x-idempotency'].namespace);
+assert.match(api['x-dice-policy'].events,/DM-only.*DMs only/);assert.match(api['x-dice-policy'].visibility,/filter before pagination/);
+console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; all 50 previous operations retained; P05 strict server dice commands, shared receipts and secret-free initiative projection. Focused checker, not a general OpenAPI validator.`);

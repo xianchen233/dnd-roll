@@ -1,5 +1,62 @@
 # 阶段验收记录
 
+## P05 本地完整验收通过；精确 SHA 远端 CI 待核验（2026-10-21）
+
+最终串行 `p05-backend-delivered.log`：**77unit+91真实IT，0失败/错误/跳过**。
+195前端/生产构建、58契约、完整31真实浏览器（历史UI后新4条再次通过）、23旧表
+全部原列/行及八checksum、七组实际Java/PG停止/同库同素材根重启均通过。
+`p05-restart-{seed,verify}.log`、`p05-final-*-restart-evidence.json`与
+`p05-process-evidence.json`为实际证据，新旧进程ID均不同，新会话逐项deepEqual。
+新增dice组完整比较逐骰/取舍/来源/操作者/名称、确认次序/历史/版本/原回执；改名
+不改旧快照，隐藏/撤权后旧回执不能重骰或读取。P05a–d本地完成，P05e仍待精确代码
+SHA的push/PR六job及标准Compose31浏览器/七组容器重启成功；此时不关闭P05/M2。
+
+以下保留本轮实际过程与失败，不以早期绿灯替代最终证据。
+
+开工HEAD963ddd74750644b33fdfddd661e24d7977e806c5 clean、fetch后与origin一致；
+认证API独立核对push39461677478/PR39461684085六job全部completed/success，PR #1
+open/draft、base main。P01–P04保持完成；没有重复开发，也未合并/发布。
+
+先固定 `contracts/dice-initiative.md`，按dnd-rule-lookup A仅locate、B完整回读
+战斗流程/优势劣势，再在线核对官方SRD5.2.1相关段落；来源/许可与工程推论在
+`docs/research/dice-initiative-5r.md`。V9骰子与V10先攻为新增迁移，旧V1–V8不改。
+
+实际RED/GREEN（外置.tools日志）：
+
+- `p05-dice-red.log`：4测试3断言失败/1空结果访问错误；`p05-dice-green.log`：4通过。
+- `p05-http-red.log`：74unit通过，3真实HTTP在缺少rolls入口处expected200/actual404；
+  后续断言当时未运行。初次实现行为断言通过但两次fixture清理被新FK拒绝；只修
+  本fixture的先roll后card删除顺序。`p05-initiative-red.log`原3通过、新2缺入口失败；
+  `p05-initiative-green.log`74unit+5真实HTTP全部通过。
+- 前端空入口7项RED；实现后6过1定位歧义，限定详情定位后7通过；构建中测试helper
+  的exact选项TS错误为准备失败，移除后全量193/构建通过，不计新行为RED。
+- `p05-browser-first.log`真实生产Chrome3过1失败：offline/原生socket关闭后，DM隐藏
+  角色，重连新CONNECTED读取选中角色404，但旧公开roll留在界面。组件补断言
+  `p05-hidden-source-red.log`1失败/7通过，立即清feed/cards/initiative/history并
+  source-free重新读；`p05-hidden-source-green.log`8通过。原真实4条再次11.6s通过，
+  不放宽断言/timeout、不retry。历史骰子详情再1RED/8GREEN→9GREEN。
+- 新unit回归固定10点熵证明稳定候选平手顺序、相同怪物组只投一次、优劣与突袭
+  抵消及无效分组/过期卡完全不消耗熵；这是追加回归，不冒称此前已有RED。
+
+实际验收进度：
+
+| 检查 | 已执行结果 |
+| --- | --- |
+| 无数据库 | 清除TEST_DATABASE_*后77unit通过；p05-unit-no-db.log |
+| 真实后端 | 首轮完整77unit+88IT通过，p05-backend-full-2.log；新增分页/控制撤销/先攻commit回滚3项后，聚焦77unit+8 DiceIT通过，p05-backend-focused-2.log |
+| 最后完整后端 | p05-backend-final.log因本机too many clients有30上下文启动错误，不能记通过；核实并停止验收Java后，p05-backend-delivered.log完整77unit+91IT全部通过 |
+| 前端/构建 | 最终18文件195测试通过、TS/Vite通过；p05-frontend-delivered.log / p05-build-delivered.log，约637kB主chunk提示保留 |
+| 契约 | 58 HTTP操作，旧50操作与全部旧schema逐项deepEqual；严格请求/同namespace/玩家先攻无秘密字段检查通过。初次缺文档路由RED及后续补CSRF/路径参数亦保留 |
+| 真实Chrome | 完整31 passed（1.4m），原27/全部旧文件保留；新增历史UI后4条再11.4s通过；p05-browser-full.log / p05-browser-delivered.log，60秒/条、零retry |
+| V8→V10迁移 | DiceMigrationIT逐表保留全部23张旧表原列/行及八checksum，并验证骰子同团角色FK；首次完整运行通过 |
+| 实际服务重启 | 原六组+新dice七组seed/verify全PASS，p05-restart-{seed,verify}.log、p05-final-*-restart-evidence.json；同库/素材根真实Java与PG前后不同ID及CommandLine见p05-process-evidence.json |
+| 视觉 | 人工查看真实initiative-dm.png：独立角色/怪物分组/突袭/确认次序与来源展开均在完整工作区，玩家无隐藏条目/空位；最终静态检查继续执行 |
+
+受限表达式不等于任意规则引擎；NPC参战引用独立角色，多个地图棋子不复制先攻。
+角色卡数值、资源和暗骰公开/应用互不隐式改变；英雄激励重骰、固定先攻、警戒交换
+等扩展不自动执行，保留来源化手动处理。P06回合/伤害/更正、RP、资料、触屏/容量/
+TLS和完整一致备份/异机恢复仍待后续。P05e及P05/M2未完成，代码SHA双CI尚待提交核验。
+
 ## P04 完成：精确代码 SHA 的本地与双 CI 全部通过
 
 日期：2026-10-21（Asia/Shanghai）。代码 **a7ef38830b34a5e55f51294cf289a3e1b216fbda** 的

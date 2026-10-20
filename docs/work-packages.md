@@ -21,7 +21,8 @@
 P04代码a7ef388的push39460581794/PR39460588799六job全success：70unit+82真实IT、
 186前端/构建、50契约、标准Compose27浏览器与六组实际容器重启通过。旧回归全部
 保留，V8迁移保留20旧表原列/行/七checksum；详见verification。沿用原分支/草稿PR #1，
-未合并/发布。下一包P05未开工，M2/P05–P10/A仍未完成；最新文档HEAD的Checks也独立核对。
+未合并/发布。P05已开始（a–d已实现，e整体验收/精确SHA双CI进行中），
+M2/P05–P10/A仍未完成；最新文档HEAD的Checks也独立核对。
 
 | 工作包 | 前置 | 首先测试的行为 / 交付边界 |
 | --- | --- | --- |
@@ -75,6 +76,16 @@ P02 和 P03 可在契约协调后并行；P07 附件存储依赖 P02，记录语
 5. P04e 完整验收：保留所有旧回归，新HTTP/迁移/浏览器/六组实际重启与精确代码SHA的push/PR CI；通过后才关闭P04。
 
 P04a–e全部完成，最终代码SHA的本地与push/PR完整CI全通过，结果见verification；P05–P10/A及整个M2继续未完成。
+
+### P05 有序子包（2026-10-21，进行中）
+
+契约 `contracts/dice-initiative.md`，依据 `docs/research/dice-initiative-5r.md`。
+
+1. P05a 受限骰式、服务器熵、逐骰/取舍/常数/优劣抵消：实际4项RED→GREEN。
+2. P05b 当前身份/角色权限、暗骰、不可变来源快照、按钮与指令同持久回执：真实HTTP缺入口RED→GREEN，重试/并发/提交失败/撤权/分页均已执行。
+3. P05c 独立角色参战、显式相同怪物组、突袭来源、候选次序/理由化确认、历史：实际2入口RED→GREEN；不执行P06回合/伤害。
+4. P05d 中文工作区、来源/逐骰展开、重试/读确认/隔离与重连：7入口RED→GREEN；实际offline重连404旧记录残留再RED→GREEN，历史展开再RED→GREEN。
+5. P05e 完整验收：本地77unit+91IT、195前端/构建、58契约、31浏览器、七组实际Java/PG重启及23旧表原列/行/八checksum通过；代码SHA双CI待核验，未关闭P05，详见verification/continuation。
 
 ## M3：模组与有限自动化
 

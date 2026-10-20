@@ -68,3 +68,23 @@ their fixture. CI runs all five groups around a real standard Compose restart.
 
 The check writes synthetic private evidence outside the source tree; it is not a
 deployment backup or proof of the separately pending P09 restore on another host.
+
+## P05 dice and initiative persistence
+
+V9 stores immutable server rolls and independent durable receipts; V10 adds
+current initiative candidates/confirmed order, append-only DM history and
+initiative receipts. V1–V8 checksums/data stay unchanged. Preserve the existing
+PostgreSQL and asset volumes on upgrade. No external randomness service or new
+runtime dependency is required; production draws use Java SecureRandom.
+
+Run `node scripts/check-dice-restart.mjs seed <new-outside-repo-evidence.json>`
+using the same E2E environment, actually restart PostgreSQL and the packaged
+backend, then run `verify` with that file. It compares every saved raw die,
+selection, source/calculation/name/actor snapshot, confirmed order, history and
+original receipts using fresh sessions; later rename/hide/revocation cannot
+reroll, restore order, disclose private dice or bypass authorization. Seed refuses
+to overwrite evidence. CI now runs all seven groups (asset/token/map/P02/character/
+content/dice) around the same actual db/backend Compose restart.
+
+Dice and initiative preparation do not advance turns, enforce combat movement,
+apply damage or consume resources. Those behaviors remain the next work package.

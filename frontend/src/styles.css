@@ -43,3 +43,19 @@
 .content-results { padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit,minmax(260px,1fr)); gap: .8rem; }
 .content-results li { padding: .8rem; background: #f3eee4; border: 1px solid #ded0bd; border-radius: .4rem; overflow-wrap: anywhere; }
 .content-panel pre { max-height: 22rem; overflow: auto; font-size: .8rem; }
+.dice-workspace { margin: 1rem 1.5rem; padding: 1.25rem; border: 1px solid var(--border, #ccd2ce); border-radius: 12px; background: var(--surface, #fffdf8); color: #24332e; }
+.dice-workspace fieldset { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; padding: 1rem; margin: 1rem 0; min-width: 0; }
+.dice-workspace label { display: flex; flex-direction: column; gap: .25rem; }
+.dice-workspace label:has(input[type="checkbox"]) { flex-direction: row; align-items: center; }
+.dice-workspace input[type="checkbox"] { width: auto; }
+.dice-workspace article, .initiative-participant { padding: .8rem; border: 1px solid #d6ded8; border-radius: 8px; margin: .5rem 0; }
+.dice-workspace article { max-width: 900px; overflow-wrap: anywhere; }
+.dice-workspace details { margin-top: .5rem; }
+.dice-workspace textarea { min-width: min(22rem, 70vw); }
+.initiative-participant { display: flex; flex-wrap: wrap; gap: .7rem; width: 100%; }
+.dice-workspace ol > li { padding: .5rem; }
+.dice-workspace label { color: #43534b; }
+.dice-workspace input, .dice-workspace select, .dice-workspace textarea { background: #fff; color: #263c31; border: 1px solid #a8b8ac; border-radius: 5px; padding: .6rem; }
+.dice-workspace button { background: #314d3b; color: #fff; }
+.dice-workspace fieldset { border: 1px solid #b8c8ba; border-radius: 8px; }
+.dice-workspace li button { margin: .4rem .4rem 0 0; }

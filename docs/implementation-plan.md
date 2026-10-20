@@ -6,7 +6,10 @@
 
 ## 本轮当前状态（2026-10-21）
 
-**P01–P04均已完成；P05未开工，M2及P05–P10/A仍未完成。**
+**P01–P04均已完成；P05a–d已实现，P05e整体验收/精确SHA双CI进行中。**
+契约 `contracts/dice-initiative.md`，5R依据 `docs/research/dice-initiative-5r.md`。
+服务端随机/来源/逐骰、暗骰和共用命令逻辑、5R候选/确认先攻及中文工作区已实际
+RED/GREEN；完整证据及当前下一步见continuation/verification。M2及P05–P10/A仍未完成。
 P04契约 `contracts/content.md`；a7ef388的push39460581794/PR39460588799六job
 全部成功：70unit+82真实IT、186前端/构建、50契约、标准Compose27浏览器及六组实际
 重启通过。本地无库单测、V8旧数据迁移与Java/PG重启也通过；实际RED/GREEN、限制与
@@ -36,7 +39,7 @@ P04–P10/A仍未完成，检索、投骰、战斗、容量/触屏/TLS/完整备
 
 2026-10-21：P03与P04的全部门槛已通过，见 `contracts/characters.md`、
 `contracts/content.md` 及 `work-packages.md` 的有序子包。旧“P03/P04尚未开工”
-段落分别是此前交接的历史；当前下一包为P05，整个M2仍未完成，完成文档新HEAD的
+段落分别是此前交接的历史；当前包为P05（整体验收进行中），整个M2仍未完成，完成文档新HEAD的
 Checks也须独立核对。
 
 | 负责方 | 目录与责任 | 依赖 |

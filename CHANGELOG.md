@@ -11,6 +11,17 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Added
 
+- Add server-owned persistent dice with bounded expressions, every raw die and
+  kept/discarded result, saved calculation/name/actor sources, DM-only rolls and
+  one versioned, idempotent service for buttons and text commands. Rolls never
+  spend character resources or infer combat outcomes.
+- Add 5R initiative preparation for independent characters, explicit identical
+  monster groups, sourced surprise disadvantage, candidate review and reasoned
+  order confirmation/history. Hidden participants leave no player rows or ranks;
+  V9/V10 preserve prior data and add durable rolls, initiative and receipts.
+- Add a Chinese dice/initiative workspace with precise uncertain-request retry,
+  reconnect/permission recovery, visible-record pagination and expandable dice
+  details. P06 round/turn execution and manual combat remain unfinished.
 - Add a searchable, attributed selection of ten SRD 5.2.1 entries, immutable
   campaign custom entries and explicit 5R/2014/custom source identities. Search,
   structured fill and execution coverage are reported separately.

@@ -4125,6 +4125,499 @@
         },
         "x-character-permission": "Current DM/controller only; current content admission independent of character control"
       }
+    },
+    "/api/campaigns/{campaignId}/rolls": {
+      "get": {
+        "summary": "Read current authorized P05 data",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authorized result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiceListing"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Generic request or authorization failure"
+          },
+          "401": {
+            "description": "Generic request or authorization failure"
+          },
+          "403": {
+            "description": "Generic request or authorization failure"
+          },
+          "404": {
+            "description": "Generic request or authorization failure"
+          },
+          "409": {
+            "description": "Generic request or authorization failure"
+          }
+        },
+        "x-dice-permission": "current member; character control for mutation; DM-only visibility enforced",
+        "operationId": "getapicampaignscampaignIdrolls"
+      },
+      "post": {
+        "summary": "Execute authoritative P05 command",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiceCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authorized result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiceRoll"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Generic request or authorization failure"
+          },
+          "401": {
+            "description": "Generic request or authorization failure"
+          },
+          "403": {
+            "description": "Generic request or authorization failure"
+          },
+          "404": {
+            "description": "Generic request or authorization failure"
+          },
+          "409": {
+            "description": "Generic request or authorization failure"
+          }
+        },
+        "x-dice-permission": "current member; character control for mutation; DM-only visibility enforced",
+        "x-idempotency": {
+          "namespace": "dice-commands",
+          "authorization": "current membership/DM/source control before receipt replay",
+          "samePayload": "original result before stale version; no mutation or event",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT"
+        },
+        "operationId": "postapicampaignscampaignIdrolls"
+      },
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ]
+    },
+    "/api/campaigns/{campaignId}/rolls/{id}": {
+      "get": {
+        "summary": "Read current authorized P05 data",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authorized result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiceRoll"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Generic request or authorization failure"
+          },
+          "401": {
+            "description": "Generic request or authorization failure"
+          },
+          "403": {
+            "description": "Generic request or authorization failure"
+          },
+          "404": {
+            "description": "Generic request or authorization failure"
+          },
+          "409": {
+            "description": "Generic request or authorization failure"
+          }
+        },
+        "x-dice-permission": "current member; character control for mutation; DM-only visibility enforced",
+        "operationId": "getapicampaignscampaignIdrollsid"
+      },
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ]
+    },
+    "/api/campaigns/{campaignId}/roll-commands": {
+      "post": {
+        "summary": "Execute authoritative P05 command",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiceTextCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authorized result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiceRoll"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Generic request or authorization failure"
+          },
+          "401": {
+            "description": "Generic request or authorization failure"
+          },
+          "403": {
+            "description": "Generic request or authorization failure"
+          },
+          "404": {
+            "description": "Generic request or authorization failure"
+          },
+          "409": {
+            "description": "Generic request or authorization failure"
+          }
+        },
+        "x-dice-permission": "current member; character control for mutation; DM-only visibility enforced",
+        "x-idempotency": {
+          "namespace": "dice-commands",
+          "authorization": "current membership/DM/source control before receipt replay",
+          "samePayload": "original result before stale version; no mutation or event",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT"
+        },
+        "operationId": "postapicampaignscampaignIdrollcommands"
+      },
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ]
+    },
+    "/api/campaigns/{campaignId}/initiative": {
+      "get": {
+        "summary": "Read current authorized P05 data",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authorized result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InitiativeView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Generic request or authorization failure"
+          },
+          "401": {
+            "description": "Generic request or authorization failure"
+          },
+          "403": {
+            "description": "Generic request or authorization failure"
+          },
+          "404": {
+            "description": "Generic request or authorization failure"
+          },
+          "409": {
+            "description": "Generic request or authorization failure"
+          }
+        },
+        "x-dice-permission": "current member; character control for mutation; DM-only visibility enforced",
+        "operationId": "getapicampaignscampaignIdinitiative"
+      },
+      "post": {
+        "summary": "Execute authoritative P05 command",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitiativeGenerate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authorized result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharacterAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Generic request or authorization failure"
+          },
+          "401": {
+            "description": "Generic request or authorization failure"
+          },
+          "403": {
+            "description": "Generic request or authorization failure"
+          },
+          "404": {
+            "description": "Generic request or authorization failure"
+          },
+          "409": {
+            "description": "Generic request or authorization failure"
+          }
+        },
+        "x-dice-permission": "current DM only",
+        "x-idempotency": {
+          "namespace": "initiative-commands",
+          "authorization": "current membership/DM/source control before receipt replay",
+          "samePayload": "original result before stale version; no mutation or event",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT"
+        },
+        "operationId": "postapicampaignscampaignIdinitiative"
+      },
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ]
+    },
+    "/api/campaigns/{campaignId}/initiative/confirm": {
+      "post": {
+        "summary": "Execute authoritative P05 command",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitiativeConfirm"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authorized result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharacterAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Generic request or authorization failure"
+          },
+          "401": {
+            "description": "Generic request or authorization failure"
+          },
+          "403": {
+            "description": "Generic request or authorization failure"
+          },
+          "404": {
+            "description": "Generic request or authorization failure"
+          },
+          "409": {
+            "description": "Generic request or authorization failure"
+          }
+        },
+        "x-dice-permission": "current DM only",
+        "x-idempotency": {
+          "namespace": "initiative-commands",
+          "authorization": "current membership/DM/source control before receipt replay",
+          "samePayload": "original result before stale version; no mutation or event",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT"
+        },
+        "operationId": "postapicampaignscampaignIdinitiativeconfirm"
+      },
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ]
+    },
+    "/api/campaigns/{campaignId}/initiative/history": {
+      "get": {
+        "summary": "Read current authorized P05 data",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authorized result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InitiativeHistory"
+                  },
+                  "minItems": 0,
+                  "maxItems": 1000000
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Generic request or authorization failure"
+          },
+          "401": {
+            "description": "Generic request or authorization failure"
+          },
+          "403": {
+            "description": "Generic request or authorization failure"
+          },
+          "404": {
+            "description": "Generic request or authorization failure"
+          },
+          "409": {
+            "description": "Generic request or authorization failure"
+          }
+        },
+        "x-dice-permission": "current DM only",
+        "operationId": "getapicampaignscampaignIdinitiativehistory"
+      },
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ]
     }
   },
   "components": {
@@ -7351,6 +7844,632 @@
             "maxLength": 1000
           }
         }
+      },
+      "DiceCommand": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "characterId",
+          "key",
+          "expression",
+          "visibility",
+          "advantage",
+          "disadvantage"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "characterId": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 36
+          },
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "expression": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 100
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "PUBLIC",
+              "DM"
+            ]
+          },
+          "advantage": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "minItems": 0,
+            "maxItems": 10
+          },
+          "disadvantage": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "minItems": 0,
+            "maxItems": 10
+          }
+        }
+      },
+      "DiceTextCommand": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "characterId",
+          "text"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "characterId": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 36
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          }
+        }
+      },
+      "DiceDie": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sides",
+          "value",
+          "sign",
+          "kept"
+        ],
+        "properties": {
+          "sides": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 1000
+          },
+          "value": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "sign": {
+            "type": "integer",
+            "enum": [
+              -1,
+              1
+            ]
+          },
+          "kept": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DiceResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expression",
+          "mode",
+          "dice",
+          "constant",
+          "total"
+        ],
+        "properties": {
+          "expression": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "NORMAL",
+              "ADVANTAGE",
+              "DISADVANTAGE"
+            ]
+          },
+          "dice": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiceDie"
+            },
+            "minItems": 0,
+            "maxItems": 101
+          },
+          "constant": {
+            "type": "integer",
+            "minimum": -200000,
+            "maximum": 200000
+          },
+          "total": {
+            "type": "integer",
+            "minimum": -300000,
+            "maximum": 300000
+          }
+        }
+      },
+      "DiceRoll": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "characterId",
+          "sourceVersion",
+          "actor",
+          "name",
+          "at",
+          "visibility",
+          "key",
+          "calculation",
+          "advantage",
+          "disadvantage",
+          "result"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "characterId": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 36
+          },
+          "sourceVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "actor": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "PUBLIC",
+              "DM"
+            ]
+          },
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "calculation": {
+            "$ref": "#/components/schemas/CharacterCalculation"
+          },
+          "advantage": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "minItems": 0,
+            "maxItems": 10
+          },
+          "disadvantage": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "minItems": 0,
+            "maxItems": 10
+          },
+          "result": {
+            "$ref": "#/components/schemas/DiceResult"
+          }
+        }
+      },
+      "DiceListing": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "rolls",
+          "next"
+        ],
+        "properties": {
+          "rolls": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiceRoll"
+            },
+            "minItems": 0,
+            "maxItems": 50
+          },
+          "next": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 36
+          }
+        }
+      },
+      "InitiativeParticipant": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "characterId",
+          "expectedVersion",
+          "kind",
+          "group",
+          "surprised",
+          "advantage",
+          "disadvantage"
+        ],
+        "properties": {
+          "characterId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "PC",
+              "MONSTER"
+            ]
+          },
+          "group": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 100
+          },
+          "surprised": {
+            "type": "boolean"
+          },
+          "advantage": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "minItems": 0,
+            "maxItems": 10
+          },
+          "disadvantage": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "minItems": 0,
+            "maxItems": 10
+          }
+        }
+      },
+      "InitiativeGenerate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "participants",
+          "reason"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "participants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InitiativeParticipant"
+            },
+            "minItems": 1,
+            "maxItems": 100
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        }
+      },
+      "InitiativeConfirm": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "order",
+          "reason"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "order": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "minItems": 1,
+            "maxItems": 100,
+            "uniqueItems": true
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        }
+      },
+      "InitiativeEntry": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "characterId",
+          "name",
+          "sourceVersion",
+          "kind",
+          "group",
+          "surprised",
+          "calculation",
+          "advantage",
+          "disadvantage",
+          "result"
+        ],
+        "properties": {
+          "characterId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "sourceVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "PC",
+              "MONSTER"
+            ]
+          },
+          "group": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 100
+          },
+          "surprised": {
+            "type": "boolean"
+          },
+          "calculation": {
+            "$ref": "#/components/schemas/CharacterCalculation"
+          },
+          "advantage": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "minItems": 0,
+            "maxItems": 10
+          },
+          "disadvantage": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "minItems": 0,
+            "maxItems": 10
+          },
+          "result": {
+            "$ref": "#/components/schemas/DiceResult"
+          }
+        }
+      },
+      "InitiativeState": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "status",
+          "entries",
+          "reason"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "EMPTY",
+              "DRAFT",
+              "CONFIRMED"
+            ]
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InitiativeEntry"
+            },
+            "minItems": 0,
+            "maxItems": 100
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 1000
+          }
+        }
+      },
+      "InitiativePublicEntry": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "characterId",
+          "name",
+          "total"
+        ],
+        "properties": {
+          "characterId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "total": {
+            "type": "integer",
+            "minimum": -20000,
+            "maximum": 20000
+          }
+        }
+      },
+      "InitiativePublicState": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "status",
+          "entries"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "EMPTY",
+              "CONFIRMED"
+            ]
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InitiativePublicEntry"
+            },
+            "minItems": 0,
+            "maxItems": 100
+          }
+        }
+      },
+      "InitiativeView": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/InitiativeState"
+          },
+          {
+            "$ref": "#/components/schemas/InitiativePublicState"
+          }
+        ]
+      },
+      "InitiativeHistory": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "actor",
+          "kind",
+          "reason",
+          "at",
+          "snapshot"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "actor": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "GENERATE",
+              "CONFIRM"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/InitiativeState"
+          }
+        }
       }
     }
   },
@@ -7431,5 +8550,13 @@
     "expiry": "Server clock and explicit DM round tick; expiry only reminds DM; removal requires confirmation; no automatic condition effects",
     "client": "Exact uncertain retry; latest successful post-ack read; dispose scope/private state on denial; stale drafts retain original version",
     "migration": "V7 preserves all V1-V6 rows and checksums; same campaign control and placement foreign keys"
+  },
+  "x-dice-policy": {
+    "entropy": "server SecureRandom only; never accept final values",
+    "visibility": "filter before pagination; DM-only records and hidden source omitted with no counts, sequence or placeholders",
+    "snapshots": "immutable dice/calculation/name/actor; current membership/control before replay",
+    "initiative": "5R surprise disadvantage; explicit identical-monster groups; PC ties decided by players, monster/mixed by DM; explicit saved order",
+    "events": "unchanged after-commit SCENE_CHANGED; DM-only rolls and candidate-only changes notify DMs only",
+    "migration": "V9/V10 preserve all V1–V8 rows/checksums; no turn/damage/resource execution"
   }
 }

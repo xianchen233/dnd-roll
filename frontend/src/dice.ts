@@ -1,0 +1,13 @@
+import type {Calculation} from './characters';
+import type {VersionedCommand} from './types';
+export type DiceResult={expression:string;mode:string;dice:{sides:number;value:number;sign:number;kept:boolean}[];constant:number;total:number};
+export type DiceCommand=VersionedCommand & {characterId:string;key:string;expression:string;visibility:string;advantage:string[];disadvantage:string[]};
+export type DiceTextCommand=VersionedCommand & {characterId:string;text:string};
+export type Roll={id:string;characterId:string;sourceVersion:number;actor:string;name:string;at:string;visibility:string;key:string;calculation:Calculation;advantage:string[];disadvantage:string[];result:DiceResult};
+export type RollList={rolls:Roll[];next:string};
+export type Participant={characterId:string;expectedVersion:number;kind:string;group:string;surprised:boolean;advantage:string[];disadvantage:string[]};
+export type InitiativeEntry={characterId:string;name:string;total?:number;sourceVersion?:number;kind?:string;group?:string;surprised?:boolean;calculation?:Calculation;advantage?:string[];disadvantage?:string[];result?:DiceResult};
+export type Initiative={version?:number;status:string;entries:InitiativeEntry[];reason?:string};
+export type InitiativeGenerate=VersionedCommand & {participants:Participant[];reason:string};
+export type InitiativeConfirm=VersionedCommand & {order:string[];reason:string};
+export type InitiativeHistory={version:number;actor:string;kind:string;reason:string;at:string;snapshot:Initiative};
