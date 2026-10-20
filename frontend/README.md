@@ -54,3 +54,22 @@ npm run test:e2e
 For CI's bundled browser run `npx playwright install --with-deps chromium` first. `npm run test:e2e:headed` is available for manual observation. The test uses two isolated cookie contexts and real HTTP/STOMP connections, checks player filtering, observes a real DM STOMP invalidation, moves through the UI, reloads, verifies canvas rendering has initialized, and logs out both accounts. It rejects browser JavaScript/console errors except the expected unauthenticated `/api/auth/me` probe. Screenshots and failure traces are written under ignored `test-results/`; the HTML report is under ignored `playwright-report/`.
 
 Four independent P02e cases bring the complete suite to seventeen cases. They compose two-scene fog/calibration preservation and full-cover recalibration, actual player browser offline/online recovery of missed scene/fog and permission changes, and a committed fog POST whose response is deliberately lost before exact-body historical retry. The retry case also interrupts post-acknowledgment reads and requires a successful fresh read before synchronization is confirmed. These tests retain all thirteen earlier cases unchanged. Only the dedicated response/read fault injection uses route interception; the offline cases combine real browser network state with explicit close() on captured native WebSocket instances. Node-side socket-close events and a later new socket with a real STOMP CONNECTED frame prove reconnection; STOMP is never fabricated. Member removal must return 204 and disappear from the member list before the player goes online. Recalibration checks both the real POST target/offset and the read-back configuration. P02e and P02 completed those full-suite, restart and exact-commit CI gates at 853944d; see docs/verification.md for the final evidence. Later HEADs still require independent CI checks.
+## Character sheets (P03)
+
+Open **打开角色卡工作区** for the selected campaign. Create multiple independent
+characters, edit the six groups, inspect calculations/sources and edit history,
+and explicitly consume/recover resources. Saved totals are computed by the server;
+HP maximum, growth choices, slots and special rules remain sourced manual inputs.
+Avatars currently use a short text/emoji marker; bitmap upload is not implemented.
+
+DMs can share/revoke full-card control separately from map-token control, set
+reasoned calculation overrides, tick condition counters and confirm expiry removal.
+An optional token placement references the same character and resource state.
+Copying creates a new resource owner. Export downloads `dnd-roll.character` JSON;
+paste/upload it to import into the selected campaign under new ownership. Player
+imports await that campaign's DM review and never carry old grants/overrides/history.
+
+`characters.spec.ts` adds six real-service browser flows to all 17 previous flows:
+multiple cards, sources/history, DM overrides/expiry, committed response loss with
+precise retry, native socket offline/reconnect and cross-campaign structured transfer.
+No business API or STOMP response is mocked; transport failures are identified.

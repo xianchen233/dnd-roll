@@ -3,7 +3,7 @@
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "info": {
     "title": "D&D Roll HTTP contract",
-    "version": "0.4.0"
+    "version": "0.5.0"
   },
   "servers": [
     {
@@ -2307,6 +2307,1278 @@
           "versionConflict": "409 VERSION_CONFLICT for fresh stale expectedVersion"
         }
       }
+    },
+    "/api/campaigns/{campaignId}/characters": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "campaignId",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "listCharacters",
+        "x-character-permission": "member; omit hidden/review private data",
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered result; no-store, private; receipts are historical acknowledgements only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharacterListing"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createCharacter",
+        "x-character-permission": "member; self controller; campaignVersion",
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered result; no-store, private; receipts are historical acknowledgements only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharacterAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "VERSION_CONFLICT or IDEMPOTENCY_CONFLICT",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCharacterRequest"
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "namespace": "character-commands",
+          "key": [
+            "sessionActor",
+            "requestId"
+          ],
+          "authorization": "Current membership, target visibility and command permission before receipt replay",
+          "samePayload": "Original acknowledgement before stale check; no mutation or event",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT"
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/characters/{id}": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "campaignId",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getCharacter",
+        "x-character-permission": "DM/controller/shared full",
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered result; no-store, private; receipts are historical acknowledgements only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharacterDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "editCharacter",
+        "x-character-permission": "DM/controller; overrides DM only",
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered result; no-store, private; receipts are historical acknowledgements only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharacterAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "VERSION_CONFLICT or IDEMPOTENCY_CONFLICT",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCharacterRequest"
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "namespace": "character-commands",
+          "key": [
+            "sessionActor",
+            "requestId"
+          ],
+          "authorization": "Current membership, target visibility and command permission before receipt replay",
+          "samePayload": "Original acknowledgement before stale check; no mutation or event",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT"
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/characters/{id}/history": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "campaignId",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "characterHistory",
+        "x-character-permission": "DM/controller; no shared-full history",
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered result; no-store, private; receipts are historical acknowledgements only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CharacterHistory"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/characters/{id}/access": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "campaignId",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getCharacterAccess",
+        "x-character-permission": "DM only",
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered result; no-store, private; receipts are historical acknowledgements only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharacterAccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "setCharacterAccess",
+        "x-character-permission": "DM only",
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered result; no-store, private; receipts are historical acknowledgements only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharacterAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "VERSION_CONFLICT or IDEMPOTENCY_CONFLICT",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CharacterAccessRequest"
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "namespace": "character-commands",
+          "key": [
+            "sessionActor",
+            "requestId"
+          ],
+          "authorization": "Current membership, target visibility and command permission before receipt replay",
+          "samePayload": "Original acknowledgement before stale check; no mutation or event",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT"
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/characters/{id}/resources": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "campaignId",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "changeCharacterResource",
+        "x-character-permission": "DM/controller",
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered result; no-store, private; receipts are historical acknowledgements only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharacterAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "VERSION_CONFLICT or IDEMPOTENCY_CONFLICT",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CharacterResourceRequest"
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "namespace": "character-commands",
+          "key": [
+            "sessionActor",
+            "requestId"
+          ],
+          "authorization": "Current membership, target visibility and command permission before receipt replay",
+          "samePayload": "Original acknowledgement before stale check; no mutation or event",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT"
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/characters/{id}/conditions": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "campaignId",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "confirmCharacterCondition",
+        "x-character-permission": "DM only",
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered result; no-store, private; receipts are historical acknowledgements only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharacterAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "VERSION_CONFLICT or IDEMPOTENCY_CONFLICT",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CharacterConditionRequest"
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "namespace": "character-commands",
+          "key": [
+            "sessionActor",
+            "requestId"
+          ],
+          "authorization": "Current membership, target visibility and command permission before receipt replay",
+          "samePayload": "Original acknowledgement before stale check; no mutation or event",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT"
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/characters/{id}/copy": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "campaignId",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "copyCharacter",
+        "x-character-permission": "full read; new self controller",
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered result; no-store, private; receipts are historical acknowledgements only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharacterAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "VERSION_CONFLICT or IDEMPOTENCY_CONFLICT",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CopyCharacterRequest"
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "namespace": "character-commands",
+          "key": [
+            "sessionActor",
+            "requestId"
+          ],
+          "authorization": "Current membership, target visibility and command permission before receipt replay",
+          "samePayload": "Original acknowledgement before stale check; no mutation or event",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT"
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/characters/{id}/export": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "campaignId",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "exportCharacter",
+        "x-character-permission": "full read",
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered result; no-store, private; receipts are historical acknowledgements only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharacterDocument"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/characters/import": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "campaignId",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "importCharacter",
+        "x-character-permission": "member; target DM review for player import",
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered result; no-store, private; receipts are historical acknowledgements only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharacterAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "VERSION_CONFLICT or IDEMPOTENCY_CONFLICT",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportCharacterRequest"
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "namespace": "character-commands",
+          "key": [
+            "sessionActor",
+            "requestId"
+          ],
+          "authorization": "Current membership, target visibility and command permission before receipt replay",
+          "samePayload": "Original acknowledgement before stale check; no mutation or event",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT"
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/characters/{id}/placements": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "campaignId",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "characterPlacements",
+        "x-character-permission": "DM only",
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered result; no-store, private; receipts are historical acknowledgements only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CharacterPlacement"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "linkCharacter",
+        "x-character-permission": "DM only; character and token versions",
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered result; no-store, private; receipts are historical acknowledgements only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharacterAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Authenticated current membership and character permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "VERSION_CONFLICT or IDEMPOTENCY_CONFLICT",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CharacterPlacementRequest"
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "namespace": "character-commands",
+          "key": [
+            "sessionActor",
+            "requestId"
+          ],
+          "authorization": "Current membership, target visibility and command permission before receipt replay",
+          "samePayload": "Original acknowledgement before stale check; no mutation or event",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT"
+        }
+      }
     }
   },
   "components": {
@@ -3490,6 +4762,1593 @@
             "description": "Distinct integer cells within the target scene; at most scene.width * scene.height entries. Canonical response and fingerprint order is y then x."
           }
         }
+      },
+      "CharacterSource": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "book",
+          "revision",
+          "rules",
+          "detail"
+        ],
+        "properties": {
+          "book": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "revision": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "rules": {
+            "type": "string",
+            "enum": [
+              "5R",
+              "2014",
+              "CUSTOM"
+            ]
+          },
+          "detail": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 1000
+          }
+        }
+      },
+      "CharacterEntry": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "description",
+          "source"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "name": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 100
+          },
+          "description": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 5000
+          },
+          "source": {
+            "$ref": "#/components/schemas/CharacterSource"
+          }
+        }
+      },
+      "CharacterBackground": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "entry",
+          "increases",
+          "originFeat",
+          "proficiencies",
+          "equipment"
+        ],
+        "properties": {
+          "entry": {
+            "$ref": "#/components/schemas/CharacterEntry"
+          },
+          "increases": {
+            "type": "object",
+            "maxProperties": 6,
+            "propertyNames": {
+              "enum": [
+                "STR",
+                "DEX",
+                "CON",
+                "INT",
+                "WIS",
+                "CHA"
+              ]
+            },
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2
+            }
+          },
+          "originFeat": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 80
+          },
+          "proficiencies": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 0,
+              "maxLength": 200
+            },
+            "minItems": 0,
+            "maxItems": 50
+          },
+          "equipment": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 0,
+              "maxLength": 200
+            },
+            "minItems": 0,
+            "maxItems": 100
+          }
+        }
+      },
+      "CharacterClass": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "subclass",
+          "level",
+          "source"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "subclass": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 100
+          },
+          "level": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "source": {
+            "$ref": "#/components/schemas/CharacterSource"
+          }
+        }
+      },
+      "CharacterCheck": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "ability",
+          "proficiency",
+          "bonus",
+          "source"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "ability": {
+            "type": "string",
+            "enum": [
+              "STR",
+              "DEX",
+              "CON",
+              "INT",
+              "WIS",
+              "CHA"
+            ]
+          },
+          "proficiency": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "PROFICIENT",
+              "EXPERT"
+            ]
+          },
+          "bonus": {
+            "type": "integer",
+            "minimum": -1000,
+            "maximum": 1000
+          },
+          "source": {
+            "$ref": "#/components/schemas/CharacterSource"
+          }
+        }
+      },
+      "CharacterCombat": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "maxHp",
+          "hp",
+          "tempHp",
+          "speed",
+          "deathSuccesses",
+          "deathFailures",
+          "acMode",
+          "manualAc",
+          "source"
+        ],
+        "properties": {
+          "maxHp": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "hp": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "tempHp": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "speed": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "deathSuccesses": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "deathFailures": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "acMode": {
+            "type": "string",
+            "enum": [
+              "UNARMORED",
+              "MANUAL"
+            ]
+          },
+          "manualAc": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000
+          },
+          "source": {
+            "$ref": "#/components/schemas/CharacterSource"
+          }
+        }
+      },
+      "CharacterAttack": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "ability",
+          "proficient",
+          "hitBonus",
+          "damageBonus",
+          "dice",
+          "damageType",
+          "mastery",
+          "source"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "ability": {
+            "type": "string",
+            "enum": [
+              "STR",
+              "DEX",
+              "CON",
+              "INT",
+              "WIS",
+              "CHA"
+            ]
+          },
+          "proficient": {
+            "type": "boolean"
+          },
+          "hitBonus": {
+            "type": "integer",
+            "minimum": -1000,
+            "maximum": 1000
+          },
+          "damageBonus": {
+            "type": "integer",
+            "minimum": -1000,
+            "maximum": 1000
+          },
+          "dice": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 100
+          },
+          "damageType": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 100
+          },
+          "mastery": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 1000
+          },
+          "source": {
+            "$ref": "#/components/schemas/CharacterSource"
+          }
+        }
+      },
+      "CharacterCasting": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "ability",
+          "attackBonus",
+          "dcBonus",
+          "source"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "ability": {
+            "type": "string",
+            "enum": [
+              "STR",
+              "DEX",
+              "CON",
+              "INT",
+              "WIS",
+              "CHA"
+            ]
+          },
+          "attackBonus": {
+            "type": "integer",
+            "minimum": -1000,
+            "maximum": 1000
+          },
+          "dcBonus": {
+            "type": "integer",
+            "minimum": -1000,
+            "maximum": 1000
+          },
+          "source": {
+            "$ref": "#/components/schemas/CharacterSource"
+          }
+        }
+      },
+      "CharacterSpell": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "level",
+          "prepared",
+          "castingId",
+          "description",
+          "source"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "level": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9
+          },
+          "prepared": {
+            "type": "boolean"
+          },
+          "castingId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "description": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 5000
+          },
+          "source": {
+            "$ref": "#/components/schemas/CharacterSource"
+          }
+        }
+      },
+      "CharacterFeature": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "choices",
+          "description",
+          "source"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "kind": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "choices": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 2000
+          },
+          "description": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 5000
+          },
+          "source": {
+            "$ref": "#/components/schemas/CharacterSource"
+          }
+        }
+      },
+      "CharacterResource": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "current",
+          "max",
+          "recovery",
+          "source"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "HIT_DICE",
+              "SPELL_SLOT",
+              "PACT_SLOT",
+              "FEATURE",
+              "CUSTOM"
+            ]
+          },
+          "current": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "max": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "recovery": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 1000
+          },
+          "source": {
+            "$ref": "#/components/schemas/CharacterSource"
+          }
+        }
+      },
+      "CharacterItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "quantity",
+          "equipped",
+          "description",
+          "source"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "equipped": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 5000
+          },
+          "source": {
+            "$ref": "#/components/schemas/CharacterSource"
+          }
+        }
+      },
+      "CharacterCondition": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "description",
+          "source",
+          "icon",
+          "remainingRounds",
+          "expiresAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "name": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 100
+          },
+          "description": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 5000
+          },
+          "source": {
+            "$ref": "#/components/schemas/CharacterSource"
+          },
+          "icon": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 16
+          },
+          "remainingRounds": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expiresAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "CharacterModifier": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "target",
+          "amount",
+          "source"
+        ],
+        "properties": {
+          "target": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "amount": {
+            "type": "integer",
+            "minimum": -1000,
+            "maximum": 1000
+          },
+          "source": {
+            "$ref": "#/components/schemas/CharacterSource"
+          }
+        }
+      },
+      "CharacterOverride": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "target",
+          "value",
+          "reason"
+        ],
+        "properties": {
+          "target": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "value": {
+            "type": "integer",
+            "minimum": -10000,
+            "maximum": 10000
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        }
+      },
+      "CharacterSheet": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "avatar",
+          "species",
+          "background",
+          "classes",
+          "abilities",
+          "skills",
+          "saves",
+          "combat",
+          "attacks",
+          "casting",
+          "spells",
+          "features",
+          "resources",
+          "equipment",
+          "money",
+          "conditions",
+          "modifiers",
+          "overrides",
+          "notes"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "avatar": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 16
+          },
+          "species": {
+            "$ref": "#/components/schemas/CharacterEntry"
+          },
+          "background": {
+            "$ref": "#/components/schemas/CharacterBackground"
+          },
+          "classes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CharacterClass"
+            },
+            "minItems": 1,
+            "maxItems": 20
+          },
+          "abilities": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "STR",
+              "DEX",
+              "CON",
+              "INT",
+              "WIS",
+              "CHA"
+            ],
+            "properties": {
+              "STR": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 30
+              },
+              "DEX": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 30
+              },
+              "CON": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 30
+              },
+              "INT": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 30
+              },
+              "WIS": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 30
+              },
+              "CHA": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 30
+              }
+            }
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CharacterCheck"
+            },
+            "minItems": 18,
+            "maxItems": 18
+          },
+          "saves": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CharacterCheck"
+            },
+            "minItems": 6,
+            "maxItems": 6
+          },
+          "combat": {
+            "$ref": "#/components/schemas/CharacterCombat"
+          },
+          "attacks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CharacterAttack"
+            },
+            "minItems": 0,
+            "maxItems": 100
+          },
+          "casting": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CharacterCasting"
+            },
+            "minItems": 0,
+            "maxItems": 20
+          },
+          "spells": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CharacterSpell"
+            },
+            "minItems": 0,
+            "maxItems": 500
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CharacterFeature"
+            },
+            "minItems": 0,
+            "maxItems": 200
+          },
+          "resources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CharacterResource"
+            },
+            "minItems": 0,
+            "maxItems": 100
+          },
+          "equipment": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CharacterItem"
+            },
+            "minItems": 0,
+            "maxItems": 300
+          },
+          "money": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "cp",
+              "sp",
+              "ep",
+              "gp",
+              "pp"
+            ],
+            "properties": {
+              "cp": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100000000
+              },
+              "sp": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100000000
+              },
+              "ep": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100000000
+              },
+              "gp": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100000000
+              },
+              "pp": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100000000
+              }
+            }
+          },
+          "conditions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CharacterCondition"
+            },
+            "minItems": 0,
+            "maxItems": 100
+          },
+          "modifiers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CharacterModifier"
+            },
+            "minItems": 0,
+            "maxItems": 100
+          },
+          "overrides": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CharacterOverride"
+            },
+            "minItems": 0,
+            "maxItems": 100
+          },
+          "notes": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 10000
+          }
+        }
+      },
+      "CharacterAck": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "CharacterSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "avatar",
+          "version",
+          "canEdit",
+          "canReadFull",
+          "health",
+          "ac",
+          "speed",
+          "conditions"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "avatar": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 16
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "canEdit": {
+            "type": "boolean"
+          },
+          "canReadFull": {
+            "type": "boolean"
+          },
+          "health": {
+            "type": "string",
+            "enum": [
+              "UNHURT",
+              "HURT",
+              "DOWN"
+            ]
+          },
+          "ac": {
+            "type": "integer",
+            "minimum": -10000,
+            "maximum": 10000
+          },
+          "speed": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "conditions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 0,
+              "maxLength": 100
+            },
+            "minItems": 0,
+            "maxItems": 100
+          }
+        }
+      },
+      "CharacterListing": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "campaignVersion",
+          "characters"
+        ],
+        "properties": {
+          "campaignVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "characters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CharacterSummary"
+            }
+          }
+        }
+      },
+      "CharacterCalculation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "baseValue",
+          "value",
+          "components",
+          "overrideReason"
+        ],
+        "properties": {
+          "baseValue": {
+            "type": "integer",
+            "minimum": -1000000,
+            "maximum": 1000000
+          },
+          "value": {
+            "type": "integer",
+            "minimum": -1000000,
+            "maximum": 1000000
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "label",
+                "value",
+                "source"
+              ],
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "minLength": 0,
+                  "maxLength": 300
+                },
+                "value": {
+                  "type": "integer",
+                  "minimum": -1000000,
+                  "maximum": 1000000
+                },
+                "source": {
+                  "$ref": "#/components/schemas/CharacterSource"
+                }
+              }
+            }
+          },
+          "overrideReason": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 1000
+          }
+        }
+      },
+      "CharacterDetail": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "version",
+          "canEdit",
+          "canManage",
+          "sheet",
+          "calculations",
+          "expiredConditionIds"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "canEdit": {
+            "type": "boolean"
+          },
+          "canManage": {
+            "type": "boolean"
+          },
+          "sheet": {
+            "$ref": "#/components/schemas/CharacterSheet"
+          },
+          "calculations": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CharacterCalculation"
+            }
+          },
+          "expiredConditionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 0,
+              "maxLength": 100
+            },
+            "minItems": 0,
+            "maxItems": 100
+          }
+        }
+      },
+      "CharacterAccess": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "hidden",
+          "shareFull",
+          "importReview",
+          "controllers"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "hidden": {
+            "type": "boolean"
+          },
+          "shareFull": {
+            "type": "boolean"
+          },
+          "importReview": {
+            "type": "boolean"
+          },
+          "controllers": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "minItems": 0,
+            "maxItems": 100
+          }
+        }
+      },
+      "CharacterCard": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "campaignId",
+          "version",
+          "hidden",
+          "shareFull",
+          "importReview",
+          "controllers",
+          "sheet"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "campaignId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "hidden": {
+            "type": "boolean"
+          },
+          "shareFull": {
+            "type": "boolean"
+          },
+          "importReview": {
+            "type": "boolean"
+          },
+          "controllers": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "minItems": 0,
+            "maxItems": 100
+          },
+          "sheet": {
+            "$ref": "#/components/schemas/CharacterSheet"
+          }
+        }
+      },
+      "CharacterHistory": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "actor",
+          "kind",
+          "reason",
+          "at",
+          "before",
+          "after"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "actor": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "kind": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "before": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CharacterCard"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "after": {
+            "$ref": "#/components/schemas/CharacterCard"
+          }
+        }
+      },
+      "CharacterDocument": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "format",
+          "formatVersion",
+          "rules",
+          "sheet"
+        ],
+        "properties": {
+          "format": {
+            "const": "dnd-roll.character",
+            "type": "string"
+          },
+          "formatVersion": {
+            "const": 1,
+            "type": "integer"
+          },
+          "rules": {
+            "const": "5R",
+            "type": "string"
+          },
+          "sheet": {
+            "$ref": "#/components/schemas/CharacterSheet"
+          }
+        }
+      },
+      "CharacterPlacement": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "tokenId",
+          "sceneId",
+          "tokenVersion"
+        ],
+        "properties": {
+          "tokenId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sceneId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tokenVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "CreateCharacterRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "sheet"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "sheet": {
+            "$ref": "#/components/schemas/CharacterSheet"
+          }
+        }
+      },
+      "UpdateCharacterRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "sheet",
+          "reason"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "sheet": {
+            "$ref": "#/components/schemas/CharacterSheet"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        }
+      },
+      "CharacterAccessRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "controllers",
+          "hidden",
+          "shareFull",
+          "approveImport",
+          "reason"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "controllers": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "minItems": 0,
+            "maxItems": 100,
+            "uniqueItems": true
+          },
+          "hidden": {
+            "type": "boolean"
+          },
+          "shareFull": {
+            "type": "boolean"
+          },
+          "approveImport": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        }
+      },
+      "CharacterResourceRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "resourceId",
+          "delta",
+          "reason"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "resourceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "delta": {
+            "type": "integer",
+            "minimum": -100000,
+            "maximum": 100000
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        }
+      },
+      "CharacterConditionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "action",
+          "conditionId",
+          "reason"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "TICK",
+              "REMOVE"
+            ]
+          },
+          "conditionId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        }
+      },
+      "CopyCharacterRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "name"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        }
+      },
+      "ImportCharacterRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "document"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "document": {
+            "$ref": "#/components/schemas/CharacterDocument"
+          }
+        }
+      },
+      "CharacterPlacementRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "tokenId",
+          "tokenVersion",
+          "reason"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "tokenId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tokenVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        }
       }
     }
   },
@@ -3559,5 +6418,16 @@
     "migration": "V6 introduces fog and fog receipts while preserving V1 through V5 checksums and old rows.",
     "clientLifecycle": "Use cache: no-store for current map-view and image reads. On scene/version invalidation remove old image before requesting replacement; revoke object URLs and destroy textures on replacement, unmount, campaign/scene switch and 401/403, including concurrent image denials. Ignore late responses for disposed state. Reconnect and periodic reads reread maps. Retain exact body/requestId after uncertain POST, disable conflicting edits, preserve original draft version, and require latest post-ack authoritative read before claiming synchronization.",
     "interaction": "Native Pixi pointer pan, cursor-centered wheel zoom/reset, selected-token drag preview and integer-cell snapping, click movement and two-point Euclidean distance times distancePerCell. Numeric movement fallback remains. DM rectangular reveal/cover and coordinate forms require explicit save and authoritative confirmation. This is geometric assistance, not a D&D movement rule."
+  },
+  "x-character-policy": {
+    "rules": "5R basic formulae only; sources record book/revision/rules separately",
+    "identity": "Independent character, resources, controls and history; multiple token placements reference one character",
+    "authorization": "Membership and visibility before receipts; hidden omitted; public summaries omit exact HP/resources/notes/history/controllers; export/history equally checked; creation/copy/import receipts reauthorize current visibility of the result identity before returning its ID",
+    "atomicity": "actor then campaign lock; state/version/history/receipt atomically; identical retry one effect; same version one winner",
+    "revocation": "Member removal advances affected versions and appends actual actor history; rejoin/replay never restore grants",
+    "transfer": "Versioned structured format; target campaign ownership; clear old overrides/grants/history/placements; player import awaits target DM review",
+    "expiry": "Server clock and explicit DM round tick; expiry only reminds DM; removal requires confirmation; no automatic condition effects",
+    "client": "Exact uncertain retry; latest successful post-ack read; dispose scope/private state on denial; stale drafts retain original version",
+    "migration": "V7 preserves all V1-V6 rows and checksums; same campaign control and placement foreign keys"
   }
 }

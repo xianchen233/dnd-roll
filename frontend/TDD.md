@@ -230,3 +230,23 @@ P01 浏览器脚本 `e2e/accounts.spec.ts` 使用现有 DM/PLAYER 环境账号�
 - 协调者随后实际执行加强版本：新四条 **4 passed（18.4s）**，单项2.6/4.7/7.6/1.7秒，日志 `.tools/p02e-browser-strengthened.log`；真实原生socket关闭及新CONNECTED断言均实际通过。首次即通过，无生产修复，完整17条和新SHA全部CI另核实。
 - 最终加强版完整真实 Chrome / 生产 preview **17 passed（46.4s）**，日志 `.tools/p02e-browser-strengthened-full.log`；原六文件13条未改，每条60秒、零retry。后端/源码/构建产物/重启脚本未变，沿用同轮实际通过证据，新SHA远端CI仍独立确认。
 - 最终验收SHA `853944d` 的 push39436631381 / PR39436640191 六个job全部completed/success；166前端/构建、61unit+61IT、标准Compose17条（push2.1m/PR1.5m）与四组实际容器重启全PASS，完整日志由协调者独立读取并记录在 docs/verification.md。全部门槛通过后P02e/P02完成；后续文档SHA仍独立核对Checks，PR保持草稿、不合并/发布。P03及整个M2继续未完成。
+# P03 当前证据（2026-10-20，未完成）
+
+22:52:18新5项实际RED：缺新建/打开角色入口；22:58:33同5项GREEN，覆盖新建完整
+字段、原草稿版本、精确不确定重试/权威读、撤权与旧响应隔离。JSX标签、命令路径及
+Testing Library参数的中间编译/准备失败单列不冒充RED。23:00:05全量171（旧166保留）
+及生产构建通过，主chunk609.74kB提示保留。
+23:05:02对畸形import.classes对象not.toThrow断言实际RED；检查预览字段形状后
+23:05:22新增6项GREEN。日志外层.tools/p03-frontend-*、p03-import-preview-*。
+实际浏览器新6条和旧17条尚未运行，不标通过；P03/M2未完成。
+## P03 最终本地回归（2026-10-20）
+
+后续实际断言RED与日志：p03-import-conflict-red（409后列表未刷新）、p03-named-links-red
+（缺命名关联选择）、p03-placement-conflict-red（冲突表单残留）、p03-create-selection-red
+（ACK后旧列表清选择）。分别补目标版本刷新、按来源/场景棋子名称选择并保持原ID版本、
+409销毁旧权限/关联表单、ACK同步失效旧列表读序号。单次修改不自动升级重发旧命令。
+最终角色11项及完整177项通过，构建通过（p03-build-final-production，610.88kB提示保留）。
+最终真实Chrome完整23 passed（58.0秒），原17及全部旧文件/60秒/零retry保留；新6条
+包括真实socket offline/新CONNECTED、提交后丢响应/同body retry/失败权威读恢复和
+跨战役下载/复制/导入。首次离线事件准备错误与后续验收团排序干扰旧2条均如实保留，
+没有删断言或放宽时限。最终构建的源与结果对应关系见verification，未拿旧构建冒充。

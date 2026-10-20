@@ -1,5 +1,48 @@
 # 继续工作的入口
 
+## P03 当前执行中（2026-10-20，本会话，优先于下方历史交接）
+
+末尾补强已通过全部本地门槛：create/copy/import历史回执须另复核结果角色的当前
+可见性，实际404/200 RED后修复；65unit+75IT完整GREEN，独立无数据库65unit、
+177前端/构建、45契约、新JAR生产Chrome23条（1.0m）、重新seed后的五组实际Java+PG
+重启均通过。最后源码日志为p03-backend-final、p03-unit-no-db-final、
+p03-browser-final-after-receipts、p03-final-restart-{seed,verify}及p03-final-process-evidence。
+服务再次核对身份后停止，三端口无监听，数据保留。仅剩统一提交推送并核验最终SHA
+的push/PR CI，P03/M2尚未完成。下方74IT/第一次重启为本轮更早历史，不替代本段。
+
+最新：本地完整65无数据库unit、65unit+74真实PG/HTTP/WS/迁移、177前端/构建、
+45契约、最终生产Chrome23条（58.0秒）及五组实际Java+PG重启全部通过；16张旧表
+全列/全行/六checksum自然升级一致。完整失败闭环、重启wrapper管道卡住后的分步
+核验及证据见verification最上段。Java/production preview/PG再次核对身份后已停止，
+55432/8080/5173无监听，数据及私有素材保留。下一步统一提交推送并独立核对最终SHA
+的push/PR全CI，之后才关闭P03；**P03及整个M2当前仍未完成**。下文“正重跑/待本地
+浏览器”等为本轮早期记录，已由本段及verification最新结果更新，不重复开发。
+
+起点 b1f2c5f00d015e9efc50340e99db4584b3287056，干净，fetch后本地/origin/PR一致。
+独立核对 push39439094794 / PR39439269275 六job completed/success，PR #1 open/draft。
+已读AGENTS、continuation、verification、work-packages、产品/路线/CONTEXT及全部必读契约。
+已使用工作区dnd-rule-lookup：A仅locate，B SRD5.2定位+整页回读，见
+`docs/research/character-sheet-5r.md`，未读/分发商业规则正文。
+
+P03契约为`contracts/characters.md`，按P03a身份字段历史→b来源计算→c资源状态→d传输
+与棋子引用→e完整验收执行。已写V7、CharacterSheet/Service/Controller/JdbcStore、角色
+授权撤销与实际操作者历史；六组前端字段、精确重试、来源历史、DM权限/计时/传输入口。
+P01/P02保持完成，不重复；**P03及整个M2仍未完成**。
+
+实际证据：4计算/校验断言RED；HTTP创建入口预期200实际404，扩展7场景同一前置RED；
+65unit+7IT首轮GREEN。补充待审导入复制绕过（true实际false）和NUL输入400实际500
+真实RED，修复后65unit+9IT通过。前端5项缺入口实际RED，171全量/构建通过；畸形
+导入预览not.toThrow断言RED，修复后新6项GREEN。契约缺14操作RED→45操作GREEN。
+新增迁移/多棋子/回滚/原生WS覆盖首次通过不冒充RED。全量首次74IT中旧TokensIT八项
+因本机PG连接上限无法加载context；新类DirtiesContext释放池后正重跑全量。无凭据输出。
+
+下一步：查看`.tools/p03-backend-full-2.log`，完成前端最终全量/构建及新6条实际浏览器
+（frontend/e2e/characters.spec.ts），补真实V6→V7旧库逐列快照与第五组角色重启脚本，
+原四组/17浏览器全保留运行。实际浏览器/重启/最终SHA双CI尚未执行，不得标通过。
+当前PG已核对身份后启动127.0.0.1:55432（pg-data）；Java/preview尚未启动。
+重启前仍重新核对端口和进程身份，不复用PID。本会话尚未提交；沿原分支/草稿PR统一
+提交推送，不合并/发布。所有日志为外层`.tools/p03-*`，凭据仅内存。
+
 更新：2026-10-20（Asia/Shanghai）。最新分支、HEAD 和工作区以 `git status --short --branch` / `git log -5 --oneline` 为准。当前沿用 `feat/accounts-and-invitations` 和 [草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，未合并、未发布。
 
 ## 当前入口：P02e / P02 已完成，下一工作包 P03 尚未开工

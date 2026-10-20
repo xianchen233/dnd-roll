@@ -1,0 +1,415 @@
+{
+  "format": "dnd-roll.character",
+  "formatVersion": 1,
+  "rules": "5R",
+  "sheet": {
+    "name": "示例冒险者",
+    "avatar": "",
+    "species": {
+      "id": "species",
+      "name": "",
+      "description": "",
+      "source": {
+        "book": "手动填写",
+        "revision": "1",
+        "rules": "CUSTOM",
+        "detail": ""
+      }
+    },
+    "background": {
+      "entry": {
+        "id": "background",
+        "name": "",
+        "description": "",
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      },
+      "increases": {
+        "STR": 0,
+        "DEX": 0,
+        "CON": 0,
+        "INT": 0,
+        "WIS": 0,
+        "CHA": 0
+      },
+      "originFeat": "",
+      "proficiencies": [],
+      "equipment": []
+    },
+    "classes": [
+      {
+        "id": "class-1",
+        "name": "冒险者",
+        "subclass": "",
+        "level": 1,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      }
+    ],
+    "abilities": {
+      "STR": 10,
+      "DEX": 10,
+      "CON": 10,
+      "INT": 10,
+      "WIS": 10,
+      "CHA": 10
+    },
+    "skills": [
+      {
+        "id": "acrobatics",
+        "name": "特技",
+        "ability": "DEX",
+        "proficiency": "NONE",
+        "bonus": 0,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      },
+      {
+        "id": "animalHandling",
+        "name": "驯兽",
+        "ability": "WIS",
+        "proficiency": "NONE",
+        "bonus": 0,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      },
+      {
+        "id": "arcana",
+        "name": "奥秘",
+        "ability": "INT",
+        "proficiency": "NONE",
+        "bonus": 0,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      },
+      {
+        "id": "athletics",
+        "name": "运动",
+        "ability": "STR",
+        "proficiency": "NONE",
+        "bonus": 0,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      },
+      {
+        "id": "deception",
+        "name": "欺瞒",
+        "ability": "CHA",
+        "proficiency": "NONE",
+        "bonus": 0,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      },
+      {
+        "id": "history",
+        "name": "历史",
+        "ability": "INT",
+        "proficiency": "NONE",
+        "bonus": 0,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      },
+      {
+        "id": "insight",
+        "name": "洞悉",
+        "ability": "WIS",
+        "proficiency": "NONE",
+        "bonus": 0,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      },
+      {
+        "id": "intimidation",
+        "name": "威吓",
+        "ability": "CHA",
+        "proficiency": "NONE",
+        "bonus": 0,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      },
+      {
+        "id": "investigation",
+        "name": "调查",
+        "ability": "INT",
+        "proficiency": "NONE",
+        "bonus": 0,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      },
+      {
+        "id": "medicine",
+        "name": "医药",
+        "ability": "WIS",
+        "proficiency": "NONE",
+        "bonus": 0,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      },
+      {
+        "id": "nature",
+        "name": "自然",
+        "ability": "INT",
+        "proficiency": "NONE",
+        "bonus": 0,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      },
+      {
+        "id": "perception",
+        "name": "察觉",
+        "ability": "WIS",
+        "proficiency": "NONE",
+        "bonus": 0,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      },
+      {
+        "id": "performance",
+        "name": "表演",
+        "ability": "CHA",
+        "proficiency": "NONE",
+        "bonus": 0,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      },
+      {
+        "id": "persuasion",
+        "name": "游说",
+        "ability": "CHA",
+        "proficiency": "NONE",
+        "bonus": 0,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      },
+      {
+        "id": "religion",
+        "name": "宗教",
+        "ability": "INT",
+        "proficiency": "NONE",
+        "bonus": 0,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      },
+      {
+        "id": "sleightOfHand",
+        "name": "巧手",
+        "ability": "DEX",
+        "proficiency": "NONE",
+        "bonus": 0,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      },
+      {
+        "id": "stealth",
+        "name": "隐匿",
+        "ability": "DEX",
+        "proficiency": "NONE",
+        "bonus": 0,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      },
+      {
+        "id": "survival",
+        "name": "求生",
+        "ability": "WIS",
+        "proficiency": "NONE",
+        "bonus": 0,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      }
+    ],
+    "saves": [
+      {
+        "id": "STR",
+        "name": "STR",
+        "ability": "STR",
+        "proficiency": "NONE",
+        "bonus": 0,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      },
+      {
+        "id": "DEX",
+        "name": "DEX",
+        "ability": "DEX",
+        "proficiency": "NONE",
+        "bonus": 0,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      },
+      {
+        "id": "CON",
+        "name": "CON",
+        "ability": "CON",
+        "proficiency": "NONE",
+        "bonus": 0,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      },
+      {
+        "id": "INT",
+        "name": "INT",
+        "ability": "INT",
+        "proficiency": "NONE",
+        "bonus": 0,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      },
+      {
+        "id": "WIS",
+        "name": "WIS",
+        "ability": "WIS",
+        "proficiency": "NONE",
+        "bonus": 0,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      },
+      {
+        "id": "CHA",
+        "name": "CHA",
+        "ability": "CHA",
+        "proficiency": "NONE",
+        "bonus": 0,
+        "source": {
+          "book": "手动填写",
+          "revision": "1",
+          "rules": "CUSTOM",
+          "detail": ""
+        }
+      }
+    ],
+    "combat": {
+      "maxHp": 1,
+      "hp": 1,
+      "tempHp": 0,
+      "speed": 30,
+      "deathSuccesses": 0,
+      "deathFailures": 0,
+      "acMode": "UNARMORED",
+      "manualAc": 10,
+      "source": {
+        "book": "手动填写",
+        "revision": "1",
+        "rules": "CUSTOM",
+        "detail": ""
+      }
+    },
+    "attacks": [],
+    "casting": [],
+    "spells": [],
+    "features": [],
+    "resources": [],
+    "equipment": [],
+    "money": {
+      "cp": 0,
+      "sp": 0,
+      "ep": 0,
+      "gp": 0,
+      "pp": 0
+    },
+    "conditions": [],
+    "modifiers": [],
+    "overrides": [],
+    "notes": ""
+  }
+}

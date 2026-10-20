@@ -220,3 +220,30 @@ Java/PostgreSQL restart gates. Final acceptance SHA `853944d` passed both push
 browser flows and four actual container-restart verification groups. P02e/P02 is
 complete; see docs/verification.md. Subsequent documentation HEADs still require
 independent CI verification. PR #1 remains a draft, unmerged and unreleased.
+# P03 当前证据（2026-10-20，未完成）
+
+先固定contracts/characters.md，按本机SRD5.2整页核对公式。22:40:20
+`mvn -Dtest=CharacterSheetTest test`（附外置m2参数）4项实际断言RED：计算缺值、
+无效数据未抛领域错误；实现后65unit GREEN。日志外层.tools/p03-calculations-red.log。
+HTTP创建预期200实际404 RED（22:44:11）；扩展7场景在相同前置RED；22:50:26
+65unit+7真实PG/HTTP GREEN。构造器兼容的初次编译错误不算行为RED。
+23:05:11待审核导入复制可绕过审核true实际false、NUL输入应400实际500两项RED；
+修复保持待审标志、拒绝不可存储Unicode并按JSONB字节/分隔符限制大小，23:06:47
+65unit+9IT GREEN。来源、技能、豁免、攻击/施法、回执/权限等见CharacterSheetTest/
+CharactersIT；后加迁移、多棋子、回滚、WS首次通过是覆盖不伪造RED。
+全量首次旧TokensIT因PG连接上限8个context错误，新增类DirtiesContext释放连接池后
+重跑，未通过前不标完整验收。日志p03-backend-full-{initial,2}.log。
+## P03 本地完整验收（2026-10-20）
+
+最终独立清除TEST_DATABASE_*的65unit通过；完整`-Pintegration verify`为65unit+74IT
+通过，零失败/错误/跳过（p03-backend-full-2.log）。新CharactersIT结束后关闭其context
+释放连接池，原TokensIT八项完整通过，没有跳过；原FogMigrationIT明确target6，保留
+其原V6断言，新增CharacterMigrationIT验证V6→V7，不减覆盖。浏览器旧库16表原列/
+原行/六checksum自然升级一致；实际Java+PG停止并在同库/素材根重启，原四组加角色
+第五组seed/verify全PASS。角色全字段、来源/覆盖/资源/历史/两场景引用/目标审核及
+撤权后历史回执均保持；详细步骤、wrapper管道故障、日志与当前CI门槛见verification。
+末尾创建/复制/导入回执“结果角色后被隐藏”的真实HTTP预期404实际200 RED
+（p03-hidden-receipt-red.log）；同团锁内另复核receipt.result.id的当前可见性后，
+完整65unit+75IT通过（p03-backend-final.log），0失败/错误/跳过。独立无数据库65unit
+再通过。新JAR真实Chrome23条及重新seed后五组实际Java+PG重启全PASS，实际进程ID
+前后不同，见verification最上段/p03-final-process-evidence.json。P03最终SHA双CI待核验。

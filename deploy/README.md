@@ -48,3 +48,23 @@ CI 将这组组合检查与既有素材、棋子、地图三组检查共用一�
 棋子重启验收使用同套环境变量：`node scripts/check-token-restart.mjs seed <仓库外新证据文件.json>` → 实际重启 PostgreSQL/后端 → `verify`。它创建独立验收战役，验证共享移动、隐藏/撤控、移除再加入、旧编辑版本冲突，以及新会话中名称/位置/隐藏/控制/版本/原回执保持。历史作者和移除回执不能恢复或再次删除新权限。CI 与素材脚本共用一次真实服务重启；该检查不等于 P09 异机恢复。
 
 专用验收环境可复现文件与数据库重启检查：环境注入 `E2E_BASE_URL`、`E2E_DM_USERNAME`、`E2E_DM_PASSWORD`、`E2E_PLAYER_USERNAME`、`E2E_PLAYER_PASSWORD`（均不提供生产凭据），先运行 `node scripts/check-asset-restart.mjs seed <仓库外新证据文件.json>`，实际重启 PostgreSQL 和后端并等就绪，再以同一文件运行 `verify`。脚本会创建独立验收战役与素材，校验原始文件 SHA-256、地图引用、版本、重试回执、历史回放不重挂图以及其他战役/玩家/退出后下载拒绝；不会清理已提交测试素材。CI 在标准 Compose 的真实浏览器流程后执行这一检查。该检查不等于 P09 异机恢复。
+## P03 character persistence and restart acceptance
+
+V7 adds character sheets, independent controls, immutable edit history, command
+receipts and same-campaign optional token references. Keep the existing database
+and private asset volume; do not recreate them for upgrade. V1–V6 checksums remain
+unchanged. Text/emoji avatars are sheet fields; bitmap avatar upload is not supplied.
+
+Alongside the four existing restart checks, run
+`node scripts/check-character-restart.mjs seed <new-outside-repo-evidence.json>`,
+actually stop/restart PostgreSQL and the packaged backend, then run `verify` with
+the same file. Use the existing E2E environment variables and dedicated test data.
+This fifth group compares complete fields, sources/calculations, DM overrides,
+resources, two token placements, access, actual-actor histories, target import
+review, versions and historical receipts under fresh sessions. It verifies that
+member removal/rejoining and old receipts never restore control or consume again.
+New fixture names sort after Demo so the preserved original browser flows retain
+their fixture. CI runs all five groups around a real standard Compose restart.
+
+The check writes synthetic private evidence outside the source tree; it is not a
+deployment backup or proof of the separately pending P09 restore on another host.

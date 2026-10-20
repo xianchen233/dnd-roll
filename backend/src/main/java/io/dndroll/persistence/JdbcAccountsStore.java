@@ -14,7 +14,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class JdbcAccountsStore implements Store {
     private final JdbcTemplate jdbc;
     private final TransactionTemplate transactions;
-    public JdbcAccountsStore(JdbcTemplate jdbc, TransactionTemplate transactions) { this.jdbc = jdbc; this.transactions = transactions; }
+    private final JdbcCharacterStore characters;
+    @org.springframework.beans.factory.annotation.Autowired
+    public JdbcAccountsStore(JdbcTemplate jdbc, TransactionTemplate transactions,JdbcCharacterStore characters) { this.jdbc = jdbc; this.transactions = transactions;this.characters=characters; }
+    public JdbcAccountsStore(JdbcTemplate jdbc,TransactionTemplate transactions){this(jdbc,transactions,new JdbcCharacterStore(jdbc,new JdbcSceneStore(jdbc,transactions),tools.jackson.databind.json.JsonMapper.builder().build()));}
     public <T> T actorLocked(String actor, Supplier<T> work) {
         return transactions.execute(status -> {
             // Serialize receipt keys while allowing FK KEY SHARE checks by invitation acceptance.
@@ -85,6 +88,7 @@ public class JdbcAccountsStore implements Store {
         jdbc.update("delete from token_controller where campaign_id=? and username=?", id, username);
         jdbc.update("delete from campaign_member where campaign_id=? and username=? and role='PLAYER'", id, username);
     }
+    public void remove(UUID id,String username,String actor){characters.revokeMember(id,username,actor);remove(id,username);}
     public long advance(UUID id) {
         jdbc.update("update campaign set version=version+1 where id=?", id);
         return campaign(id).version();

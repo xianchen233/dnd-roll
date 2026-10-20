@@ -1,5 +1,87 @@
 # 阶段验收记录
 
+## P03 本地完整验收，最终提交双 CI 待核验（2026-10-20）
+
+末尾安全审查追加：create/copy/import回执还须复核“结果角色”的当前可见性。
+23:43:45真实HTTP断言RED（隐藏后重试应404、实际200），补结果身份授权后
+23:45:55完整65unit+75IT GREEN；独立无数据库65unit及前端177也再次通过。
+最新日志p03-hidden-receipt-red.log、p03-backend-final.log、p03-unit-no-db-final.log。
+最后补强后的新JAR完整Chrome **23 passed（1.0m）**，
+`p03-browser-final-after-receipts.log`；五组重新seed，按真实CommandLine/data分步实际
+停止并重启Java和PG，PID前后均不同，HTTP200后五组verify全PASS。
+`p03-final-restart-{seed,verify}.log`、`p03-final-process-evidence.json`、
+`p03-final-{asset,token,map,p02,character}-restart-evidence.json`为最后源码的新证据。
+最后又核对Java/preview/PG实际身份后停止，三端口无监听，数据保留。下面74IT/首次
+重启结果为此前历史；当前最终数为65unit+75IT、177前端、45契约、23浏览器/五组重启。
+仅剩提交的push/PR CI待核验，不以旧SHA结果关闭P03。
+
+P03a–d 的身份/六组字段/权限/历史、5R来源计算/DM覆盖、独立资源/到期确认、
+复制/目标审核导入导出/多棋子引用已实现。P03e 本地门槛通过；**P03与整个M2仍未完成**，
+当前交付还须统一提交推送并独立核对该SHA的push与PR全部CI。
+
+| 检查 | 实际结果与外置证据 |
+| --- | --- |
+| 独立无数据库单测 | 清除TEST_DATABASE_*，`mvn ... test -B -ntp`：65通过，p03-unit-no-db.log |
+| 完整真实后端 | `mvn ... -Pintegration verify -B -ntp`：65unit+74真实PG/HTTP/WS/迁移，0失败/错误/跳过；p03-backend-full-2.log。原61+61保留 |
+| 前端 | 最终16文件177通过（原166保留），p03-frontend-final.log；TS/Vite最终生产构建通过，p03-build-final-production.log，主chunk610.88kB提示保留 |
+| 契约 | 45 HTTP操作（原31及全部断言保留），全部旧路由/旧schema与HEAD逐项deepEqual；新14操作及严格嵌套/传输/秘密边界检查通过 |
+| 真实浏览器 | 最终生产构建真实Chrome完整23 passed（58.0秒），p03-browser-final-production.log；原17流程/全部旧文件、60秒/条、零retry不变 |
+| V6→V7旧库自然升级 | P03Snapshot.java / p03-before-v7.json / p03-after-v7.json，16张V1–V6表全部原列/原行及六个checksum完全一致；独立CharacterMigrationIT另验证FK/无角色资源克隆 |
+| 五组实际服务重启 | run-p03-restart.ps1 seed→实际停止Java和PG→同库同私有素材根启动→五组新会话verify全PASS；p03-restart-{seed,verify}.log，p03-{asset,token,map,p02,character}-restart-evidence.json |
+| 视觉与静态 | 人工查看最终DM到期提醒/数值/覆盖与玩家撤权后空角色工作区；无隐藏角色资料，地图保持。node --check新脚本、git diff --check通过 |
+
+新角色重启组逐项deepEqual完整字段、所有资源池、5R计算/来源、DM覆盖、原历史/实际
+操作者/版本、授权及两个场景中的棋子引用。复制独立，跨战役导入需目标DM审核；
+移除成员/重新加入后旧create/access/import回执只确认过去，不恢复权限；旧resource/
+copy/history/export仍拒绝，状态到期不自动移除。原四组素材/棋子/地图/两场景也全部通过。
+
+重启包装脚本已核实旧Java44812/PG14548后真正停止并重启PG为48188，但其PowerShell
+输出管道未结束，未启动Java。确认仅本任务wrapper48092后停止该包装进程，单独启动
+新Java51144，HTTP200后才执行五组verify；不将卡住的wrapper标通过。最终再次核对
+Java/preview/PG的CommandLine/data后停止，55432/8080/5173无监听，数据及私有素材保留。
+
+失败及后续修复均保留：
+
+- 首轮新增浏览器5过1准备失败：玩家在全部变更时离线，正确未收到MESSAGE，末尾却
+  期待大于0。改为真实重连后明确再提交一次隐藏角色更新并等待实际MESSAGE；无业务
+  mock或生产修复。原trace另存p03-browser-initial-offline-trace.zip，新6条13.3秒通过。
+- 后续全量21过2失败：本轮重启验收团`Character restart`排序在Demo前，旧场景/M1
+  用例默认进入首团而无预期demo单位。仅更名本轮新建团为ZZZ前缀并修正新脚本前缀；
+  未动旧测试/原数据。两份trace保存在p03-browser-fixture-{scenes,tabletop}-trace.zip。
+- 前端实际追加RED：import409后不刷新campaignVersion、施法/棋子只能输入ID、棋子
+  版本冲突后旧表单残留、新建ACK与旧列表同批返回使选择消失；逐项最小修复后11项
+  角色测试及全量177 GREEN。编译时Testing Library的exact参数不支持，单列为准备
+  故障，已修正；旧构建57.6秒结果不冒称最终，最终新构建23条58.0秒通过。
+
+边界：头像为短文本/emoji；生命上限、升级选择和特殊能力仍为带来源的手动字段；
+内容库/准入开关/结构化填卡属P04、投骰属P05、战斗属P06。未验证公网TLS、触屏、容量、
+完整备份/异机恢复，不因P03本地验收将这些或整个M2标完成。不合并、不发布。
+
+## P03 开工与当前证据（2026-10-20，进行中）
+
+b1f2c5f00d015e9efc50340e99db4584b3287056 本地/origin/PR一致、工作区干净；
+独立API读取push39439094794/PR39439269275六个frontend/backend/browser job success，
+PR open/draft/main。交接提交本身已核验，不复用853944d/863a68a结果。
+
+- 22:40:20 `-Dtest=CharacterSheetTest test`：4项断言RED，空计算/未拒绝无效输入；
+  `.tools/p03-calculations-red.log`。随后65unit全部通过，见HTTP聚焦日志。
+- 22:44:11 新HTTP入口200实际404 RED；22:46:23扩展7个场景都在该前置失败，不声称
+  已执行后续断言。22:50:26 `-Pintegration -Dit.test=CharactersIT verify` 65unit+7IT
+  GREEN；首次编译构造器兼容失败单列，已保留旧构造入口并通过旧测试编译。
+- 23:05:11 待审核卡复制true实际false、NUL输入400实际500两项真实RED；修复复制审核
+  标志、Unicode与JSONB字节/分隔符上限；23:06:47 65unit+9IT GREEN。
+- 22:52:18 前端新5项缺入口实际RED；22:58:33新5项GREEN，期间JSX/路径/TS参数错误
+  为准备/编译故障。23:00:05全量171通过及生产构建609.74kB提示（原166保留）。
+  23:05:02畸形导入预览not.toThrow断言RED，23:05:22新6项GREEN。
+- 机器契约缺14路由的实际RED→45 HTTP操作GREEN，保留31旧操作及全部旧断言。
+- 第一次完整后端74IT中66通过，旧TokensIT8项因PG too many clients context启动失败；
+  不是行为RED、不是全量通过。新增CharactersIT结束后显式关闭context释放连接池，
+  当前重跑日志`.tools/p03-backend-full-2.log`。新增迁移、同角色多棋子、即时/延迟commit
+  回执故障与原生WS秘密边界已执行通过，属于覆盖而非虚构RED。
+
+新浏览器/旧17流程、旧四组及新角色实际重启、浏览器旧V6库全列比较和最终SHA双CI
+仍待执行。P03和M2未完成；不合并、不发布。最终结果须继续追加并更新本段入口。
+
 ## 下一会话交接确认（2026-10-20）
 
 用户指定下一工作包交给下一会话，本次不开始 P03。交接前 HEAD

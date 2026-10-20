@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const read = (path) => readFile(new URL(path, import.meta.url), 'utf8');
-const [apiText, eventText, readme, accounts, scenes, assets, tokens, mapVisibility] = await Promise.all([
+const [apiText, eventText, readme, accounts, scenes, assets, tokens, mapVisibility, characters] = await Promise.all([
   read('../contracts/openapi.json'),
   read('../contracts/scene-events.schema.json'),
   read('../contracts/README.md'),
@@ -11,6 +11,7 @@ const [apiText, eventText, readme, accounts, scenes, assets, tokens, mapVisibili
   read('../contracts/assets.md'),
   read('../contracts/tokens.md'),
   read('../contracts/map-visibility.md'),
+  read('../contracts/characters.md'),
 ]);
 const api = JSON.parse(apiText);
 const event = JSON.parse(eventText);
@@ -39,12 +40,17 @@ function validate(schema, value) {
   if (schema.enum) assert.ok(schema.enum.includes(value));
   if (schema.type === 'object') {
     assert.ok(value !== null && typeof value === 'object' && !Array.isArray(value));
+    if (schema.maxProperties !== undefined) assert.ok(Object.keys(value).length <= schema.maxProperties);
     for (const key of schema.required ?? []) assert.ok(Object.hasOwn(value, key), `Missing ${key}`);
     if (schema.additionalProperties === false) {
       for (const key of Object.keys(value)) assert.ok(Object.hasOwn(schema.properties, key), `Unexpected ${key}`);
     }
-    for (const [key, property] of Object.entries(schema.properties)) {
+    for (const [key, property] of Object.entries(schema.properties ?? {})) {
       if (Object.hasOwn(value, key)) validate(property, value[key]);
+    }
+    for (const [key, property] of Object.entries(value)) {
+      if (schema.propertyNames?.enum) assert.ok(schema.propertyNames.enum.includes(key));
+      if (schema.additionalProperties && typeof schema.additionalProperties === 'object' && !Object.hasOwn(schema.properties ?? {}, key)) validate(schema.additionalProperties, property);
     }
   } else if (schema.type === 'array') {
     assert.ok(Array.isArray(value));
@@ -88,7 +94,7 @@ assert.equal(api.openapi, '3.1.0');
 assert.equal(api.jsonSchemaDialect, 'https://json-schema.org/draft/2020-12/schema');
 assert.equal(event.$schema, api.jsonSchemaDialect);
 checkRefs(api);
-const documentedOperations = [...`${readme}\n${accounts}\n${scenes}\n${assets}\n${tokens}\n${mapVisibility}`.matchAll(/(?:`|### )(GET|POST) (\/api[^` \r\n]*)/g)]
+const documentedOperations = [...`${readme}\n${accounts}\n${scenes}\n${assets}\n${tokens}\n${mapVisibility}\n${characters}`.matchAll(/(?:`|### )(GET|POST) (\/api[^` \r\n]*)/g)]
   .map(([, method, path]) => `${method} ${path.split('?')[0]}`);
 const actualOperations = Object.entries(api.paths).flatMap(([path, item]) =>
   Object.keys(item).filter((method) => ['get', 'post'].includes(method))
@@ -649,4 +655,34 @@ for (const secret of ['assetId', 'gridSize', 'offsetX', 'offsetY', 'width', 'hei
   assert.throws(() => validate(event, { type: 'SCENE_CHANGED', campaignId: id, [secret]: 'secret' }));
   assert.throws(() => validate(schemas.ApiError, { code: 'NOT_FOUND', message: 'Unavailable', [secret]: 'secret' }));
 }
-console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; all M1/P01/P02a/P02b/P02c assertions retained; P02d strict safe-map/fog schemas, authenticated no-store PNG delivery, exact queries, shared versions/durable receipts, no secret payloads or reusable caches. This is a focused contract checker, not a general OpenAPI validator.`);
+const characterExample = JSON.parse(await read('../contracts/character.example.json'));
+validate(schemas.CharacterDocument, characterExample);
+assert.deepEqual(schemas.CharacterDocument.required, ['format', 'formatVersion', 'rules', 'sheet']);
+assert.deepEqual(schemas.CharacterSheet.required, ['name', 'avatar', 'species', 'background', 'classes', 'abilities', 'skills', 'saves', 'combat', 'attacks', 'casting', 'spells', 'features', 'resources', 'equipment', 'money', 'conditions', 'modifiers', 'overrides', 'notes']);
+for (const [name, schema] of Object.entries(schemas).filter(([name]) => name.startsWith('Character') && name !== 'CharacterCalculation')) {
+  if (schema.properties) { assert.equal(schema.additionalProperties, false, name); assert.deepEqual(schema.required, Object.keys(schema.properties), name); }
+}
+for (const field of schemas.CharacterSheet.required) {
+  const broken = structuredClone(characterExample); delete broken.sheet[field];
+  assert.throws(() => validate(schemas.CharacterDocument, broken));
+}
+for (const field of ['campaignId', 'controllers', 'hidden', 'actor', 'history', 'placements']) {
+  assert.throws(() => validate(schemas.CharacterDocument, { ...characterExample, [field]: 'forged' }));
+  assert.throws(() => validate(schemas.CharacterSheet, { ...characterExample.sheet, [field]: 'forged' }));
+}
+for (const field of ['hp', 'maxHp', 'resources', 'notes', 'controllers', 'sheet', 'history', 'source', 'hidden']) assert.ok(!Object.hasOwn(schemas.CharacterSummary.properties, field));
+for (const path of Object.keys(api.paths).filter(p => p.includes('/characters'))) {
+  for (const [method, op] of Object.entries(api.paths[path]).filter(([method]) => ['get', 'post'].includes(method))) {
+    assert.ok(op['x-character-permission']);
+    if (method === 'post') { assert.equal(op['x-idempotency'].namespace, 'character-commands'); assert.match(op['x-idempotency'].authorization, /before receipt replay/); assert.match(op['x-idempotency'].samePayload, /before stale.*no mutation or event/); }
+  }
+}
+assert.deepEqual(schemas.CharacterSource.properties.rules.enum, ['5R', '2014', 'CUSTOM']);
+assert.match(api['x-character-policy'].expiry, /only reminds DM.*confirmation/);
+assert.match(api['x-character-policy'].transfer, /target DM review/);
+assert.match(api['x-character-policy'].revocation, /actual actor.*never restore/);
+assert.match(api['x-character-policy'].authorization, /creation\/copy\/import.*current visibility.*result identity/);
+for (const value of [0, 31, 1.5, '12', null]) assert.throws(() => validate(schemas.CharacterSheet, { ...characterExample.sheet, abilities: { ...characterExample.sheet.abilities, STR: value } }));
+for (const value of [null, -1, 4, 0.5]) assert.throws(() => validate(schemas.CharacterCombat, { ...characterExample.sheet.combat, deathFailures: value }));
+assert.throws(() => validate(schemas.CharacterDocument, { ...characterExample, formatVersion: 2 }));
+console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; all 31 existing operations/assertions retained; P03 strict nested sheets/transfer, sourced calculations, DM overrides, independent resource identity, authorization before replay and no private summary fields. Focused checker, not a general OpenAPI validator.`);

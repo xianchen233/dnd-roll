@@ -34,7 +34,7 @@ class FogMigrationIT {
             for(String table:List.of("app_user","campaign","campaign_member","scene","token","token_controller","movement_receipt","account_command_receipt","campaign_invitation","scene_command_receipt","campaign_asset","scene_map","asset_command_receipt","token_command_receipt"))
                 columns.put(table,jdbc.queryForList("select column_name from information_schema.columns where table_schema=? and table_name=? order by ordinal_position",String.class,schema,table));
             var before=snapshot(jdbc,columns);var checksums=jdbc.queryForList("select version,checksum from flyway_schema_history where version is not null order by version");
-            Flyway.configure().dataSource(source).schemas(schema).defaultSchema(schema).load().migrate();
+            Flyway.configure().dataSource(source).schemas(schema).defaultSchema(schema).target("6").load().migrate();
             assertEquals(before,snapshot(jdbc,columns));assertEquals(checksums,jdbc.queryForList("select version,checksum from flyway_schema_history where version in ('1','2','3','4','5') order by version"));
             assertEquals(6,jdbc.queryForObject("select count(*) from flyway_schema_history where success and version is not null",Integer.class));
             assertEquals(List.of(campaign,campaign),jdbc.queryForList("select campaign_id from token_controller order by username",UUID.class));

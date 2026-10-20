@@ -11,6 +11,17 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Added
 
+- Add independent 5R character sheets with all six field groups, multiple
+  characters per player, sourced server calculations, reasoned DM overrides,
+  immutable edit history and revocation-safe character control.
+- Add separate HP/temp HP and bounded resource counters, explicit condition
+  round ticks and DM-confirmed expiry reminders, independent token references,
+  character copying and a versioned structured transfer format. Player imports
+  require target DM review; copying pending imports keeps that review requirement.
+- Add a character workspace with grouped field editors, calculation explanations,
+  resource buttons, histories, DM permissions and import/export preview. V7 adds
+  durable sheets/history/receipts and same-campaign controls/placements; P03 full
+  acceptance is still in progress.
 - Add integrated P02 acceptance for two-scene fog/calibration and independent
   token visibility/control, with a real-service restart check retaining both
   scenes, original/safe image hashes, versions and historical command receipts.

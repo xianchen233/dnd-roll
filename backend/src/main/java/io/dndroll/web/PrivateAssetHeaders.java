@@ -13,7 +13,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class PrivateAssetHeaders extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
-        if (request.getRequestURI().matches("/api/campaigns/[^/]+/(assets/[^/]+/content|scene/map-(view|image)|scenes/[^/]+/fog)")) {
+        if (request.getRequestURI().matches("/api/campaigns/[^/]+/(assets/[^/]+/content|scene/map-(view|image)|scenes/[^/]+/fog|characters(?:/.*)?)")) {
             response.setHeader("Cache-Control", "no-store, private");
             response.setHeader("X-Content-Type-Options", "nosniff");
         }

@@ -40,6 +40,7 @@ public final class AccountsService {
         void join(UUID campaignId, String actor);
         boolean insertUser(String username, String passwordHash);
         void remove(UUID campaignId, String actor);
+        default void remove(UUID campaignId,String username,String actualActor){remove(campaignId,username);}
         long advance(UUID campaignId);
     }
     public interface Events { void changed(UUID campaignId); void removed(String username); }
@@ -156,7 +157,7 @@ public final class AccountsService {
             var role = store.role(id, username);
             if (role == Role.DM) throw new DomainException("DM_REMOVAL_DENIED", 409, "A DM cannot be removed");
             long version = store.campaign(id).version();
-            if (role != null) { store.remove(id, username); version = store.advance(id); events.removed(username); events.changed(id); }
+            if (role != null) { store.remove(id, username, actor); version = store.advance(id); events.removed(username); events.changed(id); }
             store.receipt(actor, requestId, new Receipt("REMOVE", target, expectedVersion, "", id, null, version));
             return null;
         });

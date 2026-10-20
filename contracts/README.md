@@ -46,3 +46,8 @@ Account invitations, campaign creation and member management are specified in [P
 
 The [P02e integrated acceptance contract](p02-acceptance.md) composes these existing
 boundaries across both clients, disconnection, revocation and real service restart.
+
+[P03 character sheets](characters.md) add independent long-term character identity,
+typed sheets, sources/calculations, histories, resources, conditions, transfer and
+map placement references. A token configuration does not constitute a character card.
+The synthetic [version 1 example](character.example.json) contains no private data.

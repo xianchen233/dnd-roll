@@ -18,6 +18,10 @@
 
 ## 当前分工
 
+2026-10-20：P03 已从 b1f2c5f 开始实施，见 `contracts/characters.md` 与
+`work-packages.md` 的 P03a–e 有序子包。旧“P03尚未开工”段落为P02交接历史；
+当前P03与整个M2仍未完成，须完成本轮所有验收及最终HEAD双CI后才关闭P03。
+
 | 负责方 | 目录与责任 | 依赖 |
 | --- | --- | --- |
 | 协调者 | contracts、docs、deploy、scripts、CI、Git；工具准备、最终代码审查、集成验收 | 契约先行，汇总各模块测试证据 |

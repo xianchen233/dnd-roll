@@ -1,7 +1,23 @@
 import type { Asset, Assets, Campaign, CreatedInvitation, Csrf, Identity, Invitations, InvitePreview, MapConfiguration, Members, Move, Scene, SceneMap, Scenes, SceneReceipt, Token, VersionedCommand } from './types';
 import type { AuthoredTokens, TokenCommand, TokenReceipt, MapView, Fog, FogCommand } from './types';
+import type { CharacterList, CharacterDetail, CharacterAck, CharacterAccess, CharacterHistory, CharacterDocument, Sheet } from './characters';
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
 export class Api {
+  characters(id: string): Promise<CharacterList> { return this.call(`/campaigns/${encodeURIComponent(id)}/characters`); }
+  character(id: string, characterId: string): Promise<CharacterDetail> { return this.call(this.characterPath(id, characterId)); }
+  createCharacter(id: string, body: VersionedCommand & { sheet: Sheet }): Promise<CharacterAck> { return this.post(`/campaigns/${encodeURIComponent(id)}/characters`, body); }
+  updateCharacter(id: string, characterId: string, body: VersionedCommand & { sheet: Sheet; reason: string }): Promise<CharacterAck> { return this.post(this.characterPath(id, characterId), body); }
+  characterHistory(id: string, characterId: string): Promise<CharacterHistory[]> { return this.call(`${this.characterPath(id, characterId)}/history`); }
+  characterAccess(id: string, characterId: string): Promise<CharacterAccess> { return this.call(`${this.characterPath(id, characterId)}/access`); }
+  saveCharacterAccess(id: string, characterId: string, body: VersionedCommand & { controllers: string[]; hidden: boolean; shareFull: boolean; approveImport: boolean; reason: string }): Promise<CharacterAck> { return this.post(`${this.characterPath(id, characterId)}/access`, body); }
+  characterResource(id: string, characterId: string, body: VersionedCommand & { resourceId: string; delta: number; reason: string }): Promise<CharacterAck> { return this.post(`${this.characterPath(id, characterId)}/resources`, body); }
+  characterCondition(id: string, characterId: string, body: VersionedCommand & { action: string; conditionId: string | null; reason: string }): Promise<CharacterAck> { return this.post(`${this.characterPath(id, characterId)}/conditions`, body); }
+  copyCharacter(id: string, characterId: string, body: VersionedCommand & { name: string }): Promise<CharacterAck> { return this.post(`${this.characterPath(id, characterId)}/copy`, body); }
+  exportCharacter(id: string, characterId: string): Promise<CharacterDocument> { return this.call(`${this.characterPath(id, characterId)}/export`); }
+  importCharacter(id: string, body: VersionedCommand & { document: CharacterDocument }): Promise<CharacterAck> { return this.post(`/campaigns/${encodeURIComponent(id)}/characters/import`, body); }
+  characterPlacements(id: string, characterId: string): Promise<{ tokenId: string; sceneId: string; tokenVersion: number }[]> { return this.call(`${this.characterPath(id, characterId)}/placements`); }
+  linkCharacter(id: string, characterId: string, body: VersionedCommand & { tokenId: string; tokenVersion: number; reason: string }): Promise<CharacterAck> { return this.post(`${this.characterPath(id, characterId)}/placements`, body); }
+  private characterPath(id: string, characterId: string) { return `/campaigns/${encodeURIComponent(id)}/characters/${encodeURIComponent(characterId)}`; }
   async mapView(id: string): Promise<MapView> {
     const response = await this.request(`/api/campaigns/${encodeURIComponent(id)}/scene/map-view`, { credentials: 'include', cache: 'no-store' });
     await this.check(response); return response.json();
