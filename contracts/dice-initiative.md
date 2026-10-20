@@ -1,6 +1,8 @@
 # P05: server dice and 5R initiative
 
-Status: in progress. P01–P04 remain complete; P06 turn execution/damage is separate.
+Status: P05a–e completed, 2026-10-21; code f416e62 passed local and exact-SHA
+push/PR CI. P01–P04 remain complete; P06 turn execution/damage is separate.
+The whole M2 remains incomplete. Evidence: docs/verification.md.
 Rules: [5R evidence](../docs/research/dice-initiative-5r.md).
 
 Ordered slices: P05a bounded dice/parser and snapshots; P05b durable authorized

@@ -310,3 +310,7 @@ P04代码a7ef388的push39460581794/PR39460588799六job全success，逐份日志�
   after history UI addition all 4 P05 flows passed again (11.4s). Every scenario
   retains 60 seconds/zero retries. p05-browser-full.log/p05-browser-delivered.log.
   Exact delivered SHA Compose suite/CI still checked independently, see verification.
+- Delivered code f416e62 push39468342643/PR39468347675 six jobs all success;
+  both frontend logs 195 tests/build/58 contracts, both standard Compose 31
+  browsers and seven actual db/backend restart groups passed. P05 complete;
+  subsequent completion-document HEAD checked independently.

@@ -1,6 +1,46 @@
 # 继续工作的入口
 
-## 当前入口：P05 已实现；最终整体验收/精确 SHA 双 CI 进行中
+## 当前入口：P05 已完成；下一包 P06 尚未开工
+
+更新：2026-10-21（Asia/Shanghai）。继续 `feat/accounts-and-invitations` /
+[草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，未合并、未发布。
+最新HEAD/工作区始终以Git实际状态为准；完成状态文档的新HEAD亦独立核验push/PR。
+
+P05代码 **f416e627d99c7dbf332bbf174309cde7b1d7291e** 的
+[push39468342643](https://github.com/xianchen233/dnd-roll/actions/runs/39468342643) 与
+[PR39468347675](https://github.com/xianchen233/dnd-roll/actions/runs/39468347675)
+均completed/success，frontend/backend/browser六job全绿，PR open/draft、base main。
+已逐份读取六份日志：77unit+91真实IT、195前端/构建、58契约、两组标准Compose
+31浏览器（push3.1m/PR2.4m）、七组实际db/backend容器重启seed/verify均PASS。
+本地独立无数据库77unit、完整77+91、195前端、31浏览器及七组真实Java/PG重启也
+通过；V8→V10保留23旧表原列/行/八checksum。实际RED/GREEN及失败/修复记录完整保留。
+
+**P01–P05均完成；整个M2、P06–P10/A仍未完成。** P05契约
+`contracts/dice-initiative.md`，规则依据 `docs/research/dice-initiative-5r.md`。
+受限表达式、服务端逐骰/取舍/来源快照、暗骰和当前权限过滤、按钮/命令共用回执，
+5R独立角色参战/显式怪物组/突袭劣势/候选/理由化次序确认与DM历史已交付。
+多个地图棋子不复制先攻；只辅助投骰与确认顺序，不执行回合/伤害/资源。
+NPC须有独立角色卡；固定先攻/英雄激励重骰/警戒交换等未自动实现，保留手动来源处理。
+
+下一可执行步骤：按AGENTS先读本页、verification/work-packages及产品/路线/CONTEXT/
+必读契约，独立核对Git、远端及最新HEAD（含本次完成文档）的push/PR Checks。
+然后进入 **P06 手动战斗与更正**：先核对5R来源，固定行动/目标/投骰关联、DM命中
+裁定/手动应用伤害、角色级回合/回合外操作/来源日志/关联更正的契约与有序切片；
+实际RED→最小实现→GREEN→完整验收。保留P01–P05回归，不把探索移动当战斗限制，
+不因P05完成标M2完成。沿用原分支/草稿PR #1，不合并、不发布。
+
+运行时/凭据/私有证据在仓库外 `.tools`，凭据只注入内存。最终日志
+`p05-backend-delivered.log`、`p05-unit-no-db.log`、`p05-frontend-delivered.log`、
+`p05-build-delivered.log`、`p05-browser-full.log`及`p05-browser-delivered.log`。
+重启七组 `p05-final-*-restart-evidence.json`、`p05-restart-{seed,verify}.log`，
+前后进程身份在p05-process-evidence.json。JAR为.tools/p05-acceptance.jar，外置
+start-p05-backend.ps1/run-p05-restart.ps1可复用；新seed用全新前缀，不覆盖已有证据。
+Java/production preview/PG最后按实际CommandLine/data核对后停止，55432/8080/5173
+无监听，数据库/私有素材保留；不要复用旧PID。PG启动huge_pages=off且分步操作。
+
+以下为P05开发/验收时的历史入口，不作为当前下一步。
+
+## 历史过程：P05 已实现；最终整体验收/精确 SHA 双 CI 进行中
 
 更新：2026-10-21（Asia/Shanghai）。沿用 `feat/accounts-and-invitations` /
 [草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，不合并、不发布。

@@ -314,3 +314,7 @@ P04代码a7ef388的push39460581794/PR39460588799六job全success，逐份日志�
   all eight checksums, validates same-campaign roll source FK. Seven groups around
   actual packaged-Java/PostgreSQL stop/restart passed with new sessions;
   p05-restart-{seed,verify}.log and p05-process-evidence.json outside the repo.
+- Delivered code f416e62 push39468342643/PR39468347675 all six jobs succeeded;
+  each backend log 77 units + 91 real IT, zero failure/error/skip. Both standard
+  Compose 31-browser suites and seven actual db/backend restart groups passed.
+  P05 complete; completion-document HEAD remains independently checked.
