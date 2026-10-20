@@ -1,5 +1,16 @@
 # 阶段验收记录
 
+## 下一会话交接确认（2026-10-20）
+
+用户指定下一工作包交给下一会话，本次不开始 P03。交接前 HEAD
+`863a68abb4addf0dcfc7664a0c04cc204c97c31f` 工作区干净、与 origin 一致；独立核验
+[push39437833963](https://github.com/xianchen233/dnd-roll/actions/runs/39437833963) 和
+[PR39437844561](https://github.com/xianchen233/dnd-roll/actions/runs/39437844561) 均
+completed/success，frontend/backend/browser 六 job 全通过，PR #1 open/draft。
+Java/preview/PG 的55432/8080/5173再次确认无监听。本次仅更新交接与验收入口，
+无生产行为变化，不重复本地测试。此后交接文档提交的新 HEAD Checks 由下一会话
+开工独立核验；P01/P02完成、P03未开工、整个M2及后续包未完成，不合并/发布。
+
 ## P02e / P02 完成（2026-10-20）
 
 最终验收提交 **`853944d36d59d31b833c509f30db84b356449a5a`** 的

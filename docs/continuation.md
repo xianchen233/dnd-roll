@@ -4,6 +4,14 @@
 
 ## 当前入口：P02e / P02 已完成，下一工作包 P03 尚未开工
 
+2026-10-20 用户明确要求：**下一包交给下一会话，本会话不启动 P03**。
+交接前独立核验 `863a68abb4addf0dcfc7664a0c04cc204c97c31f` 工作区干净、与 origin
+一致；其 [push39437833963](https://github.com/xianchen233/dnd-roll/actions/runs/39437833963)
+与 [PR39437844561](https://github.com/xianchen233/dnd-roll/actions/runs/39437844561) 均
+completed/success，六个 job 全绿，PR 仍 open/draft。本次仅补交接文档，不改行为、
+不重复本地测试；后续交接文档新 HEAD 的 Checks 留待下一会话开工独立核验，
+不能把863a68a绿灯当作新SHA结果。55432/8080/5173再次确认无监听。
+
 最终验收提交 `853944d36d59d31b833c509f30db84b356449a5a` 的
 [push39436631381](https://github.com/xianchen233/dnd-roll/actions/runs/39436631381) 与
 [PR39436640191](https://github.com/xianchen233/dnd-roll/actions/runs/39436640191) 均
