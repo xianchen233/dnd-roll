@@ -280,3 +280,7 @@ WebSocket close/新CONNECTED后已提交隐藏撤权。增加精确accessible-na
 通过（1.2m），p04-frontend-final-3.log / p04-build-final-3.log /
 p04-browser-full-final.log。新增DM准入断言初次匹配option与正文两处，限定目录
 查询后通过，不计作行为RED。新公开目录采用原浅色面板并人工检查截图。
+
+P04代码a7ef388的push39460581794/PR39460588799六job全success，逐份日志确认
+70unit+82IT、186前端/构建、50契约、两组标准Compose27浏览器及六组实际db/backend
+重启全PASS；P04至此完成。完成状态文档后续HEAD另核对，不将旧SHA冒称新SHA结果。

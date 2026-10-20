@@ -1,16 +1,45 @@
 # 继续工作的入口
 
-## 当前入口：P04 正在验收；P01/P02/P03 已完成
+## 当前入口：P04 已完成；下一包 P05 尚未开工
 
-2026-10-21 从d19d40a开工，独立核对该SHA的push39454060276/PR39454069467
-六job全部成功；仍为原分支feat/accounts-and-invitations /草稿PR #1，未合并/发布。
-P04契约contracts/content.md；规则与许可核对docs/research/content-5r.md。
-当前代码、实际RED/GREEN与最终待办以verification最新节和Git实际状态为准。
-P04a–d已实现，P04e完整验收及新SHA双CI进行中；不得提前标P04或M2完成。
-以下P03交接入口为本轮开始时的历史记录。
+更新：2026-10-21（Asia/Shanghai）。继续 `feat/accounts-and-invitations` /
+[草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，未合并、未发布。
+最新HEAD与工作区以Git实际状态为准；本次完成文档的push/PR Checks也独立核验。
 
+P04代码 **a7ef38830b34a5e55f51294cf289a3e1b216fbda** 的
+[push39460581794](https://github.com/xianchen233/dnd-roll/actions/runs/39460581794) 与
+[PR39460588799](https://github.com/xianchen233/dnd-roll/actions/runs/39460588799)
+均completed/success，六job全绿；已逐份读取日志确认70unit+82真实IT、186前端/构建、
+50契约、两组标准Compose27浏览器和六组实际db/backend重启全PASS。
+本地独立无数据库70unit、最终新JAR27流程、六组实际Java/PG重启、V7→V8保留全部
+20旧表原列/行和七checksum也通过。P01/P02/P03全部原回归保留。
 
-## 当前入口：P03 已完成；下一包 P04 尚未开工
+**P01–P04均完成；整个M2及P05–P10/A仍未完成。**
+P04契约 `contracts/content.md`，5R/许可依据 `docs/research/content-5r.md`。
+十条SRD5.2.1精选、团内不可变自定义条目、来源/版本/准入筛选、DM审核/自由选用、
+服务器预览和来源化填卡已交付；已有卡和历史不被目录更新或切回审核改写。
+填卡不赋予熟练/精通、不应用属性/资源/效果或执行投骰；完整资料库和自动化不冒称完成。
+
+下一可执行步骤：按AGENTS先读本页、verification、work-packages、产品/路线/CONTEXT
+与必读契约，独立核对Git、远端和最新HEAD（含本次文档提交）的push/PR Checks。
+然后进入 **P05 掷骰与5R先攻**：使用dnd-rule-lookup核对5R服务端随机结果/逐骰与修正
+快照、暗骰权限、按钮/命令共用逻辑、参战/分组/突袭劣势/平手/隐藏先攻来源；
+先固定契约与有序切片，实际RED→最小实现→GREEN→完整验收，不重做P01–P04。
+战斗手动结算属P06；RP/资料/备份/触屏/容量/TLS仍按后续包与发布门槛推进。
+
+最终日志/凭据/运行时在仓库外 `D:/workspace/dnd/.tools`，凭据只注入内存，不打印。
+本轮日志 `p04-backend-final.log`、`p04-unit-no-db-final.log`、`p04-frontend-final-3.log`、
+`p04-build-final-3.log`、`p04-browser-full-final.log`；最终六组证据
+`p04-delivered-{asset,token,map,p02,character,content}-restart-evidence.json` 与
+`p04-delivered-restart-{seed,verify}.log`，真实进程前后ID在p04-process-evidence.json。
+验收JAR复制为.tools/p04-acceptance.jar，运行脚本start-p04-backend.ps1、
+run-p02d-browser.ps1、run-p04-restart.ps1；seed文件采用wx保护，需新前缀，不能覆盖旧证据。
+Java/production preview/PG最后均按实际CommandLine/data核对后停止；三端口无监听，
+数据库/私有素材保留，不复用旧PID。Windows的pg_ctl带huge_pages=off且分步启动。
+
+以下为P03交接时的历史入口，不作为当前下一步。
+
+## 历史入口：P03 已完成；下一包 P04 尚未开工
 
 交接更新：2026-10-21（Asia/Shanghai）；P03代码验收于2026-10-20完成。
 继续 `feat/accounts-and-invitations` / [草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，

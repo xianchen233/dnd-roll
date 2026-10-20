@@ -1,6 +1,7 @@
 # P04: searchable content and explicit character fill
 
-Status: in progress. P01/P02/P03 are complete and retained. M2 is incomplete.
+Status: P04a–e completed, 2026-10-21. Code a7ef388 passed local and exact-SHA push/PR CI.
+P01/P02/P03 are complete and retained. M2 is incomplete. Evidence: docs/verification.md.
 
 Ordered slices: (a) provenance/catalog contract and licensed seed, (b) immutable
 campaign custom entries and admission, (c) authoritative preview/fill, (d) Chinese
