@@ -51,9 +51,31 @@ DM 历史 retry 后当前全盖提示；玩家无隐藏资料或作者区。
 验收 Java/preview/PG 已核对 CommandLine/data 后停止，55432/8080/5173 无监听；
 数据库、私有素材、忽略的截图与外置日志/回执证据保留，不能复用旧 PID。
 
-31 契约、两个新增 mjs 的语法及 `git diff --check`通过。当前变更 SHA 的远端
-标准 Compose/17 浏览器/四组实际容器重启及全部 Checks 仍待推送核实；本地无 Docker，
-不能用旧 SHA 绿灯代替。**P02e 与整个 P02 未完成**，不合并/发布。
+31 契约、两个新增 mjs 的语法及 `git diff --check`通过。
+
+### P02e 首次远端通过及重连证据加强
+
+验收提交 `5ac74917cd54b04c7fa0f249eebb76ac5940cf5b` 的
+[push39435183782](https://github.com/xianchen233/dnd-roll/actions/runs/39435183782) 与
+[PR39435191314](https://github.com/xianchen233/dnd-roll/actions/runs/39435191314) 六 job
+全部 completed/success。读取两组完整日志确认 166 前端、61unit+61IT、标准 Compose
+**17 passed（push2.0m、PR2.1m）**；原三组及新两场景第四组 seed→实际 db/backend
+重启→verify 全 PASS。完整外置日志 `job-118670291250.log` / `job-118670255945.log`。
+
+最终只读审查指出三项证据缺口：点击移除后立即上线可能先于异步撤销提交；地图保存
+只断言 fog 清空不能证明偏移字段实际修改；`setOffline` 不能保证已有 WS 被关闭，
+先前1.5秒流程不能冒称经历3秒STOMP重连。补强测试而不改生产行为：成员移除等待
+实际 204 和名单无成员再上线；DM 回场景等标题/素材/校准表单，捕获 POST 的目标
+sceneId 和 offsetX=1，且读回 offsetX=1；真实browser offline后关闭捕获的原生
+WebSocket，观察 Node close/重连状态，上线要求新socket及真实服务端 CONNECTED帧。
+没有模拟 STOMP 响应。fog不确定请求另明确权威一格→草稿两格→真实提交两格。
+
+加强后新增四条 **4 passed（18.4s）**，日志 `.tools/p02e-browser-strengthened.log`，
+首次即通过，不虚构 RED。后端/生产/迁移/契约/重启脚本均未改，沿用同轮已实际通过
+结果。协调者以相同生产构建独立复验完整 **17 passed（46.4s）**，日志
+`.tools/p02e-browser-strengthened-full.log`，全部旧13条/60秒/零retry不变；四张加强后
+截图也保留在忽略的 test-results。Java/preview/PG 再次核实身份后停止。
+加强提交的远端全量Checks仍独立核实。**P02e/P02仍未完成**，不合并/发布。
 
 ## P02d 最终代码验收（2026-10-20）
 

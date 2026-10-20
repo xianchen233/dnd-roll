@@ -13,8 +13,13 @@ push39289292710 / PR39289302976 六个 job 全部 success，PR #1 仍 open/draft
 原六个 E2E 文件及13流程未改；真实双端离线/撤权/提交后响应丢失精确重试通过。
 四组（原素材/棋子/地图 + 新两场景组合）实际 Java+PG 停止/同库同素材根重启，
 seed/verify 全 PASS；详情、首两轮测试准备失败及边界见 verification。
-当前变更 SHA 的完整远端 Compose/Checks 仍待推送核实，**P02e 和整个 P02 仍未完成**。
-下一步提交推送原分支并核实该 SHA 的 push/PR 全量CI，全部通过后才更新完成状态。
+首次验收提交 `5ac7491` 的 push39435183782 / PR39435191314 六 job 全 success，
+标准Compose17流程及四组实际容器重启全 PASS。其后只读审查加强了三项证据：
+移除实际204/名单无成员后才上线；捕获校准POST并读回offsetX=1；真实浏览器offline
+加原生socket关闭，要求实际close及新socket的服务端CONNECTED。新四条18.4秒通过，
+无生产行为变化；完整17条再次 **46.4秒通过**，加强提交的远端CI仍独立核实。
+**P02e/P02仍未完成**。
+下一步提交推送加强版本并核实该 SHA 的 push/PR 全量CI，全部通过后才更新完成状态。
 外置 `.tools/run-p02e-restart.ps1` 注入已有测试凭据调用四组脚本，证据/日志以
 `p02e-`前缀在同目录。新仓库脚本 `scripts/check-p02-restart.mjs`，验收契约
 `contracts/p02-acceptance.md`；无新 API/迁移/生产行为。验收 Java/production preview/PG

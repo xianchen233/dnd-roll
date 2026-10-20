@@ -2,20 +2,37 @@ import { randomUUID } from 'node:crypto';
 import { deflateSync } from 'node:zlib';
 import { test as base, expect, type APIRequestContext, type BrowserContext, type Page } from '@playwright/test';
 
-type Sessions = { dmContext: BrowserContext; playerContext: BrowserContext; dm: Page; player: Page; errors: string[] };
+type SocketEvidence = { opened: number; closed: number; connected: number };
+type Sessions = { dmContext: BrowserContext; playerContext: BrowserContext; dm: Page; player: Page; errors: string[]; dmSockets: SocketEvidence; playerSockets: SocketEvidence };
 const test = base.extend<{ sessions: Sessions }>({
   sessions: [async ({ browser, baseURL }, use) => {
     const dmContext = await browser.newContext({ baseURL }), playerContext = await browser.newContext({ baseURL });
     const dm = await dmContext.newPage(), player = await playerContext.newPage(), errors: string[] = [];
-    for (const page of [dm, player]) page.on('pageerror', e => errors.push(e.message));
+    const dmSockets = { opened: 0, closed: 0, connected: 0 }, playerSockets = { opened: 0, closed: 0, connected: 0 };
+    for (const [page, evidence] of [[dm, dmSockets], [player, playerSockets]] as const) {
+      page.on('pageerror', e => errors.push(e.message));
+      page.on('websocket', socket => {
+        if (new URL(socket.url()).pathname !== '/ws') return;
+        evidence.opened++;
+        socket.on('close', () => { evidence.closed++; });
+        socket.on('framereceived', frame => { if (/^CONNECTED\r?\n/.test(String(frame.payload))) evidence.connected++; });
+      });
+    }
     await player.addInitScript(() => {
       const created: string[] = [], revoked: string[] = [];
       Object.assign(window, { acceptanceUrls: { created, revoked } });
       const create = URL.createObjectURL.bind(URL), revoke = URL.revokeObjectURL.bind(URL);
       URL.createObjectURL = blob => { const url = create(blob); created.push(url); return url; };
       URL.revokeObjectURL = url => { revoked.push(url); revoke(url); };
+      // Preserve the native constructor and transport. Capture actual instances
+      // only so offline tests can also force a real socket disconnect.
+      const sockets: WebSocket[] = [];
+      Object.assign(window, { acceptanceSockets: sockets });
+      window.WebSocket = new Proxy(window.WebSocket, {
+        construct(target, args) { const socket = Reflect.construct(target, args) as WebSocket; if (new URL(socket.url).pathname === '/ws') sockets.push(socket); return socket; },
+      });
     });
-    try { await use({ dmContext, playerContext, dm, player, errors }); }
+    try { await use({ dmContext, playerContext, dm, player, errors, dmSockets, playerSockets }); }
     finally { await Promise.all([dmContext.close(), playerContext.close()]); }
   }, { timeout: 20000 }],
 });
@@ -65,6 +82,7 @@ async function prepare(s: Sessions, secondScene = false) {
     await expect(page.locator('.connection')).toHaveText('● 实时连接');
     await expect(page.getByRole('img', { name: '场景网格地图' })).toHaveAttribute('data-map-image', 'ready');
   }
+  await expect.poll(() => s.dmSockets.connected).toBeGreaterThan(0); await expect.poll(() => s.playerSockets.connected).toBeGreaterThan(0);
   return { endpoint, campaignId: campaign.id as string, sceneId: first.id as string, firstName: first.name as string, second, fogPath, tokenPath, map, token, publicName, hiddenName, playerUsername, dmUsername };
 }
 async function pixels(s: Sessions, endpoint: string, sceneId: string, version: number) {
@@ -72,8 +90,25 @@ async function pixels(s: Sessions, endpoint: string, sceneId: string, version: n
   expect(response.status()).toBe(200); expect(response.headers()['cache-control']).toContain('no-store');
   return s.player.evaluate(async data => { const bitmap = await createImageBitmap(new Blob([Uint8Array.from(atob(data), c => c.charCodeAt(0))], { type: 'image/png' })), canvas = document.createElement('canvas'); canvas.width = bitmap.width; canvas.height = bitmap.height; const ctx = canvas.getContext('2d')!; ctx.drawImage(bitmap, 0, 0); bitmap.close(); return [10, 60].map(x => [...ctx.getImageData(x, 10, 1, 1).data]); }, (await response.body()).toString('base64'));
 }
-async function offline(context: BrowserContext, page: Page) { await context.setOffline(true); await expect.poll(() => page.evaluate(() => navigator.onLine)).toBe(false); }
-async function online(context: BrowserContext, page: Page) { await context.setOffline(false); await expect.poll(() => page.evaluate(() => navigator.onLine)).toBe(true); }
+async function offlineAndDisconnect(s: Sessions) {
+  const before = { ...s.playerSockets };
+  await s.playerContext.setOffline(true); await expect.poll(() => s.player.evaluate(() => navigator.onLine)).toBe(false);
+  // Browser network offline does not guarantee an existing WebSocket closes.
+  // Combine it with close() on real native sockets, without mocking STOMP.
+  await s.player.evaluate(() => {
+    const sockets = (window as unknown as { acceptanceSockets: WebSocket[] }).acceptanceSockets;
+    for (const socket of sockets) if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) socket.close(1000, 'P02e offline disconnect');
+  });
+  await expect.poll(() => s.playerSockets.closed).toBeGreaterThan(before.closed);
+  await expect(s.player.locator('.connection')).toHaveText('● 离线 · 正在重连');
+  return before;
+}
+async function onlineAndReconnect(s: Sessions, before: SocketEvidence) {
+  await s.playerContext.setOffline(false); await expect.poll(() => s.player.evaluate(() => navigator.onLine)).toBe(true);
+  await expect.poll(() => s.playerSockets.opened).toBeGreaterThan(before.opened);
+  await expect.poll(() => s.playerSockets.connected).toBeGreaterThan(before.connected);
+  await expect(s.player.locator('.connection')).toHaveText('● 实时连接');
+}
 async function imageReady(page: Page) { await expect(page.getByRole('img', { name: '场景网格地图' })).toHaveAttribute('data-map-image', 'ready'); }
 
 test('P02e dual clients retain independent scene fog and calibration, then recalibrate to full cover without changing unit visibility', async ({ sessions: s }, info) => {
@@ -85,10 +120,17 @@ test('P02e dual clients retain independent scene fog and calibration, then recal
   expect((await s.playerContext.request.get(`${p.endpoint}/scene/map-image?sceneId=${p.sceneId}&version=${first.version}`)).status()).toBe(404);
   expect((await s.playerContext.request.get(`${p.endpoint}/scenes`)).status()).toBe(403);
   await click(s.dm, `切换到 ${p.firstName}`); await expect(s.player.getByRole('heading', { name: p.firstName, exact: true })).toBeVisible(); await imageReady(s.player);
+  await expect(s.dm.getByRole('heading', { name: p.firstName, exact: true })).toBeVisible();
+  await expect(s.dm.getByLabel('当前场景地图素材', { exact: true })).toHaveValue(p.map.assetId);
+  await expect(s.dm.getByLabel('每格距离', { exact: true })).toHaveValue('5');
   expect(await read(s.dmContext.request, p.fogPath)).toEqual(firstFog); expect(await read(s.dmContext.request, `${p.endpoint}/scene`)).toEqual(first);
   expect(await read(s.dmContext.request, `${p.endpoint}/scenes/${p.second!.id}/fog`)).toEqual(secondFog);
-  await s.dm.getByLabel('图片偏移 X', { exact: true }).fill('1'); await click(s.dm, '保存地图配置');
+  await s.dm.getByLabel('图片偏移 X', { exact: true }).fill('1');
+  const mapRequest = s.dm.waitForRequest(r => r.method() === 'POST' && /\/scenes\/[^/]+\/map$/.test(new URL(r.url()).pathname));
+  await click(s.dm, '保存地图配置'); const requested = await mapRequest;
+  expect(new URL(requested.url()).pathname).toBe(`${p.endpoint}/scenes/${p.sceneId}/map`); expect(requested.postDataJSON().map.offsetX).toBe(1);
   await expect(s.dm.getByText('地图请求已确认；当前配置已从服务器刷新。', { exact: true })).toBeVisible();
+  const recalibrated = await read(s.dmContext.request, `${p.endpoint}/scenes/${p.sceneId}/map`); expect(recalibrated.sceneId).toBe(p.sceneId); expect(recalibrated.map.offsetX).toBe(1);
   const covered = await read(s.dmContext.request, p.fogPath); expect(covered.revealed).toEqual([]);
   expect(await pixels(s, p.endpoint, p.sceneId, covered.sceneVersion)).toEqual([[0, 0, 0, 255], [0, 0, 0, 255]]);
   await expect(s.player.getByRole('button', { name: new RegExp(p.publicName) })).toBeEnabled(); await expect(s.player.getByText(p.hiddenName, { exact: true })).toHaveCount(0);
@@ -99,13 +141,13 @@ test('P02e dual clients retain independent scene fog and calibration, then recal
 test('P02e actual player offline reconnect replaces missed scene and fog changes and clears obsolete move retry and image', async ({ sessions: s }, info) => {
   const p = await prepare(s, true); await s.player.getByRole('button', { name: new RegExp(p.publicName) }).click();
   const old = await s.player.evaluate(() => (window as unknown as { acceptanceUrls: { created: string[] } }).acceptanceUrls.created.at(-1)!);
-  await offline(s.playerContext, s.player);
+  const disconnected = await offlineAndDisconnect(s);
   await s.player.getByLabel('目标 X', { exact: true }).fill('3'); await s.player.getByLabel('目标 Y', { exact: true }).fill('3'); await click(s.player, '确认移动');
   await expect(s.player.getByRole('button', { name: '重试同一操作', exact: true })).toBeEnabled();
   await click(s.dm, `切换到 ${p.second!.name}`);
   const fogPath = `${p.endpoint}/scenes/${p.second!.id}/fog`, fog = await read(s.dmContext.request, fogPath);
   await command(s.dmContext.request, fogPath, { requestId: randomUUID(), expectedVersion: fog.sceneVersion, revealed: [] });
-  await online(s.playerContext, s.player);
+  await onlineAndReconnect(s, disconnected);
   await expect(s.player.getByRole('heading', { name: p.second!.name, exact: true })).toBeVisible(); await imageReady(s.player);
   await expect(s.player.getByRole('heading', { name: '未选择单位', exact: true })).toBeVisible(); await expect(s.player.getByRole('button', { name: '重试同一操作', exact: true })).toHaveCount(0);
   expect(await s.player.evaluate(url => (window as unknown as { acceptanceUrls: { revoked: string[] } }).acceptanceUrls.revoked.includes(url), old)).toBe(true);
@@ -118,14 +160,18 @@ test('P02e actual offline permission changes revoke old movement receipts, then 
   const p = await prepare(s), moveBody = { requestId: randomUUID(), expectedVersion: p.token.version, x: 2, y: 3 };
   await command(s.playerContext.request, `${p.endpoint}/tokens/${p.token.id}/moves`, moveBody);
   await expect(s.player.getByRole('button', { name: new RegExp(p.publicName) })).toContainText('(2, 3)');
-  await s.player.getByRole('button', { name: new RegExp(p.publicName) }).click(); await offline(s.playerContext, s.player);
+  await s.player.getByRole('button', { name: new RegExp(p.publicName) }).click(); const controlDisconnect = await offlineAndDisconnect(s);
   const tokens = await read(s.dmContext.request, p.tokenPath), current = tokens.tokens.find((t: { id: string }) => t.id === p.token.id);
   await command(s.dmContext.request, `${p.tokenPath}/${p.token.id}`, { requestId: randomUUID(), expectedVersion: current.version, name: current.name, x: current.x, y: current.y, hidden: false, controllers: [p.dmUsername] });
-  await online(s.playerContext, s.player);
+  await onlineAndReconnect(s, controlDisconnect);
   await expect(s.player.getByRole('button', { name: new RegExp(p.publicName) })).toBeDisabled(); await expect(s.player.getByRole('heading', { name: '未选择单位', exact: true })).toBeVisible();
   expect((await post(s.playerContext.request, `${p.endpoint}/tokens/${p.token.id}/moves`, moveBody)).status()).toBe(403);
   const known = await read(s.playerContext.request, `${p.endpoint}/scene`), imageUrl = `${p.endpoint}/scene/map-image?sceneId=${p.sceneId}&version=${known.version}`;
-  await offline(s.playerContext, s.player); await click(s.dm, '刷新成员与邀请'); await click(s.dm, `移除 ${p.playerUsername}`); await online(s.playerContext, s.player);
+  const memberDisconnect = await offlineAndDisconnect(s); await click(s.dm, '刷新成员与邀请');
+  const removed = s.dm.waitForResponse(r => r.request().method() === 'POST' && new URL(r.url()).pathname === `${p.endpoint}/members/${encodeURIComponent(p.playerUsername)}/remove`);
+  await click(s.dm, `移除 ${p.playerUsername}`); expect((await removed).status()).toBe(204);
+  const remaining = await read(s.dmContext.request, `${p.endpoint}/members`); expect(remaining.members.some((m: { username: string }) => m.username === p.playerUsername)).toBe(false);
+  await onlineAndReconnect(s, memberDisconnect);
   await expect(s.player.locator('.save-status')).toContainText('地图已清空'); await expect(s.player.getByRole('img', { name: '场景网格地图' })).toHaveCount(0);
   for (const path of [`${p.endpoint}/scene`, imageUrl, `${p.endpoint}/assets/${p.map.assetId}/content`]) expect((await s.playerContext.request.get(path)).status()).toBe(403);
   await s.player.screenshot({ path: info.outputPath('player-revoked-after-offline.png'), fullPage: true }); expect(s.errors).toEqual([]);
@@ -133,7 +179,9 @@ test('P02e actual offline permission changes revoke old movement receipts, then 
 
 test('P02e committed fog response loss retains exact retry and historical receipt cannot restore later covered pixels', async ({ sessions: s }, info) => {
   const p = await prepare(s), before = await read(s.dmContext.request, p.fogPath), sent: unknown[] = [];
+  expect(before.revealed).toEqual([{ x: 0, y: 0 }]); await expect(s.dm.getByText('已揭露 1 格', { exact: true })).toBeVisible();
   await s.dm.getByLabel('起点 X', { exact: true }).fill('1'); await s.dm.getByLabel('终点 X', { exact: true }).fill('1'); await click(s.dm, '加入揭露矩形');
+  await expect(s.dm.getByText('已揭露 2 格', { exact: true })).toBeVisible();
   let committed: unknown;
   // Fault injection loses only the response: route.fetch executes the actual
   // server transaction first. It is separate from the real offline cases above.
@@ -142,7 +190,7 @@ test('P02e committed fog response loss retains exact retry and historical receip
     sent.push(route.request().postDataJSON()); const response = await route.fetch(); expect(response.ok()).toBeTruthy(); committed = await response.json(); await route.abort('failed');
   });
   await click(s.dm, '保存地图遮盖'); await expect(s.dm.getByRole('button', { name: '重试同一遮盖操作', exact: true })).toBeEnabled();
-  expect(committed).toEqual(await read(s.dmContext.request, p.fogPath)); const saved = await read(s.dmContext.request, p.fogPath); expect(saved.sceneVersion).toBe(before.sceneVersion + 1);
+  expect(committed).toEqual(await read(s.dmContext.request, p.fogPath)); const saved = await read(s.dmContext.request, p.fogPath); expect(saved.sceneVersion).toBe(before.sceneVersion + 1); expect(saved.revealed).toEqual([{ x: 0, y: 0 }, { x: 1, y: 0 }]);
   // A later command legitimately supersedes the uncertain receipt before retry.
   const covered = await command(s.dmContext.request, p.fogPath, { requestId: randomUUID(), expectedVersion: saved.sceneVersion, revealed: [] });
   await s.dm.unroute(`**${p.fogPath}`); s.dm.on('request', request => { if (request.method() === 'POST' && new URL(request.url()).pathname === p.fogPath) sent.push(request.postDataJSON()); });
