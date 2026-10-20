@@ -11,6 +11,12 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Added
 
+- Add RP/OOC identity snapshots, immutable message revisions, durable PNG/JPEG
+  attachments, permission-aware replies and a unified message/dice/action timeline
+  with paged search, session archives and Markdown/JSON record exports.
+- Add a Chinese timeline workspace and shared bot shortcuts through existing
+  dice/action/turn services. P07 integrated acceptance is still in progress.
+
 - Add manual combat actions linking independent characters, saved attack sources
   and immutable server rolls, DM hit/miss judgement, explicit versioned HP/temp HP/
   resource application and linked corrections that preserve subsequent play.
@@ -19,7 +25,7 @@ and successful CI runs do not by themselves constitute a release.
   actions remain available. Duration/effect resolution remains explicit DM work.
 - Add a Chinese combat workspace, exact uncertain-request retries and filtered
   journals, with complete P06 local and exact-SHA push/PR acceptance. No release
-  is made; RP, campaign notes and consistent backup/restore remain later work.
+  is made; campaign notes and consistent backup/restore remain later work.
 
 - Add server-owned persistent dice with bounded expressions, every raw die and
   kept/discarded result, saved calculation/name/actor sources, DM-only rolls and

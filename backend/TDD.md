@@ -1,5 +1,77 @@
 # TDD evidence
 
+## P07 本地完整验收通过；精确代码 SHA 的双 CI 待核验（2026-10-21）
+
+继续 feat/accounts-and-invitations / [草稿PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，
+不合并、不发布。开工HEAD 23dfa21的push39478445935/PR39478453446已独立核验六job/
+完整日志通过；P01–P06完成且所有原回归保留。
+
+契约 contracts/timeline.md。P07a文字/身份快照/不可变更正历史、b持久PNG/JPEG与
+权限化引用、c共用RP/OOC/骰子/行动时间线、检索/分页/场次/完整Markdown及JSON导出、
+d中文工作区/既有P03/P05/P06共用bot入口已实现。无独立骰子/数值/资源逻辑；不接QQ。
+
+最终本地结果：p07-backend-final.log **84unit+108真实PG/HTTP/WS/迁移零失败/错误/
+跳过**；p07-unit-no-db.log独立清除数据库环境后84unit；前端p07-frontend-full.log
+211项，生产构建通过；p07-contract-final.log75操作，原65操作/全部旧schema逐项
+结构比较相同。V12所有旧表原列/行/12checksum保持，当前到V15且同团引用FK通过。
+p07-browser-full.log完整39生产Chrome流程通过1.8m，原35及60秒/条/零retry保留。
+已复看深色timeline-dm.png。完整RED/GREEN/原始准备错误/失败修复见下文及两端TDD。
+
+九组p07-final-{asset,token,map,p02,character,content,dice,combat,timeline}-restart-evidence.json
+在实际Java+PG停止/同库同素材根启动后，新会话verify全PASS；p07-restart-{seed,verify}.log，
+p07-process-before.json/p07-process-after.json显示不同Java/PG进程ID及真实CommandLine。
+最终JAR .tools/p07-acceptance.jar；外置start-p07-backend.ps1/run-p07-restart.ps1可复用，
+新seed须新前缀（wx禁止覆盖）。所有运行时/私有证据在D:/workspace/dnd/.tools，凭据仅内存。
+最后按实际身份停止Java/production preview/PG，三端口无监听（p07-stopped-processes.json）。
+
+**P07e/P07/M2尚未完成**：下一步提交/推送原分支、更新原草稿PR，核对精确代码SHA
+的push/PR六job、标准Compose39流程及九组实际容器重启日志。全部通过后才关闭P07；
+完成状态文档新HEAD也独立核验。P08–P10/A与容量/触屏/TLS/一致备份异机恢复继续保留。
+以下为本包开发与此前交接历史，不作为最新运行状态。
+
+
+## P07 追加验收与真实失败记录（2026-10-21）
+
+- 首次完整后端 p07-backend-full-initial.log：81unit通过，106IT中1error；旧
+  CombatMigrationIT合法最小骰子JSON没有at，V14回填的NOT NULL拒绝。保留旧断言，
+  回填缺失时刻用epoch标识未知旧时间；所有原始数据不改写。仅对隔离dnd_roll_test库
+  的未提交V14运行Flyway repair，对账日志p07-test-checksum-reconcile.log明确只修V14。
+  V1–V12源码/checksum均不变。p07-backend-full-2.log随后81+107全部通过。
+- TimelineMigrationIT比较V12所有旧表原列/行和12checksum，并验证源记录回填、
+  场次捕获和跨团FK。V13消息/V14图片场次源捕获/V15引用约束均为本包新迁移。
+- 三条TimelineImagesTest为文件提交不确定性/回滚清理/当前权限追加覆盖（直接GREEN，
+  不伪造RED）。p07-unit-no-db.log明确清除TEST_DATABASE_*后84unit零失败/错误/跳过。
+- 前端边界p07-frontend-boundaries-red.log实际1失败9通过：确认读撤销发言控制权时
+  epoch变化导致busy未清理；修复后p07-frontend-full.log完整211项通过、构建通过。
+  包含P01–P06原201，追加身份/精确File重试/编辑历史/指令/并发撤权/URL生命周期等。
+- 首次浏览器p07-browser-first.log在Java未就绪时四项初始化502，非产品RED。
+  就绪后p07-browser-ready.log 3过1败：新离线用例发送后立即读到空列表，补权威持久
+  记录就绪等待。p07-browser-fixed.log仍3过1败：全页img定位匹配原Pixi地图的img角色；
+  改为精确消息图片accessible name（包括断网前实际图片加载等待），不削弱权限断言。
+  p07-browser-final.log四条通过12秒。上述原失败trace/日志均保留，不计组件RED。
+- 人工查看完整timeline-dm.png发现浅色背景/全局浅字对比不足，调整本工作区深色配色
+  并重新构建、复看截图。p07-browser-full.log最终完整39条通过1.8m，原35保留，
+  60秒每条/零retry。覆盖RP图片/编辑历史/改名快照/引用/筛选/真实下载，P05/P06共用
+  bot入口，私密引用/导出，以及实际offline、原生socket关闭与新CONNECTED隐藏恢复。
+- p07-contract-final.log为75操作/严格字段/图片引用/无私密版本/保留策略检查；Node
+  对HEAD原65操作和全部旧schema逐项deepEqual。检查器仍非通用OpenAPI validator。
+
+九组p07-final重启seed均PASS，p07-restart-seed.log与对应JSON在仓库外.tools。
+当前验收Java已按实际CommandLine核对停止，PG保留供最终后端84+108全量；最终日志
+p07-backend-final.log仍在运行。随后实际停止/同库重启PG、启动最终JAR、九组新会话
+verify，核对进程身份再停止。代码SHA双CI未推送核验前P07e/P07/M2均保持未完成。
+
+
+## P07 2026-10-21
+
+真实HTTP RED/GREEN及失败修复：见 docs/verification.md 当前P07段。
+命令为外置 run-p04-tests.ps1 -Log <p07日志名> -Tests TimelineIT，内部真实执行
+mvn -Dmaven.repo.local=D:/workspace/dnd/.tools/m2 -B -ntp -Pintegration verify -Dit.test=TimelineIT。
+每轮均运行原81无数据库unit；消息RED 2失败→GREEN 2通过；图片/引用/查询RED
+6中3失败→第一次GREEN 1失败（嵌套404回滚）→green-2六条全过。并发同键、不同版本
+编辑及延迟commit失败回滚也已执行。所有日志外置；全量/迁移/重启/CI仍待验收。
+
+
 2026-10-18, Java 25.0.4.1 and Maven 3.9.16 on Windows.
 
 RED: `mvn -Dmaven.repo.local=D:/workspace/dnd/.tools/m2 -f backend/pom.xml test` executed before the movement/application/STOMP policy implementations. Result: **12 tests, 5 failures, 7 errors, 0 skipped; BUILD FAILURE** at 18:34 +08:00. Expected causes: deliberate `UnsupportedOperationException("TDD red")` movement/application stubs and an allow-all STOMP policy. Dependencies and tests compiled successfully; this was a behavioral failure.

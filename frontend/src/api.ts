@@ -5,6 +5,19 @@ import type { Catalog,ContentData,ContentFilters,ContentChoice,ContentPreview,Co
 import type {DiceCommand,DiceTextCommand,Roll,RollList,Initiative,InitiativeGenerate,InitiativeConfirm,InitiativeHistory} from './dice';
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
 export class Api {
+  timeline(c:string,filters:import('./timeline').TimelineFilters,before=''):Promise<import('./timeline').TimelineListing>{return this.call(`/campaigns/${encodeURIComponent(c)}/timeline?${new URLSearchParams({...filters,...(before?{before}:{})})}`);}
+  timelineEntry(c:string,id:string):Promise<import('./timeline').TimelineEntry>{return this.call(`/campaigns/${encodeURIComponent(c)}/timeline/${encodeURIComponent(id)}`);}
+  sendMessage(c:string,body:import('./timeline').TimelineSend):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/messages`,body);}
+  editMessage(c:string,id:string,body:import('./timeline').TimelineEdit):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/messages/${encodeURIComponent(id)}`,body);}
+  messageHistory(c:string,id:string):Promise<import('./timeline').TimelineRevision[]>{return this.call(`/campaigns/${encodeURIComponent(c)}/messages/${encodeURIComponent(id)}/history`);}
+  timelineSessions(c:string):Promise<import('./timeline').TimelineSessions>{return this.call(`/campaigns/${encodeURIComponent(c)}/timeline/sessions`);}
+  timelineSession(c:string,body:VersionedCommand&{kind:string;name:string}):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/timeline/sessions`,body);}
+  async uploadAttachment(c:string,command:VersionedCommand,file:File):Promise<Asset>{
+    if(!this.csrf)await this.getCsrf();const body=new FormData();body.append('command',new Blob([JSON.stringify(command)],{type:'application/json'}));body.append('file',file);
+    const response=await this.request(`/api/campaigns/${encodeURIComponent(c)}/attachments`,{method:'POST',credentials:'include',headers:{[this.csrf!.headerName]:this.csrf!.token},body});await this.check(response);return response.json();
+  }
+  async attachmentContent(c:string,id:string):Promise<Blob>{const response=await this.request(`/api/campaigns/${encodeURIComponent(c)}/attachments/${encodeURIComponent(id)}/content`,{credentials:'include',cache:'no-store'});await this.check(response);return response.blob();}
+  async exportTimeline(c:string,filters:import('./timeline').TimelineFilters,format:'markdown'|'json'):Promise<Blob>{const response=await this.request(`/api/campaigns/${encodeURIComponent(c)}/timeline/export?${new URLSearchParams({...filters,format})}`,{credentials:'include',cache:'no-store'});await this.check(response);return response.blob();}
   actions(c:string,before=''):Promise<{actions:import('./combat').CombatAction[];next:string}>{return this.call(`/campaigns/${encodeURIComponent(c)}/actions${before?`?before=${encodeURIComponent(before)}`:''}`);}
   action(c:string,id:string):Promise<import('./combat').CombatAction>{return this.call(`/campaigns/${encodeURIComponent(c)}/actions/${encodeURIComponent(id)}`);}
   declareAction(c:string,body:import('./combat').CombatDeclaration):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/actions`,body);}

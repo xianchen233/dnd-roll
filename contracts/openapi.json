@@ -5097,6 +5097,893 @@
           }
         }
       ]
+    },
+    "/api/campaigns/{campaignId}/timeline": {
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "summary": "P07 timeline",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "schema": {
+              "enum": [
+                "",
+                "RP",
+                "OOC",
+                "DICE",
+                "ACTION"
+              ]
+            }
+          },
+          {
+            "name": "characterId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 36,
+              "pattern": "^$|^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "name": "sessionId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 36,
+              "pattern": "^$|^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 40,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 40,
+              "minLength": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimelineListing"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "401": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "403": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "404": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "409": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "503": {
+            "description": "Generic authorized input/version/storage failure"
+          }
+        },
+        "x-timeline-permission": "Current membership and visibility on every read; authorship/source control before mutation receipt replay"
+      }
+    },
+    "/api/campaigns/{campaignId}/timeline/{id}": {
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "summary": "P07 {id}",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimelineEntry"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "401": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "403": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "404": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "409": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "503": {
+            "description": "Generic authorized input/version/storage failure"
+          }
+        },
+        "x-timeline-permission": "Current membership and visibility on every read; authorship/source control before mutation receipt replay"
+      }
+    },
+    "/api/campaigns/{campaignId}/timeline/export": {
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "summary": "P07 export",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "schema": {
+              "enum": [
+                "",
+                "RP",
+                "OOC",
+                "DICE",
+                "ACTION"
+              ]
+            }
+          },
+          {
+            "name": "characterId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 36,
+              "pattern": "^$|^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "name": "sessionId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 36,
+              "pattern": "^$|^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 40,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 40,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "enum": [
+                "markdown",
+                "json"
+              ],
+              "default": "markdown"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimelineExport"
+                }
+              },
+              "text/markdown": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "401": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "403": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "404": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "409": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "503": {
+            "description": "Generic authorized input/version/storage failure"
+          }
+        },
+        "x-timeline-permission": "Current membership and visibility on every read; authorship/source control before mutation receipt replay"
+      }
+    },
+    "/api/campaigns/{campaignId}/timeline/sessions": {
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "summary": "P07 sessions",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimelineSessions"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "401": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "403": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "404": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "409": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "503": {
+            "description": "Generic authorized input/version/storage failure"
+          }
+        },
+        "x-timeline-permission": "Current membership and visibility on every read; authorship/source control before mutation receipt replay"
+      },
+      "post": {
+        "summary": "P07 sessions",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharacterAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "401": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "403": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "404": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "409": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "503": {
+            "description": "Generic authorized input/version/storage failure"
+          }
+        },
+        "x-timeline-permission": "Current membership and visibility on every read; authorship/source control before mutation receipt replay",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimelineSessionCommand"
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "namespace": "timeline-sessions",
+          "authorization": "current membership/visibility/authorship/control before receipt replay",
+          "samePayload": "original result before stale version; no mutation or event",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT"
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/messages": {
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "summary": "P07 messages",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharacterAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "401": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "403": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "404": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "409": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "503": {
+            "description": "Generic authorized input/version/storage failure"
+          }
+        },
+        "x-timeline-permission": "Current membership and visibility on every read; authorship/source control before mutation receipt replay",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimelineSend"
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "namespace": "timeline-messages",
+          "authorization": "current membership/visibility/authorship/control before receipt replay",
+          "samePayload": "original result before stale version; no mutation or event",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT"
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/messages/{id}": {
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "summary": "P07 {id}",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharacterAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "401": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "403": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "404": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "409": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "503": {
+            "description": "Generic authorized input/version/storage failure"
+          }
+        },
+        "x-timeline-permission": "Current membership and visibility on every read; authorship/source control before mutation receipt replay",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimelineEdit"
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "namespace": "timeline-messages",
+          "authorization": "current membership/visibility/authorship/control before receipt replay",
+          "samePayload": "original result before stale version; no mutation or event",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT"
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/messages/{id}/history": {
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "summary": "P07 history",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TimelineRevision"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "401": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "403": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "404": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "409": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "503": {
+            "description": "Generic authorized input/version/storage failure"
+          }
+        },
+        "x-timeline-permission": "Current membership and visibility on every read; authorship/source control before mutation receipt replay"
+      }
+    },
+    "/api/campaigns/{campaignId}/attachments": {
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "summary": "P07 attachments",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimelineAttachment"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "401": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "403": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "404": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "409": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "503": {
+            "description": "Generic authorized input/version/storage failure"
+          }
+        },
+        "x-timeline-permission": "Current membership and visibility on every read; authorship/source control before mutation receipt replay",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "command": {
+                    "$ref": "#/components/schemas/TimelineUpload"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "command",
+                  "file"
+                ],
+                "additionalProperties": false
+              },
+              "encoding": {
+                "command": {
+                  "contentType": "application/json"
+                },
+                "file": {
+                  "contentType": "image/png, image/jpeg"
+                }
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "namespace": "timeline-attachments",
+          "authorization": "current membership/visibility/authorship/control before receipt replay",
+          "samePayload": "original result before stale version; no mutation or event",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT"
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/attachments/{id}/content": {
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "summary": "P07 content",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered result",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "401": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "403": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "404": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "409": {
+            "description": "Generic authorized input/version/storage failure"
+          },
+          "503": {
+            "description": "Generic authorized input/version/storage failure"
+          }
+        },
+        "x-timeline-permission": "Current membership and visibility on every read; authorship/source control before mutation receipt replay"
+      }
     }
   },
   "components": {
@@ -9709,6 +10596,496 @@
             "$ref": "#/components/schemas/TurnStateDm"
           }
         }
+      },
+      "TimelineSend": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "characterId": {
+            "type": "string",
+            "maxLength": 36,
+            "pattern": "^$|^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "kind": {
+            "enum": [
+              "RP",
+              "OOC"
+            ]
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 0
+          },
+          "replyTo": {
+            "type": "string",
+            "maxLength": 36,
+            "pattern": "^$|^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 4,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "characterId",
+          "kind",
+          "text",
+          "replyTo",
+          "attachments"
+        ],
+        "additionalProperties": false
+      },
+      "TimelineEdit": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 0
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 4,
+            "uniqueItems": true
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "text",
+          "attachments",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "TimelineUpload": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "requestId",
+          "expectedVersion"
+        ],
+        "additionalProperties": false
+      },
+      "TimelineAttachment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mediaType": {
+            "enum": [
+              "image/png",
+              "image/jpeg"
+            ]
+          },
+          "byteSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10485760
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8192
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8192
+          }
+        },
+        "required": [
+          "id",
+          "mediaType",
+          "byteSize",
+          "width",
+          "height"
+        ],
+        "additionalProperties": false
+      },
+      "TimelineMessage": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "actor": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1
+          },
+          "characterId": {
+            "type": "string",
+            "maxLength": 36,
+            "pattern": "^$|^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "sourceVersion": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 0
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimelineAttachment"
+            },
+            "maxItems": 4
+          },
+          "edited": {
+            "type": "boolean"
+          },
+          "canEdit": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "version",
+          "actor",
+          "characterId",
+          "sourceVersion",
+          "name",
+          "text",
+          "attachments",
+          "edited",
+          "canEdit"
+        ],
+        "additionalProperties": false
+      },
+      "TimelineRevision": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "actor": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 0
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimelineAttachment"
+            },
+            "maxItems": 4
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "version",
+          "actor",
+          "name",
+          "text",
+          "attachments",
+          "at",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "TimelineReply": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "enum": [
+              "RP",
+              "OOC",
+              "DICE",
+              "ACTION"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "kind"
+        ],
+        "additionalProperties": false
+      },
+      "TimelineEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "enum": [
+              "RP",
+              "OOC",
+              "DICE",
+              "ACTION"
+            ]
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sessionId": {
+            "type": "string",
+            "maxLength": 36,
+            "pattern": "^$|^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TimelineMessage"
+              },
+              {
+                "$ref": "#/components/schemas/DiceRoll"
+              },
+              {
+                "$ref": "#/components/schemas/CombatActionView"
+              }
+            ]
+          },
+          "reply": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TimelineReply"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "at",
+          "sessionId",
+          "data",
+          "reply"
+        ],
+        "additionalProperties": false
+      },
+      "TimelineListing": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimelineEntry"
+            },
+            "maxItems": 50
+          },
+          "next": {
+            "type": "string",
+            "maxLength": 36,
+            "pattern": "^$|^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          }
+        },
+        "required": [
+          "entries",
+          "next"
+        ],
+        "additionalProperties": false
+      },
+      "TimelineSession": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "archived": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "archived"
+        ],
+        "additionalProperties": false
+      },
+      "TimelineSessions": {
+        "type": "object",
+        "properties": {
+          "campaignVersion": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sessions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimelineSession"
+            }
+          }
+        },
+        "required": [
+          "campaignVersion",
+          "sessions"
+        ],
+        "additionalProperties": false
+      },
+      "TimelineSessionCommand": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "kind": {
+            "enum": [
+              "START",
+              "ARCHIVE"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "kind",
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "TimelineExportRow": {
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revisions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimelineRevision"
+            }
+          }
+        },
+        "required": [
+          "entryId",
+          "revisions"
+        ],
+        "additionalProperties": false
+      },
+      "TimelineExport": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "const": "dnd-roll.timeline"
+          },
+          "formatVersion": {
+            "const": 1
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimelineEntry"
+            }
+          },
+          "histories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimelineExportRow"
+            }
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimelineAttachment"
+            }
+          }
+        },
+        "required": [
+          "format",
+          "formatVersion",
+          "entries",
+          "histories",
+          "attachments"
+        ],
+        "additionalProperties": false
       }
     }
   },
@@ -9803,5 +11180,12 @@
     "correction": "append linked original event and current-version before/after; preserve later play",
     "privacy": "filter before pagination; no DM reasons/precise values/private event IDs/global versions in player payloads; opaque end-turn compare token",
     "movement": "exploration unchanged; active requires token and character control plus current turn or DM grant; check before receipt replay"
+  },
+  "x-timeline-policy": {
+    "retention": "No expiry/deletion of RP, edits, dice/actions or image references, independent of backup rotation",
+    "authorization": "Current permissions before pagination/search/references/history/export/downloads/receipts; omit hidden IDs/counts",
+    "atomicity": "Message/history/references/receipt and source timeline entry commit atomically; uncertain file commit preserved until fresh campaign lock reconciliation",
+    "bot": "Existing P03/P05/P06 identity, entropy, control and durable receipt paths; no new rules or implicit resources",
+    "events": "After-commit SCENE_CHANGED type/campaignId only; hidden message changes to DMs only"
   }
 }

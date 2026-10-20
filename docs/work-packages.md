@@ -1,5 +1,65 @@
 # 全量工作包与依赖
 
+## P07 本地完整验收通过；精确代码 SHA 的双 CI 待核验（2026-10-21）
+
+继续 feat/accounts-and-invitations / [草稿PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，
+不合并、不发布。开工HEAD 23dfa21的push39478445935/PR39478453446已独立核验六job/
+完整日志通过；P01–P06完成且所有原回归保留。
+
+契约 contracts/timeline.md。P07a文字/身份快照/不可变更正历史、b持久PNG/JPEG与
+权限化引用、c共用RP/OOC/骰子/行动时间线、检索/分页/场次/完整Markdown及JSON导出、
+d中文工作区/既有P03/P05/P06共用bot入口已实现。无独立骰子/数值/资源逻辑；不接QQ。
+
+最终本地结果：p07-backend-final.log **84unit+108真实PG/HTTP/WS/迁移零失败/错误/
+跳过**；p07-unit-no-db.log独立清除数据库环境后84unit；前端p07-frontend-full.log
+211项，生产构建通过；p07-contract-final.log75操作，原65操作/全部旧schema逐项
+结构比较相同。V12所有旧表原列/行/12checksum保持，当前到V15且同团引用FK通过。
+p07-browser-full.log完整39生产Chrome流程通过1.8m，原35及60秒/条/零retry保留。
+已复看深色timeline-dm.png。完整RED/GREEN/原始准备错误/失败修复见下文及两端TDD。
+
+九组p07-final-{asset,token,map,p02,character,content,dice,combat,timeline}-restart-evidence.json
+在实际Java+PG停止/同库同素材根启动后，新会话verify全PASS；p07-restart-{seed,verify}.log，
+p07-process-before.json/p07-process-after.json显示不同Java/PG进程ID及真实CommandLine。
+最终JAR .tools/p07-acceptance.jar；外置start-p07-backend.ps1/run-p07-restart.ps1可复用，
+新seed须新前缀（wx禁止覆盖）。所有运行时/私有证据在D:/workspace/dnd/.tools，凭据仅内存。
+最后按实际身份停止Java/production preview/PG，三端口无监听（p07-stopped-processes.json）。
+
+**P07e/P07/M2尚未完成**：下一步提交/推送原分支、更新原草稿PR，核对精确代码SHA
+的push/PR六job、标准Compose39流程及九组实际容器重启日志。全部通过后才关闭P07；
+完成状态文档新HEAD也独立核验。P08–P10/A与容量/触屏/TLS/一致备份异机恢复继续保留。
+以下为本包开发与此前交接历史，不作为最新运行状态。
+
+
+## 历史：P07 开发/验收过程（2026-10-21）
+
+沿用 feat/accounts-and-invitations / 草稿 PR #1，不合并、不发布。P01–P06保持完成。
+开工独立 fetch：本地/origin/PR HEAD 23dfa2169baf65282d5687720993ff5340811b7a，clean；
+认证 API 核对 push39478445935 / PR39478453446 六 job success。重新获取六份完整日志：
+81unit+100IT、201前端/构建、65契约、两组35浏览器、八组实际容器重启均PASS；
+PR open/draft/main。连接器临时传输失败后使用现有 Git credential 内存认证，不打印秘密。
+
+P07契约 contracts/timeline.md，已固定a消息身份/历史、b图片/引用、c统一检索/场次/
+导出、d中文入口与共用指令、e完整验收的有序切片。当前已实现后端和初版前端，
+**P07e/P07/M2尚未完成，不以聚焦GREEN关闭。**
+
+实际TDD：p07-messages-red.log 两条真实HTTP缺/messages 404失败→green两条通过。
+p07-images-query-red.log 六条中新图片/私密引用/场次三条失败→green-2六条通过。
+第一轮green仍有引用暗骰触发UnexpectedRollbackException：嵌套服务的404标记事务
+rollback-only；改为当前可见性预检后才投影，第二轮完整六条通过（保留前次失败）。
+p07-contract-red.log 缺10路由RED→75操作GREEN；仍须追加新schema/边界检查。
+p07-frontend-red.log 七项缺入口失败，另有未消费deferred拒绝准备错误；实现后6过1败，
+最后一条mock让新旧scope共用同一旧响应，修正mock单次响应后green-2七条通过。
+构建最初误在仓库根运行（无package.json），第二轮发现测试helper使用不支持exact类型；
+已修正，待最终构建。上述准备/类型问题不计行为RED。
+
+所有日志/运行时/私有证据在仓库外 D:/workspace/dnd/.tools，凭据只注入内存。
+PG已启动（huge_pages=off）；最新本地进程/端口应现场核对，不能沿用旧PID。
+当前全量后端 p07-backend-full-initial.log 正在运行。下一步：完成前端入口/更广边界与
+契约检查、旧库迁移保留测试、全量前后端/生产浏览器、九组实际Java/PG重启，再提交/
+推送同分支并独立核验精确代码SHA的push/PR CI；完成后才更新关闭状态。
+P08–P10/A及容量/触屏/TLS/一致备份异机恢复门槛全部保留。以下为此前历史状态。
+
+
 本清单承接产品设计第一阶段、第二阶段与后续方向，不把整个产品误当作本次框架提交。阶段状态以 `implementation-plan.md`、`continuation.md` 与 `verification.md` 为准。每个工作包开工时再确定该包的接口、数据迁移和行为测试，避免提前编写大量未经验证的实现细节。
 
 ## M0 / M1：当前批次
@@ -125,3 +185,7 @@ P04a–e全部完成，最终代码SHA的本地与push/PR完整CI全通过，结
 2. 对应契约、迁移、权限和失败行为完成；测试不能仅镜像实现。
 3. 记录实际命令、结果、未执行检查、已知限制与Git提交；更新本表状态。
 4. 写清下一工作包及其前置，不依赖旧会话或已结束的代理。
+
+### P07 有序切片（2026-10-21，本地通过；代码SHA双CI待核验）
+
+契约 [timeline.md](../contracts/timeline.md)。a消息身份及更正、b图片/引用、c统一检索/场次/导出、d中文UI与共用bot已实现；e本地84unit+108IT/211前端/75契约/39浏览器/九组真实重启通过，远端完整验收待核验，P07不提前关闭。后续P08–P10/A及M2仍未完成。

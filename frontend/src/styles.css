@@ -70,3 +70,18 @@
 .combat-workspace fieldset > p { flex-basis: 100%; margin: .25rem 0; }
 .combat-workspace fieldset > div { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; }
 .combat-workspace fieldset > div > p { flex-basis: 100%; margin: .25rem 0; }
+/* Long-lived RP records share the existing workspace typography and controls. */
+.timeline-workspace { max-width: 1180px; margin: 24px auto; padding: 24px; background: #161b22; color: #e6e0d2; border: 1px solid #7e765f; border-radius: 12px; }
+.timeline-workspace fieldset { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 16px 0; padding: 16px; min-width: 0; border: 1px solid #5c625f; }
+.timeline-workspace fieldset label { display: flex; flex-direction: column; gap: 6px; flex: 1 1 240px; }
+.timeline-workspace textarea { min-height: 100px; width: 100%; }
+.timeline-workspace input, .timeline-workspace select, .timeline-workspace textarea { background: #111c24; color: #e6e0d2; border: 1px solid #647275; padding: 10px; border-radius: 5px; }
+.timeline-workspace fieldset p { flex-basis: 100%; }
+.timeline-entry { border-bottom: 1px solid #5c625f; padding: 18px 0; overflow-wrap: anywhere; }
+.timeline-entry small { color: #b1c0c8; }
+.timeline-entry h3 { margin: 0 0 8px; }
+.timeline-entry button { margin: 4px; }
+.timeline-text { white-space: pre-wrap; }
+.timeline-workspace pre { white-space: pre-wrap; max-height: 360px; overflow: auto; }
+.timeline-image { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin: 12px 0; }
+.timeline-image img { max-width: 100%; max-height: 480px; object-fit: contain; }

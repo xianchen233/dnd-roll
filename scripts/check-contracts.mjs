@@ -727,4 +727,20 @@ for(const secret of ['version','round','grants','reason','hidden','count','posit
 for(const secret of ['reason','changes','privateOnly','sheet','hp','resources'])assert.ok(!Object.hasOwn(schemas.CombatEventPublic.properties,secret));
 for(const path of ['/actions','/actions/{id}','/actions/{id}/events','/combat','/combat/history'])for(const method of ['get','post']){const op=api.paths['/api/campaigns/{campaignId}'+path]?.[method];if(op&&method==='post'){assert.equal(op['x-idempotency'].namespace,'combat-commands');assert.match(op['x-idempotency'].authorization,/before receipt replay/);}}
 assert.match(api['x-combat-policy'].movement,/check before receipt replay/);assert.match(api['x-combat-policy'].correction,/current-version.*preserve later play/);
-console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; P06 strict manual combat/corrections, filtered journals and character turns. Previous operations/schemas retained; focused checker, not a general OpenAPI validator.`);
+const timelineSend={requestId:id,expectedVersion:0,characterId:id,kind:'RP',text:'Plain <script>text</script>',replyTo:'',attachments:[]};
+const timelineEdit={requestId:id,expectedVersion:0,text:'Corrected',attachments:[id],reason:'Correct spelling'};
+for(const [schema,sample] of [[schemas.TimelineSend,timelineSend],[schemas.TimelineEdit,timelineEdit],[schemas.TimelineUpload,{requestId:id,expectedVersion:0}],[schemas.TimelineSessionCommand,{requestId:id,expectedVersion:0,kind:'START',name:'Night 1'}]]){
+ validate(schema,sample);for(const field of Object.keys(sample)){const missing={...sample};delete missing[field];assert.throws(()=>validate(schema,missing));assert.throws(()=>validate(schema,{...sample,[field]:null}));}
+ for(const forged of ['actor','sourceSheet','result','storageKey','nameSnapshot'])assert.throws(()=>validate(schema,{...sample,[forged]:'forged'}));
+}
+assert.throws(()=>validate(schemas.TimelineSend,{...timelineSend,attachments:[id,id]}));
+assert.throws(()=>validate(schemas.TimelineSend,{...timelineSend,text:'x'.repeat(8001)}));
+assert.throws(()=>validate(schemas.TimelineSend,{...timelineSend,expectedVersion:0.5}));
+assert.throws(()=>validate(schemas.TimelineSend,{...timelineSend,replyTo:'foreign-string'}));
+for(const secret of ['ordinal','total','count','storageKey','dmReason','replyTo'])assert.ok(!Object.hasOwn(schemas.TimelineMessage.properties,secret));
+assert.ok(!Object.hasOwn(schemas.TimelineRevision.properties,'replyTo'));
+assert.match(api['x-timeline-policy'].authorization,/before pagination.*search.*references.*export.*downloads/);
+assert.match(api['x-timeline-policy'].retention,/No expiry.*backup rotation/);
+assert.match(api['x-timeline-policy'].atomicity,/atomically.*uncertain.*fresh campaign lock/);
+for(const path of ['/messages','/messages/{id}','/attachments','/timeline/sessions'])assert.match(api.paths['/api/campaigns/{campaignId}'+path].post['x-idempotency'].authorization,/before receipt replay/);
+console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; P07 durable identities/edits/images, filtered timeline/references/search/exports and shared bot paths. Previous operations/schemas retained; focused checker, not a general OpenAPI validator.`);

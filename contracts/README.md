@@ -83,3 +83,17 @@ explicit DM application/corrections, independent character turns and movement gr
 `GET /api/campaigns/{campaignId}/combat`
 `POST /api/campaigns/{campaignId}/combat`
 `GET /api/campaigns/{campaignId}/combat/history`
+
+[P07 timeline](timeline.md) adds durable RP/OOC, current-permission references,
+images, immutable edits, unified dice/action search, sessions and record exports.
+
+`GET /api/campaigns/{campaignId}/timeline`
+`GET /api/campaigns/{campaignId}/timeline/{id}`
+`GET /api/campaigns/{campaignId}/timeline/export`
+`GET /api/campaigns/{campaignId}/timeline/sessions`
+`POST /api/campaigns/{campaignId}/timeline/sessions`
+`POST /api/campaigns/{campaignId}/messages`
+`POST /api/campaigns/{campaignId}/messages/{id}`
+`GET /api/campaigns/{campaignId}/messages/{id}/history`
+`POST /api/campaigns/{campaignId}/attachments`
+`GET /api/campaigns/{campaignId}/attachments/{id}/content`
