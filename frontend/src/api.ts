@@ -5,6 +5,13 @@ import type { Catalog,ContentData,ContentFilters,ContentChoice,ContentPreview,Co
 import type {DiceCommand,DiceTextCommand,Roll,RollList,Initiative,InitiativeGenerate,InitiativeConfirm,InitiativeHistory} from './dice';
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
 export class Api {
+  actions(c:string,before=''):Promise<{actions:import('./combat').CombatAction[];next:string}>{return this.call(`/campaigns/${encodeURIComponent(c)}/actions${before?`?before=${encodeURIComponent(before)}`:''}`);}
+  action(c:string,id:string):Promise<import('./combat').CombatAction>{return this.call(`/campaigns/${encodeURIComponent(c)}/actions/${encodeURIComponent(id)}`);}
+  declareAction(c:string,body:import('./combat').CombatDeclaration):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/actions`,body);}
+  actionEvent(c:string,id:string,body:import('./combat').CombatCommand):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/actions/${encodeURIComponent(id)}/events`,body);}
+  combat(c:string):Promise<import('./combat').CombatState>{return this.call(`/campaigns/${encodeURIComponent(c)}/combat`);}
+  combatCommand(c:string,body:import('./combat').TurnCommand):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/combat`,body);}
+  combatHistory(c:string):Promise<import('./combat').TurnHistory[]>{return this.call(`/campaigns/${encodeURIComponent(c)}/combat/history`);}
   rolls(id:string,before=''):Promise<RollList>{return this.call(`/campaigns/${encodeURIComponent(id)}/rolls${before?`?before=${encodeURIComponent(before)}`:''}`);}
   roll(id:string,body:DiceCommand):Promise<Roll>{return this.post(`/campaigns/${encodeURIComponent(id)}/rolls`,body);}
   rollCommand(id:string,body:DiceTextCommand):Promise<Roll>{return this.post(`/campaigns/${encodeURIComponent(id)}/roll-commands`,body);}

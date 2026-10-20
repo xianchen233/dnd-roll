@@ -11,6 +11,15 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Added
 
+- Add manual combat actions linking independent characters, saved attack sources
+  and immutable server rolls, DM hit/miss judgement, explicit versioned HP/temp HP/
+  resource application and linked corrections that preserve subsequent play.
+- Add character turns from confirmed 5R initiative, DM skip/switch/reorder/stop
+  and temporary movement grants. Exploration remains free; out-of-turn dice and
+  actions remain available. Duration/effect resolution remains explicit DM work.
+- Add a Chinese combat workspace, exact uncertain-request retries and filtered
+  journals. P06 complete acceptance remains pending; no release is made.
+
 - Add server-owned persistent dice with bounded expressions, every raw die and
   kept/discarded result, saved calculation/name/actor sources, DM-only rolls and
   one versioned, idempotent service for buttons and text commands. Rolls never
@@ -21,7 +30,7 @@ and successful CI runs do not by themselves constitute a release.
   V9/V10 preserve prior data and add durable rolls, initiative and receipts.
 - Add a Chinese dice/initiative workspace with precise uncertain-request retry,
   reconnect/permission recovery, visible-record pagination and expandable dice
-  details. P06 round/turn execution and manual combat remain unfinished.
+  details. Manual combat acceptance is tracked separately under P06.
 - Add a searchable, attributed selection of ten SRD 5.2.1 entries, immutable
   campaign custom entries and explicit 5R/2014/custom source identities. Search,
   structured fill and execution coverage are reported separately.

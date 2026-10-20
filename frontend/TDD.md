@@ -314,3 +314,34 @@ P04代码a7ef388的push39460581794/PR39460588799六job全success，逐份日志�
   both frontend logs 195 tests/build/58 contracts, both standard Compose 31
   browsers and seven actual db/backend restart groups passed. P05 complete;
   subsequent completion-document HEAD checked independently.
+
+## P06 Chinese manual combat workspace (2026-10-21)
+
+- Contract first. p06-frontend-red.log: empty component caused six assertion
+  failures; one unconsumed deferred rejection is recorded as setup error.
+  Implement declaration, target/attack selection, current-version DM application,
+  linked correction, character turns, exact uncertain command retry, post-ack read
+  confirmation and scope/permission disposal: p06-frontend-green.log six passed.
+- Initial build failed on the test fixture's widened Source.rules string; add
+  Sheet attack type. This compile failure is not behavioral RED.
+- p06-frontend-final.log:19 files/201 tests passed; p06-build-final.log passed,
+  existing large main chunk warning retained. Original195 tests unchanged.
+- Real Chrome p06-browser-first.log:4 failed because nested select text affected
+  exact accessible-label lookup. Add explicit aria-label; next labels run3 passed,
+  one timed out filling a nonempty textarea whose label included its content.
+  Explicit textarea name fixed it; p06-browser-fixed.log all4 passed in11.7s,
+  unchanged60s limit and zero retries. This is recorded as browser RED/GREEN,
+  without fabricating an earlier component assertion. Both failures/traces kept.
+- Real dual sessions cover server-roll association, explicit DM verdict/application,
+  later independent HP loss then current-value correction preserving original,
+  character turns with hidden roster, response loss/exact retry/read failure and
+  native offline/socket-close/new CONNECTED visibility revocation. Final all35
+  browsers, actual restart and delivered code SHA push/PR CI still pending.
+- Initial whole35 production run had34 pass/one original P02 disconnect-count
+  timeout. Coordinator had concurrently seeded restart groups sharing the same
+  test account; member removal closes all sockets for that username (AccountEvents).
+  Preserve failure and run the complete suite serially with no seed operations,
+  no changes to old assertions,60s limits or zero-retry policy.
+- Serial p06-browser-delivered.log final35 passed (1.6m), all original31 retained;
+  eight actual Java/PG restart groups also passed. Final frontend201/build/65
+  contracts passed; exact delivered code SHA push/PR still independently required.

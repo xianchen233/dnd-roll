@@ -716,4 +716,15 @@ const publicInitiative={status:'CONFIRMED',entries:[{characterId:id,name:'Visibl
 for(const secret of ['version','group','surprised','result','calculation','hidden','position','count']){assert.throws(()=>validate(schemas.InitiativePublicState,{...publicInitiative,[secret]:'secret'}));assert.throws(()=>validate(schemas.InitiativePublicEntry,{...publicInitiative.entries[0],[secret]:'secret'}));}
 assert.equal(api.paths['/api/campaigns/{campaignId}/rolls'].post['x-idempotency'].namespace,api.paths['/api/campaigns/{campaignId}/roll-commands'].post['x-idempotency'].namespace);
 assert.match(api['x-dice-policy'].events,/DM-only.*DMs only/);assert.match(api['x-dice-policy'].visibility,/filter before pagination/);
-console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; all 50 previous operations retained; P05 strict server dice commands, shared receipts and secret-free initiative projection. Focused checker, not a general OpenAPI validator.`);
+const combatDeclaration={requestId:id,expectedVersion:0,characterId:id,targetId:id,attackId:'sword',visibility:'PUBLIC'};
+const combatCommand={requestId:id,expectedVersion:0,kind:'APPLY',rollId:'',verdict:'',changes:[{characterId:id,expectedVersion:0,hp:10,tempHp:0,resources:[]}],correctionOf:'',reason:'DM confirmed final values'};
+for(const [schema,sample] of [[schemas.CombatDeclare,combatDeclaration],[schemas.CombatCommand,combatCommand]]){
+ validate(schema,sample);for(const field of Object.keys(sample)){const missing={...sample};delete missing[field];assert.throws(()=>validate(schema,missing));assert.throws(()=>validate(schema,{...sample,[field]:null}));}
+ for(const forged of ['actor','total','sourceSheet','automatic'])assert.throws(()=>validate(schema,{...sample,[forged]:'forged'}));
+}
+const publicTurn={status:'ACTIVE',order:[{characterId:id,name:'Hero'}],currentId:id,endVersion:123};validate(schemas.TurnStatePublic,publicTurn);
+for(const secret of ['version','round','grants','reason','hidden','count','position'])assert.throws(()=>validate(schemas.TurnStatePublic,{...publicTurn,[secret]:'secret'}));
+for(const secret of ['reason','changes','privateOnly','sheet','hp','resources'])assert.ok(!Object.hasOwn(schemas.CombatEventPublic.properties,secret));
+for(const path of ['/actions','/actions/{id}','/actions/{id}/events','/combat','/combat/history'])for(const method of ['get','post']){const op=api.paths['/api/campaigns/{campaignId}'+path]?.[method];if(op&&method==='post'){assert.equal(op['x-idempotency'].namespace,'combat-commands');assert.match(op['x-idempotency'].authorization,/before receipt replay/);}}
+assert.match(api['x-combat-policy'].movement,/check before receipt replay/);assert.match(api['x-combat-policy'].correction,/current-version.*preserve later play/);
+console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; P06 strict manual combat/corrections, filtered journals and character turns. Previous operations/schemas retained; focused checker, not a general OpenAPI validator.`);

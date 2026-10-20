@@ -23,7 +23,7 @@ Contract version: 0.1. All application paths are same-origin under `/api`. Produ
 ```
 
 - `POST /api/campaigns/{campaignId}/tokens/{tokenId}/moves`, body `{ "requestId": "UUID", "expectedVersion": 0, "x": 4, "y": 5 }` → updated visible token with `id,name,x,y,version,canMove` fields. Read a new scene snapshot after success.
-- A member who cannot view a token receives 404. A visible token without control returns 403. DM may move any token in their campaign. Grid bounds, role, control and membership are enforced by the backend. Current milestone covers exploration movement; combat restrictions are a later slice.
+- A member who cannot view a token receives 404. A visible token without control returns 403. DM may move any token in their campaign. Grid bounds, role, control and membership are enforced by the backend. Exploration remains free; active combat also checks current character control and turn/DM movement grants as specified in [P06](combat.md), before historical receipt replay.
 - Repeating the same request ID, actor and payload returns the original response without moving twice, including when the expected version is now stale. Reusing that key with a different payload returns 409. Actor identity comes from the session.
 - A stale object version returns 409; the client refreshes the authoritative snapshot and explains the conflict. Invalid coordinates return 400.
 
@@ -72,3 +72,14 @@ DM-only dice, shared command/button behavior and explicit initiative confirmatio
 `POST /api/campaigns/{campaignId}/initiative`
 `POST /api/campaigns/{campaignId}/initiative/confirm`
 `GET /api/campaigns/{campaignId}/initiative/history`
+
+[P06 manual combat](combat.md) links saved attacks, targets and server rolls,
+explicit DM application/corrections, independent character turns and movement grants.
+
+`GET /api/campaigns/{campaignId}/actions`
+`POST /api/campaigns/{campaignId}/actions`
+`GET /api/campaigns/{campaignId}/actions/{id}`
+`POST /api/campaigns/{campaignId}/actions/{id}/events`
+`GET /api/campaigns/{campaignId}/combat`
+`POST /api/campaigns/{campaignId}/combat`
+`GET /api/campaigns/{campaignId}/combat/history`

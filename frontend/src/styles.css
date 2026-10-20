@@ -59,3 +59,14 @@
 .dice-workspace button { background: #314d3b; color: #fff; }
 .dice-workspace fieldset { border: 1px solid #b8c8ba; border-radius: 8px; }
 .dice-workspace li button { margin: .4rem .4rem 0 0; }
+/* P06 shares the document workspace rhythm; no fixed overlay over the map. */
+.combat-workspace { margin: 1rem; padding: 1.25rem; border: 1px solid #7e765f; border-radius: .6rem; background: #161b22; color: #e6e0d2; }
+.combat-workspace fieldset { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; margin: 1rem 0; padding: 1rem; }
+.combat-workspace label { display: flex; flex-direction: column; gap: .35rem; max-width: 100%; }
+.combat-workspace p { max-width: 80ch; line-height: 1.6; }
+.combat-workspace article { padding: 1rem; border: 1px solid #5c625f; }
+.combat-workspace details { padding: .65rem; border-bottom: 1px solid #5c625f; overflow-wrap: anywhere; }
+.combat-workspace textarea { min-width: min(32rem,80vw); min-height: 5rem; }
+.combat-workspace fieldset > p { flex-basis: 100%; margin: .25rem 0; }
+.combat-workspace fieldset > div { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; }
+.combat-workspace fieldset > div > p { flex-basis: 100%; margin: .25rem 0; }

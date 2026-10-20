@@ -1,5 +1,89 @@
 # 阶段验收记录
 
+## P06 本地完整验收通过，代码 SHA 双 CI 待核验（2026-10-21）
+
+最终p06-backend-final-2.log：**81unit+100真实IT，零失败/错误/跳过**；独立清除
+TEST_DATABASE_*后的p06-unit-delivered.log 81项通过。201前端/生产构建、65契约
+通过，原58操作与全部旧schema逐项deepEqual，原P01–P05回归保留。V10→V12保留
+28旧表全部原列/行及10个checksum，角色/目标同团FK验证通过。
+
+完整串行生产Chrome **35 passed（1.6m）**，p06-browser-delivered.log；原31流程/
+旧测试文件及60秒限制/零retry全部保留。包括新四流程的关联投骰、手动应用、后续
+独立扣血后使用当前值更正、角色回合、隐藏名单、丢响应精确重试及实际offline/
+socket关闭/新CONNECTED撤权恢复。视觉已检查完整combat-dm.png，来源/前后值/
+更正历史均可展开。第一次34+1的并发seed干扰及此前真实失败完整保留，见下。
+
+八组新seed→实际停止验收Java和PostgreSQL→同库同素材根启动→新会话verify全PASS。
+证据p06-delivered-{asset,token,map,p02,character,content,dice,combat}-restart-evidence.json，
+p06-delivered-restart-{seed,verify}.log、p06-delivered-process-evidence.json，Java/PG
+前后不同ID与真实CommandLine均记录。combat组完整deepEqual来源/逐骰/实际操作者/
+手动应用/后续变化/关联更正/角色值/回合历史/原回执，隐藏后旧请求不能越权或重复应用。
+
+运行时/私有日志/证据在仓库外.tools，最终JAR p06-acceptance.jar，凭据仅内存。
+P06a–d本地完成，P06e/整个P06/M2仍待精确代码SHA的push/PR六job、标准Compose35
+浏览器及八组实际容器重启；提交推送并核验后才关闭P06。不合并、不发布。
+
+以下为P06开发/验收过程，原失败与当时状态保留。
+
+## P06 开发及本地验收进行中（2026-10-21）
+
+开工独立fetch：本地/origin/PR HEAD均为d4e10682c0699f83e0466e4a4b6c132d09d2d956，
+工作区clean。认证API再次核对push39469353602/PR39469359789为该SHA，六job全success；
+重新获取完整日志确认77unit+91IT、195前端/构建、58契约、两组31浏览器和七组重启PASS。
+PR #1 open/draft/main；沿用原分支、不合并/发布，P01–P05不重复开发。
+
+先固定contracts/combat.md及docs/research/combat-5r.md，A仅locate，B完整回读
+战斗流程/反应/临时生命；在线核对官方SRD临时生命段，另两处PDF回读超时明确保留。
+最终数值由DM显式确认，不按骰值自动扣资源；更正使用当前角色版本，原操作/后续
+历史均保留。回合外投骰/行动不封禁；探索移动保持原行为，战斗移动须棋子与角色
+双控制及当前回合/DM放行。状态到期继续P03显式DM确认，不冒称自动执行状态效果。
+
+实际RED/GREEN（日志均在仓库外.tools）：
+
+- p06-actions-red.log：3真实HTTP在/actions缺入口处expected200/actual404；
+  p06-actions-green.log：3通过。p06-turns-red.log原3通过、新回合入口404失败；
+  p06-turns-green.log：4通过。后续并发/延迟commit失败/两角色原子应用/撤权/双控制
+  移动和旧回执权限追加回归通过，不冒称首次已有RED。
+- p06-private-version-red.log实际暴露玩家endVersion从1→2泄漏DM放行次数；改为
+  随机比较令牌，放行保留令牌；p06-private-version-green.log 5真实HTTP通过。
+- p06-private-headers-red.log断言期望no-store, private，实际为Spring默认头；扩展
+  最早filter至actions/combat及失败响应；p06-private-headers-green.log 8真实HTTP通过。
+- p06-frontend-red.log：空入口6失败，另有未消费deferred拒绝的准备错误；实现后
+  p06-frontend-green.log 6通过。构建测试fixture的Source字面量类型失败单独修复，
+  不计行为RED。最终p06-frontend-final.log 201/19文件及p06-build-final.log通过。
+- p06-browser-first.log：4失败，实际Chrome精确标签受select选项文本影响；补
+  明确aria-label后p06-browser-labels.log 3通过1超时，第二次填写已有textarea值
+  的精确标签亦受正文影响；补textarea aria-label后p06-browser-fixed.log 4通过
+  （11.7秒），不放宽timeout/不retry。原始失败/trace保留，不伪造组件RED。
+- 首轮重启seed原七组通过，新组fixture示例无攻击而中止；补合成攻击后新combat
+  seed成功。失败p06-restart-seed.log保留；完整八组最终进程重启验收仍待执行。
+- 最终只读审查补全隐藏名单回归。手写聚焦运行器遗漏可写TEMP，两个名为hidden-
+  combat-{red,green}日志均为Mockito创建agent临时文件权限错误（各4 errors），不计
+  行为RED/GREEN。使用既有运行器并恢复修复前的status/事件/移动边界故障回放，
+  p06-hidden-combat-assert-red.log真实81项1失败：期望IDLE却为ACTIVE；随后恢复修复。
+  全隐藏名单现在不公开战斗状态、不发玩家hint、不锁玩家探索；其他战斗边界不变。
+  无库/最终全量再次执行；80unit+100IT的上一完整结果不能替代新增回归的新结果。
+  恢复源码时Copy-Item保留旧时间戳，Maven误判Nothing to compile，assert-green与
+  backend-final两轮仍运行旧class而失败；源码时间戳已更新，明确重新编译后再验收，
+  不能将命名green的日志视为通过。
+  重新编译暴露List.of().contains(null)的NPE（81项1error），改为stream空值检查；
+  p06-unit-delivered.log最终81无库单测零失败/错误/跳过。最终完整后端用
+  p06-backend-final-2.log，不能使用旧81项失败或早期80项结果冒充。
+  p06-backend-final-2.log已实际完整81unit+100IT零失败/错误/跳过；重新打包最终JAR。
+  八组新p06-delivered重启seed均PASS。首次完整生产浏览器p06-browser-full.log为34过/
+  1失败：原P02 offlineAndDisconnect等待close计数超时；协调者将共享同一测试账号的
+  重启seed并跑，其中撤权会关闭账号全部socket，两个检查并非独立。改为严格串行
+  p06-browser-delivered.log重跑完整35，不改原测试/断言/60秒限制、零retry；原失败保留。
+  一次串行launcher在无库80通过后受子脚本Set-Location影响，下一相对路径未找到，
+  已按绝对目录单独重启全量，p06-backend-delivered.log 80+100通过；不冒称首次连续执行。
+
+首次完整p06-backend-full.log：80unit+100真实IT零失败/错误/跳过；包括V10→V12
+保留28旧表全部原列/行及10checksum、同团FK。65契约检查通过，脚本生成时对原58
+操作和所有旧schema deepEqual。修复缓存头后的最终完整后端/生产浏览器全35流程/
+八组实际重启及精确代码SHA的push/PR CI尚在执行；**P06e/P06/M2未完成**。
+
+以下为P05完成及更早历史。
+
 ## P05 完成：精确代码 SHA 本地与双 CI 全部通过（2026-10-21）
 
 代码 **f416e627d99c7dbf332bbf174309cde7b1d7291e** 的

@@ -15,7 +15,7 @@ public class SceneController {
     private final SceneService service;
     public SceneController(SceneService service) { this.service = service; }
     @Configuration static class Wiring {
-        @Bean SceneService sceneService(Store store, Events events) { return new SceneService(store, events); }
+        @Bean SceneService sceneService(Store store, Events events,SceneService.MovementPermission permission) { return new SceneService(store, events,permission); }
     }
     public record MoveRequest(UUID requestId, Long expectedVersion, Integer x, Integer y) {
         Command command() {

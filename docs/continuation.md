@@ -1,5 +1,29 @@
 # 继续工作的入口
 
+## 当前入口：P06 本地完整验收通过，代码 SHA 双 CI 待核验
+
+更新2026-10-21（Asia/Shanghai）。原分支feat/accounts-and-invitations/草稿PR #1，
+不合并、不发布。开工HEAD d4e1068的push39469353602/PR39469359789六job/完整日志
+独立核验成功，详见verification。P01–P05保持完成，P06e/P06/M2尚未完成。
+
+P06契约contracts/combat.md，来源docs/research/combat-5r.md。行动/目标/既有服务器
+投骰关联、DM命中/显式生命临时生命资源应用、当前版本关联更正、独立角色回合与
+DM跳过/切换/重排/移动放行/结束、中文工作区已实现。探索行为保留，回合外操作
+不封禁，状态到期仍P03显式确认。私密日志裁剪及比较版本泄漏已实际RED修复。
+
+本地最终81unit+100IT、独立无库81、201前端/构建、65契约、完整35生产浏览器及
+八组实际Java/PG重启均通过。28旧表/10checksum保留；代码SHA的push/PR尚待提交核验，
+不得提前关闭P06。最终日志p06-backend-final-2/ p06-unit-delivered/ p06-frontend-final/
+p06-build-final/ p06-browser-delivered.log，重启证据p06-delivered-*-restart-evidence.json，
+实际进程身份在p06-delivered-process-evidence.json。私有文件均在外.tools。
+日志/准备失败/实际RED见verification及两端TDD。运行时/凭据只在外.tools，
+不要打印credentials；停止进程前核验最新CommandLine/data，不复用旧PID。
+
+下一执行步骤：审查提交推送原分支，更新原草稿
+PR并核验该代码SHA push/PR六job/标准Compose35流程/八组重启全通过后再关闭P06。
+完成状态文档的新HEAD也独立核验。后续P07–P10/A、容量/触屏/TLS及完整备份异机
+恢复仍未完成，不静默丢弃。以下为P05及更早历史入口。
+
 ## 当前入口：P05 已完成；下一包 P06 尚未开工
 
 更新：2026-10-21（Asia/Shanghai）。继续 `feat/accounts-and-invitations` /

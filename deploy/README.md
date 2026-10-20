@@ -86,5 +86,17 @@ reroll, restore order, disclose private dice or bypass authorization. Seed refus
 to overwrite evidence. CI now runs all seven groups (asset/token/map/P02/character/
 content/dice) around the same actual db/backend Compose restart.
 
-Dice and initiative preparation do not advance turns, enforce combat movement,
-apply damage or consume resources. Those behaviors remain the next work package.
+P05 dice and initiative preparation remain separate from P06 execution. P06's
+explicit combat commands start/advance independent character turns, gate combat
+movement, record manual decisions and apply DM-confirmed current values. A roll
+or hit/miss decision never spends resources. Effects/duration resolution stays
+manual; corrections append current-version changes instead of restoring history.
+
+Run `node scripts/check-combat-restart.mjs seed <new-outside-repo-evidence.json>`
+with the same environment, actually restart PostgreSQL and packaged backend, then
+run `verify`. The eighth group compares complete attack/roll/actor snapshots,
+application, later independent damage, linked correction, sheets, turn state/
+history and receipts with fresh sessions. Current hiding still denies old retries.
+CI runs all eight groups around the same actual db/backend Compose restart.
+Keep `/actions` and `/combat` success/error headers `no-store, private`; never
+cache their permission-filtered representations at a reverse proxy or CDN.

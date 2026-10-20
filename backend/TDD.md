@@ -318,3 +318,50 @@ P04代码a7ef388的push39460581794/PR39460588799六job全success，逐份日志�
   each backend log 77 units + 91 real IT, zero failure/error/skip. Both standard
   Compose 31-browser suites and seven actual db/backend restart groups passed.
   P05 complete; completion-document HEAD remains independently checked.
+
+## P06 manual combat (2026-10-21; acceptance in progress)
+
+- Read AGENTS/continuation/verification/product/plan/CONTEXT/required contracts;
+  independently fetched and verified entry d4e1068 against local/origin/PR #1,
+  push39469353602 and PR39469359789 plus all six logs. P01–P05 remain complete.
+- Contract first: contracts/combat.md, rules evidence docs/research/combat-5r.md.
+  p06-actions-red.log: 3 HTTP assertions failed because /actions returned404;
+  p06-actions-green.log: 3 passed. p06-turns-red.log: prior3 passed/new turn
+  assertion failed on404; p06-turns-green.log: all4 passed.
+- p06-private-version-red.log: assertion failed on player endVersion1→2 after
+  private DM grant. Replace global counter with opaque random compare token;
+  grants preserve token. p06-private-version-green.log:5 real HTTP passed.
+- Added real commit-time deferred trigger rollback, same-request concurrent
+  application, same-version correction race, multi-character atomic changes,
+  current-version correction after later HP loss, source/target hiding, CSRF,
+  foreign campaign/identity/revoked receipts and dual token/character movement
+  controls. These are executed regression additions, not invented RED evidence.
+- p06-private-headers-red.log: expected no-store, private vs Spring default.
+  Extend earliest filter to combat/actions (including anonymous failure);
+  p06-private-headers-green.log:8 real HTTP passed.
+- Initial complete p06-backend-full.log:80 units +100 real IT, zero failure/error/
+  skip. CombatMigrationIT preserves all28 V10 tables' old columns/rows and all10
+  migration checksums; same-campaign source/target FK enforced. Final no-DB/full
+  tests, actual eight-group Java/PG restart and exact-SHA dual CI still pending.
+- Restart seed first failed on a synthetic template with no attacks; original
+  seven seed groups passed. Add a synthetic saved attack, then new combat seed
+  passed. No implementation RED claimed for fixture preparation.
+- Final audit added entirely-hidden combat status/hints/exploration regression.
+  Two custom focused launches omitted writable TEMP and failed Mockito agent
+  initialization (4 errors each), not behavioral evidence. With existing runner,
+  replayed the pre-fix projection/event/movement boundary: actual81 tests/1
+  assertion failure (expected IDLE vs ACTIVE), p06-hidden-combat-assert-red.log;
+  restore fixed projection, private-only hints and exploration behavior and rerun.
+- Copying fixed source preserved its older timestamp; two subsequent runs used
+  stale compiled class and still failed. Touch source forced actual recompilation;
+  then valid immutable empty List.of exposed contains(null) NPE. Replace that
+  check with anyMatch(Objects::isNull). p06-unit-delivered.log finally81 database-
+  free units passed, zero failure/error/skip. Final complete result still pending.
+- p06-backend-final-2.log: final81 units +100 real PostgreSQL/HTTP/WS/migration,
+  zero failure/error/skip. New final packaged JAR prepared. Eight new delivered
+  restart seeds passed. Actual stop/restart/verify and exact-SHA dual CI pending.
+- Eight delivered seed→actual packaged-Java and PostgreSQL stop/start→fresh-session
+  verify groups all passed. Complete action/roll/source/actor/change/correction,
+  sheet and turn/history/receipt snapshots deepEqual. Current hiding denies old
+  replay. Logs p06-delivered-restart-{seed,verify}.log and process/evidence JSON
+  outside repo. Exact delivered-SHA push/PR CI still pending.

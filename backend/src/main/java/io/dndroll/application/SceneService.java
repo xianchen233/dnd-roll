@@ -21,15 +21,18 @@ public final class SceneService {
         <T> T locked(UUID campaignId, Supplier<T> action);
     }
     public interface Events { void changed(UUID campaignId); }
+    public interface MovementPermission { boolean canMove(UUID campaign,UUID token,String actor,Role role); }
     private final Store store;
     private final Events events;
-    public SceneService(Store store, Events events) { this.store = store; this.events = events; }
+    private final MovementPermission permission;
+    public SceneService(Store store, Events events) { this(store,events,(c,t,a,r)->true); }
+    public SceneService(Store store, Events events,MovementPermission permission) { this.store = store; this.events = events;this.permission=permission; }
     public List<CampaignView> campaigns(String actor) { return store.campaigns(actor); }
     public Snapshot snapshot(UUID campaignId, String actor) {
         return store.locked(campaignId, () -> {
             var role = requireMember(campaignId, actor);
             var scene = store.scene(campaignId);
-            var tokens = scene.tokens().stream().map(t -> Movement.view(t, role, actor)).filter(java.util.Objects::nonNull).toList();
+            var tokens = scene.tokens().stream().map(t -> Movement.view(t, role, actor)).filter(java.util.Objects::nonNull).map(t->new TokenView(t.id(),t.name(),t.x(),t.y(),t.version(),t.canMove()&&permission.canMove(campaignId,t.id(),actor,role))).toList();
             return new Snapshot(scene.id(), scene.campaignId(), scene.name(), scene.width(), scene.height(), scene.gridSize(), scene.version(), tokens);
         });
     }
@@ -42,6 +45,7 @@ public final class SceneService {
             var visible = Movement.view(token, role, actor);
             if (visible == null) throw new DomainException("NOT_FOUND", 404, "Token not found");
             if (!visible.canMove()) throw new DomainException("FORBIDDEN", 403, "You cannot move this token");
+            if (!permission.canMove(campaignId,tokenId,actor,role)) throw new DomainException("FORBIDDEN",403,"Current turn or DM movement permission required");
             var existing = store.receipt(campaignId, actor, command.requestId());
             if (existing != null) {
                 if (!existing.tokenId().equals(tokenId) || !existing.command().equals(command))

@@ -6,7 +6,11 @@
 
 ## 本轮当前状态（2026-10-21）
 
-**P01–P05均已完成；下一包P06未开工，M2及P06–P10/A仍未完成。**
+**P01–P05均已完成；P06已进入手动战斗/更正与整体验收，P06e/P06/M2及P07–P10/A仍未完成。**
+P06契约`contracts/combat.md`，来源`docs/research/combat-5r.md`。最终81unit+100IT、
+独立无库81、201前端/构建、65契约、完整35真实浏览器、28旧表/10checksum及八组
+实际Java/PG重启已通过；精确代码SHA push及PR CI仍待完成，不提前关闭。实际RED、
+准备失败和后续步骤见verification。
 契约 `contracts/dice-initiative.md`，5R依据 `docs/research/dice-initiative-5r.md`。
 P05代码f416e62的push39468342643/PR39468347675六job全成功：77unit+91真实IT、
 195前端/构建、58契约、标准Compose31浏览器及七组实际重启通过；V8→V10保留23
