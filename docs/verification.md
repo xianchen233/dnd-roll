@@ -1,5 +1,36 @@
 # 阶段验收记录
 
+## P02e / P02 完成（2026-10-20）
+
+最终验收提交 **`853944d36d59d31b833c509f30db84b356449a5a`** 的
+[push39436631381](https://github.com/xianchen233/dnd-roll/actions/runs/39436631381) 与
+[PR39436640191](https://github.com/xianchen233/dnd-roll/actions/runs/39436640191) 均
+completed/success，frontend/backend/browser 六 job 全部通过，PR #1 仍 open/draft。
+独立读取最新六组 job 完整日志：166 前端测试/生产构建、31 HTTP 契约、
+61 unit + 61 真实 PG/HTTP/WS/迁移通过，零失败/错误/跳过；两组标准 Compose
+真实浏览器均 **17 passed（push2.1m、PR1.5m）**，60秒/条、零retry。
+
+新两场景组合验收、实际 browser offline + 原生 WebSocket 关闭/新socket服务端
+CONNECTED、离线期间已提交的撤控/成员移除、明确校准偏移POST/读回、提交后丢响应
+与权威读失败恢复均通过。原六个 E2E 文件/13 流程、全部原单测/IT/契约保留；本包
+生产源码、迁移及 OpenAPI 没有改动，新后端 HTTP 组合和浏览器验收首次通过，
+没有为测试补覆盖伪造 RED。初两轮测试准备错误与后续加强过程见下文及两端 TDD。
+
+两组 browser 日志均确认四组素材/棋子/地图/两场景 seed，实际重启 db 与 backend，
+新会话四组 verify 全 PASS。两场景 tokens/fog/map、原图及安全PNG SHA-256/像素、
+版本/独立回执和历史命令不恢复、撤权/重加入/旧URL/logout边界全部保持。
+外置日志 `job-118675234992.log` / `job-118675269941.log`；本地完整17条46.4秒及
+四组 Java+PG 实际重启也通过。已人工看四张截图，原图和隐藏单位没有进入玩家视图。
+
+至此 **P02e 与整个 P02 完成**，P01/P02a–d 继续保留。沿用原分支与草稿 PR #1，
+未合并、未发布。下一工作包 P03 完整半自动角色卡尚未开工；规则行为开始前必须
+使用 dnd-rule-lookup 核对 5R，先契约/实际RED，不能把棋子当作已完成角色卡。
+P04–P10/A及整个M2、容量、触屏、TLS、完整一致备份/异机恢复仍未完成。
+本机 Java/production preview/PG 已按实际 CommandLine/data 核实后停止，数据及素材保留。
+
+本段记录853944d验收证据；后续仅完成状态/交接文档提交，仍须独立核对最新HEAD Checks，
+不能把本段绿灯冒称为后续文档SHA结果。
+
 ## P02e 开工与本地验收（2026-10-20）
 
 开工 HEAD `3c834b4315361dfc8077bb638cd517183576d917`，工作区干净，fetch 后与

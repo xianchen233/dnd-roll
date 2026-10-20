@@ -2,7 +2,38 @@
 
 更新：2026-10-20（Asia/Shanghai）。最新分支、HEAD 和工作区以 `git status --short --branch` / `git log -5 --oneline` 为准。当前沿用 `feat/accounts-and-invitations` 和 [草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，未合并、未发布。
 
-## 当前入口：P02e 整体验收进行中
+## 当前入口：P02e / P02 已完成，下一工作包 P03 尚未开工
+
+最终验收提交 `853944d36d59d31b833c509f30db84b356449a5a` 的
+[push39436631381](https://github.com/xianchen233/dnd-roll/actions/runs/39436631381) 与
+[PR39436640191](https://github.com/xianchen233/dnd-roll/actions/runs/39436640191) 均
+completed/success，frontend/backend/browser 六 job 全绿，PR #1 open/draft、base main。
+最新日志确认 **61unit + 61真实PG/HTTP/WS/迁移、166前端测试/构建、31契约、17真实
+浏览器**，两组标准Compose均通过17条及四组实际db/backend重启seed/verify。
+本地完整生产preview17条46.4秒、Java+PG实际重启四组也通过。原六个E2E文件/13条
+及全部旧测试保留，生产源码/迁移/OpenAPI未改；新验收不伪造RED。具体证据、初次
+测试准备失败和三项证据加强见verification及两端TDD。
+
+P02e 契约 `contracts/p02-acceptance.md`；新增 `scripts/check-p02-restart.mjs` 和
+`frontend/e2e/acceptance.spec.ts`。实际双场景fog/校准/单位独立、真实offline加原生
+socket断开/新CONNECTED、撤权先提交再上线、fog提交后丢响应/原body重试/失败读恢复
+均通过。已更新CHANGELOG Unreleased、部署及验收。**P01/P02a–e与整个P02完成**；
+角色卡、整个M2、P04–P10/A、容量/触屏/TLS及完整备份/异机恢复仍未完成。
+
+下一可执行步骤：先读AGENTS/本页/verification/work-packages及必读契约，独立核对
+Git和最新HEAD Checks（含本次完成状态文档提交），再开始 **P03 完整半自动角色卡**。
+先核对5R规则来源（使用工作区dnd-rule-lookup），固定一人多角、独立资源、基础计算
+及来源、编辑历史、DM覆盖、状态到期提醒、复制与结构化导入导出的契约和最小切片；
+按契约→实际行为RED→最小实现→完整验收，不把既有棋子配置当角色卡，不重复P01/P02。
+继续现有分支/草稿PR #1，不合并/发布，不因P02完成标整个M2完成。
+
+工具/日志/证据在外层 `.tools` 的 `p02e-*`；`run-p02e-restart.ps1` 注入已有测试
+凭据调用原三组加新组合脚本，`start-p02e-backend.ps1`只启动当前打包Java，
+`update-p02e-pr.mjs`沿用GCM维护原PR。凭据只在内存，不打印/不提交。验收
+Java/production preview/PG 已逐一核实CommandLine/data后停止，55432/8080/5173
+无监听，数据库/私有素材/截图及证据保留；不能复用旧PID。
+
+## P02e 开工及首次验收历史
 
 2026-10-20 从 `3c834b4` 干净工作区开工，fetch 后与 origin 一致；该 SHA 的
 push39289292710 / PR39289302976 六个 job 全部 success，PR #1 仍 open/draft。
