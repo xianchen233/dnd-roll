@@ -15,7 +15,8 @@ and successful CI runs do not by themselves constitute a release.
   attachments, permission-aware replies and a unified message/dice/action timeline
   with paged search, session archives and Markdown/JSON record exports.
 - Add a Chinese timeline workspace and shared bot shortcuts through existing
-  dice/action/turn services. P07 integrated acceptance is still in progress.
+  dice/action/turn services. P07 local and exact-code-SHA push/PR acceptance
+  passed; campaign notes and consistent backup/restore remain later work.
 
 - Add manual combat actions linking independent characters, saved attack sources
   and immutable server rolls, DM hit/miss judgement, explicit versioned HP/temp HP/

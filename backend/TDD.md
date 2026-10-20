@@ -1,5 +1,10 @@
 # TDD evidence
 
+## P07 最终完成
+
+代码5d96a72的push39485707929/PR39485715062六份完整日志已重新读取并严格核对全通过：84unit+108IT、211前端/构建、75契约、两组39浏览器和九组实际容器重启。独立无库84unit及本地全量、九组实际Java/PG重启亦通过。原始失败与当时pending状态保留如下，最新入口见docs/continuation.md。完成文档HEAD另独立核验，不合并、不发布。
+
+
 ## P07 本地完整验收通过；精确代码 SHA 的双 CI 待核验（2026-10-21）
 
 继续 feat/accounts-and-invitations / [草稿PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，

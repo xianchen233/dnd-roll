@@ -1,6 +1,44 @@
 # 继续工作的入口
 
-## P07 本地完整验收通过；精确代码 SHA 的双 CI 待核验（2026-10-21）
+## P07 已完成；下一包 P08 尚未开工（2026-10-21）
+
+继续 feat/accounts-and-invitations / [草稿PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，
+不合并、不发布。最新HEAD与工作区以Git实际状态为准；完成状态文档HEAD亦独立核验。
+
+P07代码 **5d96a72ee441741f702fb7cfd1641016a6cd8d8f** 的
+[push39485707929](https://github.com/xianchen233/dnd-roll/actions/runs/39485707929) 与
+[PR39485715062](https://github.com/xianchen233/dnd-roll/actions/runs/39485715062)
+均completed/success，frontend/backend/browser六job全绿，PR open/draft/main。
+逐份重新获取完整日志并严格核对：两组均84unit+108真实IT、211前端/生产构建、75契约，
+标准Compose完整39浏览器以及九组seed→实际db/backend容器重启→九组新会话verify全PASS。
+外置p07-job-118845439558/118845439977/118845440055及118845464786/118845465315/
+118845465645，汇总p07-ci-5d96a72ee441741f702fb7cfd1641016a6cd8d8f.json和
+p07-code-ci-verified.log。首次严格检查在PR尚in_progress时退出，保留p07-code-ci-pending.log；
+待完成后重新获取全部六份并通过，不将该未完成检查或旧SHA结果当作新检查成功。
+
+本地独立无库84unit、最终84+108完整后端、211前端/构建、75契约、39生产Chrome、
+V12全部旧表原列/行/12checksum，以及九组实际Java+PG停止/同库同素材根启动/新会话
+verify亦全部通过。来源/身份/编辑/图片SHA/场次/引用/搜索/完整导出/原回执和当前隐藏
+过滤均已验证。实际RED、准备错误和修复保留在下文与两端TDD，不伪造先失败证据。
+
+**P01–P07均完成；整个M2、P08–P10/A仍未完成。** 契约contracts/timeline.md。
+机器人沿用P03/P05/P06逻辑；时间线不引入新骰子/数值/资源执行；不接QQ或导入QQ历史。
+记录/图片/编辑长期保留；Markdown/JSON记录导出不是P09数据库+素材一致部署备份。
+
+下一可执行步骤：按AGENTS读交接、verification、work-packages、产品/路线/CONTEXT与
+必读契约，独立核对最新HEAD（含完成文档）的push/PR Checks；再进入 **P08 团队笔记
+及DM资料**，先固定共享/私密、当前权限下查询/搜索/附件/导出契约，实际RED→最小实现→
+GREEN→完整验收。P01–P07不重复开发，保留P09/P10/A、容量/触屏/TLS及异机恢复门槛。
+
+日志/运行时/私有证据均在仓库外D:/workspace/dnd/.tools，凭据仅内存。最终JAR
+p07-acceptance.jar；start-p07-backend.ps1/run-p07-restart.ps1可复用，新seed须新前缀
+（wx拒覆盖）。p07-final九组JSON、p07-restart-{seed,verify}.log与进程前后身份保留。
+最后按CommandLine/data核对停止Java/production preview/PG，55432/8080/5173无监听，
+p07-stopped-processes.json留证。不要复用旧PID；PG启动huge_pages=off且分步操作。
+以下为本包开发/验收与此前交接历史，不作为当前下一步。
+
+
+## 历史：P07 本地完整验收通过；代码双 CI 当时待核验（2026-10-21）
 
 继续 feat/accounts-and-invitations / [草稿PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，
 不合并、不发布。开工HEAD 23dfa21的push39478445935/PR39478453446已独立核验六job/

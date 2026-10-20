@@ -1,6 +1,7 @@
 # P07: RP timeline and shared bot entry points
 
-Status: in progress, 2026-10-21. P01–P06 remain complete; P07/M2 are not complete.
+Status: P07a–e completed, 2026-10-21; code 5d96a72 passed local and exact-SHA
+push/PR CI. P01–P06 remain complete; P08–P10/A and the whole M2 are incomplete.
 No new D&D calculation or automatic resolution; use the P03/P05/P06 services.
 
 Ordered slices (execute assertion RED before implementation): a messages, speaking
