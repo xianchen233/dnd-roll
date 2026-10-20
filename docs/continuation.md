@@ -1,51 +1,55 @@
 # 继续工作的入口
 
-## P03 当前执行中（2026-10-20，本会话，优先于下方历史交接）
+## 当前入口：P03 已完成；下一包 P04 尚未开工
 
-末尾补强已通过全部本地门槛：create/copy/import历史回执须另复核结果角色的当前
-可见性，实际404/200 RED后修复；65unit+75IT完整GREEN，独立无数据库65unit、
-177前端/构建、45契约、新JAR生产Chrome23条（1.0m）、重新seed后的五组实际Java+PG
-重启均通过。最后源码日志为p03-backend-final、p03-unit-no-db-final、
-p03-browser-final-after-receipts、p03-final-restart-{seed,verify}及p03-final-process-evidence。
-服务再次核对身份后停止，三端口无监听，数据保留。仅剩统一提交推送并核验最终SHA
-的push/PR CI，P03/M2尚未完成。下方74IT/第一次重启为本轮更早历史，不替代本段。
+交接更新：2026-10-21（Asia/Shanghai）；P03代码验收于2026-10-20完成。
+继续 `feat/accounts-and-invitations` / [草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，
+未合并、未发布。最新HEAD/工作区始终以Git实际状态为准；完成状态文档提交也独立核对Checks。
 
-最新：本地完整65无数据库unit、65unit+74真实PG/HTTP/WS/迁移、177前端/构建、
-45契约、最终生产Chrome23条（58.0秒）及五组实际Java+PG重启全部通过；16张旧表
-全列/全行/六checksum自然升级一致。完整失败闭环、重启wrapper管道卡住后的分步
-核验及证据见verification最上段。Java/production preview/PG再次核对身份后已停止，
-55432/8080/5173无监听，数据及私有素材保留。下一步统一提交推送并独立核对最终SHA
-的push/PR全CI，之后才关闭P03；**P03及整个M2当前仍未完成**。下文“正重跑/待本地
-浏览器”等为本轮早期记录，已由本段及verification最新结果更新，不重复开发。
+P03完成代码 **f66c4e731f174c81be0ee7ab9724db30c0827446** 的
+[push39452554961](https://github.com/xianchen233/dnd-roll/actions/runs/39452554961) 和
+[PR39452563178](https://github.com/xianchen233/dnd-roll/actions/runs/39452563178) 六个
+frontend/backend/browser job均completed/success，PR open/draft、base main。已逐份读取
+最新六个job日志：**65unit+75真实PG/HTTP/WS/迁移、177前端/构建、45契约、两组标准
+Compose23真实浏览器（push2.2m/PR2.5m）及五组实际db/backend容器重启全PASS**。
 
-起点 b1f2c5f00d015e9efc50340e99db4584b3287056，干净，fetch后本地/origin/PR一致。
-独立核对 push39439094794 / PR39439269275 六job completed/success，PR #1 open/draft。
-已读AGENTS、continuation、verification、work-packages、产品/路线/CONTEXT及全部必读契约。
-已使用工作区dnd-rule-lookup：A仅locate，B SRD5.2定位+整页回读，见
-`docs/research/character-sheet-5r.md`，未读/分发商业规则正文。
+本地独立无数据库65unit、最终新JAR23流程、重新seed后的五组实际Java+PG重启也通过；
+16张旧表全部原列/原行/六个checksum自然升级一致。原61unit/61IT/166前端/31契约/
+17浏览器及四组重启全部保留。完整实际RED/GREEN、准备失败与修复见verification及两端TDD。
 
-P03契约为`contracts/characters.md`，按P03a身份字段历史→b来源计算→c资源状态→d传输
-与棋子引用→e完整验收执行。已写V7、CharacterSheet/Service/Controller/JdbcStore、角色
-授权撤销与实际操作者历史；六组前端字段、精确重试、来源历史、DM权限/计时/传输入口。
-P01/P02保持完成，不重复；**P03及整个M2仍未完成**。
+**P01、P02a–e/整个P02、P03a–e/整个P03完成；整个M2、P04–P10/A仍未完成。**
+P03契约 `contracts/characters.md`，5R依据 `docs/research/character-sheet-5r.md`，开放
+传输示例 `contracts/character.example.json`。角色身份/六组字段、来源计算/DM覆盖、
+独立资源、编辑历史/实际操作者、状态到期由DM确认、复制/目标审核导入导出及多棋子
+引用已交付；新建/复制/导入旧回执还会复核结果角色当前可见性，隐藏后不返回其ID。
+头像支持短文本/emoji；生命上限、升级选择、特殊机制和资源上限仍为有来源的手动字段。
+内容库/准入切换/便捷填卡、服务端投骰、战斗分别属于P04/P05/P06，未冒称完成。
 
-实际证据：4计算/校验断言RED；HTTP创建入口预期200实际404，扩展7场景同一前置RED；
-65unit+7IT首轮GREEN。补充待审导入复制绕过（true实际false）和NUL输入400实际500
-真实RED，修复后65unit+9IT通过。前端5项缺入口实际RED，171全量/构建通过；畸形
-导入预览not.toThrow断言RED，修复后新6项GREEN。契约缺14操作RED→45操作GREEN。
-新增迁移/多棋子/回滚/原生WS覆盖首次通过不冒充RED。全量首次74IT中旧TokensIT八项
-因本机PG连接上限无法加载context；新类DirtiesContext释放池后正重跑全量。无凭据输出。
+下一可执行步骤：按AGENTS先读本页、verification、work-packages、产品/路线/CONTEXT
+及必读契约，独立核对Git、远端和最新HEAD（含本次完成文档）的push/PR Checks。
+然后进入 **P04 规则检索与填卡**：先沿用dnd-rule-lookup核对5R及开放来源授权，
+固定名称/来源/规则版本/准入切换/结构化填卡契约和有序切片，再实际RED→最小实现→
+GREEN→完整验收。不要重做P01/P02/P03，不把检索覆盖当自动执行覆盖，不把商业索引
+正文或私有素材打包。触屏、容量、TLS、完整一致备份/异机恢复继续按P09/P10/发布门槛。
 
-下一步：查看`.tools/p03-backend-full-2.log`，完成前端最终全量/构建及新6条实际浏览器
-（frontend/e2e/characters.spec.ts），补真实V6→V7旧库逐列快照与第五组角色重启脚本，
-原四组/17浏览器全保留运行。实际浏览器/重启/最终SHA双CI尚未执行，不得标通过。
-当前PG已核对身份后启动127.0.0.1:55432（pg-data）；Java/preview尚未启动。
-重启前仍重新核对端口和进程身份，不复用PID。本会话尚未提交；沿原分支/草稿PR统一
-提交推送，不合并/发布。所有日志为外层`.tools/p03-*`，凭据仅内存。
+运行时、凭据与证据全在仓库外 `D:/workspace/dnd/.tools`，凭据只注入内存、不打印。
+本轮最后日志 `p03-backend-final.log`、`p03-unit-no-db-final.log`、`p03-frontend-final.log`、
+`p03-build-final-production.log`、`p03-browser-final-after-receipts.log`；五组最终证据为
+`p03-final-{asset,token,map,p02,character}-restart-evidence.json`，进程前后ID在
+`p03-final-process-evidence.json`。实际服务脚本仍可复用start-p02e-backend.ps1（启动当前
+JAR）、run-p02d-browser.ps1；run-p03-restart-final.ps1注入测试凭据调用五组seed/verify。
+
+Java/production preview/PostgreSQL已再次核对实际CommandLine/data后全部停止，
+55432/8080/5173无监听，数据库、私有素材和截图保留。不要复用旧PID。Windows下pg_ctl
+启动采用独立命令，避免包在全流重定向的旧restart wrapper中等待继承输出管道；首次
+wrapper卡住及分步重启证据已记verification。本次末尾只更新完成/交接文档，交付前仍
+独立核验该文档新SHA的双CI，不能拿f66c4e7绿灯代替新HEAD。
+
+以下为历史交接记录，保留当时状态，不作为当前下一步。
 
 更新：2026-10-20（Asia/Shanghai）。最新分支、HEAD 和工作区以 `git status --short --branch` / `git log -5 --oneline` 为准。当前沿用 `feat/accounts-and-invitations` 和 [草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，未合并、未发布。
 
-## 当前入口：P02e / P02 已完成，下一工作包 P03 尚未开工
+## 历史入口：P02e / P02 完成后的 P03 交接
 
 2026-10-20 用户明确要求：**下一包交给下一会话，本会话不启动 P03**。
 交接前独立核验 `863a68abb4addf0dcfc7664a0c04cc204c97c31f` 工作区干净、与 origin

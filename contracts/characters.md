@@ -1,6 +1,7 @@
 # P03: complete semi-automatic character sheets (5R)
 
-Status: implementation contract, 2026-10-20. P03 and M2 are **not complete**.
+Status: P03a–e completed, 2026-10-20; code f66c4e7 passed local and exact-SHA push/PR CI.
+The whole M2 remains **incomplete**. Evidence: docs/verification.md.
 Rules and deliberate manual boundaries: [5R evidence](../docs/research/character-sheet-5r.md).
 P02 tokens are map representations, never character sheets or resource owners.
 

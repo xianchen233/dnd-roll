@@ -20,8 +20,8 @@ and successful CI runs do not by themselves constitute a release.
   require target DM review; copying pending imports keeps that review requirement.
 - Add a character workspace with grouped field editors, calculation explanations,
   resource buttons, histories, DM permissions and import/export preview. V7 adds
-  durable sheets/history/receipts and same-campaign controls/placements; P03 full
-  acceptance is still in progress.
+  durable sheets/history/receipts and same-campaign controls/placements, with
+  complete character acceptance and all previous regressions retained.
 - Add integrated P02 acceptance for two-scene fog/calibration and independent
   token visibility/control, with a real-service restart check retaining both
   scenes, original/safe image hashes, versions and historical command receipts.

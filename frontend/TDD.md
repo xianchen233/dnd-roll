@@ -250,3 +250,8 @@ Testing Library参数的中间编译/准备失败单列不冒充RED。23:00:05�
 包括真实socket offline/新CONNECTED、提交后丢响应/同body retry/失败权威读恢复和
 跨战役下载/复制/导入。首次离线事件准备错误与后续验收团排序干扰旧2条均如实保留，
 没有删断言或放宽时限。最终构建的源与结果对应关系见verification，未拿旧构建冒充。
+P03最终代码f66c4e731f174c81be0ee7ab9724db30c0827446的push39452554961和
+PR39452563178六job全success；完整日志确认65unit+75IT、177前端/构建、45契约、
+标准Compose23浏览器与五组实际db/backend重启全PASS。至此P03完成；整个M2及P04–P10/A
+未完成。上文pending/失败均为历史真实时点，由最终证据关闭，未伪造RED或跳过检查。
+完成状态文档后续HEAD仍独立核对，见docs/verification.md与continuation.md。

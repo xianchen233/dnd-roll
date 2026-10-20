@@ -247,3 +247,8 @@ CharactersIT；后加迁移、多棋子、回滚、WS首次通过是覆盖不伪
 完整65unit+75IT通过（p03-backend-final.log），0失败/错误/跳过。独立无数据库65unit
 再通过。新JAR真实Chrome23条及重新seed后五组实际Java+PG重启全PASS，实际进程ID
 前后不同，见verification最上段/p03-final-process-evidence.json。P03最终SHA双CI待核验。
+P03最终代码f66c4e731f174c81be0ee7ab9724db30c0827446的push39452554961和
+PR39452563178六job全success；完整日志确认65unit+75IT、177前端/构建、45契约、
+标准Compose23浏览器与五组实际db/backend重启全PASS。至此P03完成；整个M2及P04–P10/A
+未完成。上文pending/失败均为历史真实时点，由最终证据关闭，未伪造RED或跳过检查。
+完成状态文档后续HEAD仍独立核对，见docs/verification.md与continuation.md。
