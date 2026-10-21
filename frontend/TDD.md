@@ -490,3 +490,9 @@ groups, retain drafts/exact uncertain resource bodies across tabs, consume only
 once and operate dice/RP without horizontal document overflow. The new continuous
 DM/two-player campaign is direct-GREEN composed acceptance of existing features.
 Full evidence and pending cloud/physical gates: docs/p10-acceptance.md.
+
+P10 code 09f81d1 push39641891945/PR39641904875 six jobs passed. All six full
+logs independently downloaded and asserted 102+118, 227/build, 87 contracts,
+47 original/new browsers, actual restart/isolated recovery, two complete-party
+comparisons, three fresh restored-target phone/campaign flows and capacity.
+Completion-document HEAD is independently verified again.

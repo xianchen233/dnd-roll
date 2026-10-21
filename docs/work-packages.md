@@ -1,7 +1,7 @@
 # 全量工作包与依赖
 
 <!-- P10 current -->
-## P10 本地功能验收通过；交付代码双 CI 待核验（2026-10-22）
+## P10 本地/容器功能验收通过；云端最终门槛后置（2026-10-22）
 
 沿用 feat/accounts-and-invitations / [草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，不合并、不发布。
 开工 befd8c1 已 fetch 并独立核验 push39634782600 / PR39634789666 六份完整日志，
@@ -19,7 +19,7 @@ P01–P08和P09功能/本地/容器验收保持；P10契约 contracts/p10-accept
 9独立HTTP会话/100棋子/72消息的本机容量通过：2.66MB地图p95 764ms，组合读取p95 152ms，
 完整备份3.92MB/1.55s；Java working set峰值568.7MB，PG进程求和366.6MB（含共享页重复）。
 不是WAN/TLS/2vCPU云主机性能保证；物理手机尚未实测。CI新增完整团重启/隔离恢复逐字段
-比较，以及恢复后新团/手机/容量和容器内存证据，尚待提交后按精确SHA执行核验。
+比较，以及恢复后新团/手机/容量和容器内存证据，精确代码SHA两组已全部通过。
 
 本地Java/production preview/PG已按实际身份停止，8080/8081/5173/55432无监听；
 原 source fence、p09-target-database.json和p09-restored-assets-final保持。凭据/证据均在外.tools。
@@ -27,8 +27,16 @@ P01–P08和P09功能/本地/容器验收保持；P10契约 contracts/p10-accept
 p10-final-browser-focus.log、p10-restart-{seed,verify}.log、p10-campaign-restart-verify.log、
 p10-capacity-local.json/p10-capacity-processes.json及p10-final-stopped.log留存。
 
-下一步：提交/推送原分支，核验精确代码SHA的push/PR六job、完整47浏览器、真实容器重启、
-完整团/十组实际隔离恢复和恢复后3流程/容量；通过后才关闭P10本地/容器功能验收。
+代码 **09f81d1f4cfd9c616aba13a959d6378e7b13ddc3** 的
+[push39641891945](https://github.com/xianchen233/dnd-roll/actions/runs/39641891945) /
+[PR39641904875](https://github.com/xianchen233/dnd-roll/actions/runs/39641904875)六job均completed/success。
+独立重取六份完整日志，严格断言两组102+118零失败/错误/跳过、227前端/构建、87契约、
+47生产浏览器、原43PASS、十组容器重启、真实完整归档和独立项目/新卷离线恢复。
+每组完整团逐字段验证两次（重启和恢复），恢复后再运行新团/两种手机3流程和9会话容量，
+均errors=0。外置p10-code-ci-verified.log/p10-ci-09f81d1f4cfd9c616aba13a959d6378e7b13ddc3.json及p10-job-{jobId}.log。
+P10本地/容器功能验收关闭；完成状态文档的新HEAD也必须独立核验同样完整证据。
+下一可执行功能包为 **A01模组包身份、格式与导入校验**：先读交接及必读契约，fetch核对
+最新HEAD的push/PR Checks，再固定版本/依赖/引用/原子失败契约并实际RED→GREEN。
 云环境准备、部署、公共HTTPS/WSS和物理跨主机恢复按用户要求留到整体功能完成后统一联验。
 这些最终门槛及物理手机/A/M2仍未完成，不以本地结果冒称完整P10或发布完成。
 <!-- /P10 current -->

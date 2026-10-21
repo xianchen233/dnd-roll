@@ -1,6 +1,7 @@
 # P10: complete first-edition acceptance
 
-Status: in progress, 2026-10-22. P01–P08 and P09 functionality/local/container
+Status: local/container functional acceptance passed, 2026-10-22 (code 09f81d1;
+push39641891945/PR39641904875, six full logs independently verified). P01–P08 and P09 functionality/local/container
 recovery remain accepted. Continue the original branch and draft PR #1; no merge
 or release. No new D&D rules, HTTP schema or database migration is introduced.
 
