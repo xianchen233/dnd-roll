@@ -120,3 +120,11 @@ immutable DM-only materials, histories, persistent images and authorized exports
 [P10 integrated acceptance](p10-acceptance.md) composes the first-edition campaign,
 phone navigation, restart/recovery and bounded capacity measurements. Deferred
 physical cloud deployment/recovery and release gates remain separately tracked.
+
+[A01 module packages](module-packages.md) add an inert current-DM-only template
+library, bounded archive validation, exact dependencies and explicit import.
+
+`GET /api/campaigns/{campaignId}/module-packages`
+`POST /api/campaigns/{campaignId}/module-packages`
+`POST /api/campaigns/{campaignId}/module-packages/preview`
+`GET /api/campaigns/{campaignId}/module-packages/{id}/content`

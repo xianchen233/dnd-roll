@@ -104,7 +104,7 @@ jobs:
           curl --fail --retry 40 --retry-delay 3 --retry-all-errors --max-time 5 --retry-max-time 120 http://localhost:8080/api/auth/csrf > /dev/null
       - run: npm run test:e2e
         working-directory: frontend
-      - name: Verify ten persistence groups across backend and PostgreSQL restart
+      - name: Verify eleven persistence groups across backend and PostgreSQL restart
         run: |
           node scripts/check-campaign-restart.mjs capture "$RUNNER_TEMP/p10-campaign-restart.json"
           node scripts/check-asset-restart.mjs seed "$RUNNER_TEMP/asset-restart.json"
@@ -117,6 +117,7 @@ jobs:
           node scripts/check-combat-restart.mjs seed "$RUNNER_TEMP/combat-restart.json"
           node scripts/check-timeline-restart.mjs seed "$RUNNER_TEMP/timeline-restart.json"
           node scripts/check-notes-restart.mjs seed "$RUNNER_TEMP/notes-restart.json"
+          node scripts/check-module-restart.mjs seed "$RUNNER_TEMP/module-restart.json"
           docker compose -f deploy/compose.yaml restart db
           docker compose -f deploy/compose.yaml up -d --wait db
           docker compose -f deploy/compose.yaml restart backend
@@ -131,11 +132,12 @@ jobs:
           node scripts/check-combat-restart.mjs verify "$RUNNER_TEMP/combat-restart.json"
           node scripts/check-timeline-restart.mjs verify "$RUNNER_TEMP/timeline-restart.json"
           node scripts/check-notes-restart.mjs verify "$RUNNER_TEMP/notes-restart.json"
+          node scripts/check-module-restart.mjs verify "$RUNNER_TEMP/module-restart.json"
           node scripts/check-campaign-restart.mjs verify "$RUNNER_TEMP/p10-campaign-restart.json"
       - name: Restore a complete migration archive into a separate Compose project
         run: |
           node scripts/check-campaign-restart.mjs capture "$RUNNER_TEMP/p10-campaign-restore.json"
-          for group in asset token map p02 character content dice combat timeline notes; do
+          for group in asset token map p02 character content dice combat timeline notes module; do
             node "scripts/check-$group-restart.mjs" seed "$RUNNER_TEMP/restore-$group.json"
           done
           node scripts/check-pending-backup.mjs capture "$RUNNER_TEMP/restore-pending.json"
@@ -155,7 +157,7 @@ jobs:
           export E2E_BASE_URL=http://localhost:8081
           node scripts/check-pending-backup.mjs verify "$RUNNER_TEMP/restore-pending.json"
           node scripts/check-campaign-restart.mjs verify "$RUNNER_TEMP/p10-campaign-restore.json"
-          for group in asset token map p02 character content dice combat timeline notes; do
+          for group in asset token map p02 character content dice combat timeline notes module; do
             node "scripts/check-$group-restart.mjs" verify "$RUNNER_TEMP/restore-$group.json"
           done
           npm --prefix frontend run test:e2e -- p10-campaign.spec.ts mobile.spec.ts

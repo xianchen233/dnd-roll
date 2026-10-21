@@ -5,6 +5,14 @@ import type { Catalog,ContentData,ContentFilters,ContentChoice,ContentPreview,Co
 import type {DiceCommand,DiceTextCommand,Roll,RollList,Initiative,InitiativeGenerate,InitiativeConfirm,InitiativeHistory} from './dice';
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
 export class Api {
+  modulePackages(c:string):Promise<import('./modules').ModuleListing>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-packages`);}
+  async previewModule(c:string,file:File):Promise<import('./modules').ModulePreview>{return this.moduleUpload(c,file);}
+  async importModule(c:string,command:import('./modules').ModuleCommand,file:File):Promise<{id:string;version:number}>{return this.moduleUpload(c,file,command);}
+  private async moduleUpload<T>(c:string,file:File,command?:import('./modules').ModuleCommand):Promise<T>{
+    if(!this.csrf)await this.getCsrf();const body=new FormData();if(command)body.append('command',new Blob([JSON.stringify(command)],{type:'application/json'}));body.append('file',file);
+    const response=await this.request(`/api/campaigns/${encodeURIComponent(c)}/module-packages${command?'':'/preview'}`,{method:'POST',credentials:'include',headers:{[this.csrf!.headerName]:this.csrf!.token},body});await this.check(response);return response.json();
+  }
+  async moduleDownload(c:string,id:string):Promise<Blob>{const response=await this.request(`/api/campaigns/${encodeURIComponent(c)}/module-packages/${encodeURIComponent(id)}/content`,{credentials:'include',cache:'no-store'});await this.check(response);return response.blob();}
   backups():Promise<import('./backups').BackupStatus>{return this.call('/admin/backups');}
   createBackup(body:VersionedCommand,migration=false):Promise<{id:string;version:number}>{return this.post(`/admin/backups${migration?'/migration':''}`,body);}
   notes(c:string,filters:import('./notes').NoteFilters,before=''):Promise<import('./notes').NoteListing>{return this.call(`/campaigns/${encodeURIComponent(c)}/notes?${new URLSearchParams({...filters,...(before?{before}:{})})}`);}

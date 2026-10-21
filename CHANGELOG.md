@@ -11,6 +11,11 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Added
 
+- Add a current-DM-only inert module library with ZIP identity/version manifests,
+  bounded strict JSON/image/hash/reference validation, exact missing-dependency
+  previews, explicit legacy confirmation and independent copies. Chinese import
+  and original ZIP download support durable exact retries; V18 commits library
+  bytes/version/receipts atomically and deployment backups retain all package data.
 - Add phone workspace navigation for character/resources, dice, RP/logs and notes,
   with touch-sized controls, keyboard tab navigation and mounted draft/uncertain
   request preservation across workspaces. Campaign changes and access denial

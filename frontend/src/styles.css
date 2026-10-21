@@ -131,3 +131,6 @@
   .app-shell input[type=checkbox] { width: 20px; height: 20px; }
   .app-shell pre { white-space: pre-wrap; overflow-wrap: anywhere; }
 }
+.module-workspace label:has(input[type=checkbox]) { display: inline-flex; align-items: center; gap: .5rem; }
+.module-workspace input[type=checkbox] { width: auto; min-height: auto; margin: 0; }
+.module-workspace p { overflow-wrap: anywhere; }

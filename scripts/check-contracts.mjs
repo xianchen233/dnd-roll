@@ -14,6 +14,7 @@ const [apiText, eventText, readme, accounts, scenes, assets, tokens, mapVisibili
   read('../contracts/characters.md'),
 ]);
 const api = JSON.parse(apiText);
+for(const [suffix,method] of [['','get'],['','post'],['/preview','post'],['/{id}/content','get']])assert.ok(api.paths['/api/campaigns/{campaignId}/module-packages'+suffix]?.[method],`A01 operation missing: ${method} ${suffix}`);
 for(const [path,method] of [['/api/admin/backups','get'],['/api/admin/backups','post'],['/api/admin/backups/migration','post'],['/api/admin/backups/{id}/content','get']])assert.ok(api.paths[path]?.[method],`P09 operation missing: ${method} ${path}`);
 for(const [suffix,method] of [['/notes','get'],['/notes','post'],['/notes/{id}','get'],['/notes/{id}','post'],['/notes/{id}/history','get'],['/notes/export','get'],['/note-attachments','post'],['/note-attachments/{id}/content','get']])assert.ok(api.paths['/api/campaigns/{campaignId}'+suffix]?.[method],`P08 operation missing: ${method} ${suffix}`);
 const event = JSON.parse(eventText);
@@ -761,4 +762,16 @@ for(const invalid of [{requestId:id},{expectedVersion:0},{requestId:id,expectedV
 for(const path of ['/api/admin/backups','/api/admin/backups/migration'])assert.match(api.paths[path].post['x-idempotency'].authorization,/operator before receipt replay/);
 assert.match(api['x-backups-policy'].retention,/no deletion of game histories or live files/);
 assert.match(api['x-backups-policy'].migration,/durable source write fence.*isolated empty-target restore/);
-console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; P09 operator backups, draining, retention and isolated restore. Previous operations/schemas retained; focused checker, not a general OpenAPI validator.`);
+const moduleCommand={requestId:id,expectedVersion:0,createCopy:false,confirmLegacy:false};
+validate(schemas.ModuleCommand,moduleCommand);
+for(const field of Object.keys(moduleCommand)){const missing={...moduleCommand};delete missing[field];assert.throws(()=>validate(schemas.ModuleCommand,missing));assert.throws(()=>validate(schemas.ModuleCommand,{...moduleCommand,[field]:null}));}
+for(const invalid of [{...moduleCommand,actor:'forged'},{...moduleCommand,expectedVersion:0.5},{...moduleCommand,createCopy:'false'}])assert.throws(()=>validate(schemas.ModuleCommand,invalid));
+const moduleManifest={format:'dnd-roll.module',formatVersion:1,moduleId:id,moduleVersion:'1.2.3',name:'Synthetic',rules:'5R',rights:'Original',dependencies:[],content:{size:10,sha256:'a'.repeat(64)},assets:[]};
+validate(schemas.ModuleManifest,moduleManifest);
+for(const invalid of [{...moduleManifest,moduleVersion:'01.2.3'},{...moduleManifest,formatVersion:2},{...moduleManifest,script:'run()'},{...moduleManifest,rules:'2024'}])assert.throws(()=>validate(schemas.ModuleManifest,invalid));
+const moduleNode={id,kind:'SCENE',name:'Literal text',text:'<script>literal</script>',visibility:'DM',nodeIds:[],assetIds:[],dependencyIds:[]};validate(schemas.ModuleDocument,{nodes:[moduleNode]});
+for(const invalid of [{...moduleNode,script:'x'},{...moduleNode,assetIds:[id,id]},{...moduleNode,text:'x'.repeat(10001)}])assert.throws(()=>validate(schemas.ModuleNode,invalid));
+const moduleRoot=api.paths['/api/campaigns/{campaignId}/module-packages'];assert.match(moduleRoot.post['x-idempotency'].authorization,/current DM before receipt replay/);
+for(const [suffix,fields]of [['',['command','file']],['/preview',['file']]]){const post=api.paths['/api/campaigns/{campaignId}/module-packages'+suffix].post;assert.deepEqual(post.requestBody.content['multipart/form-data'].schema.required.sort(),fields);assert.equal(post.requestBody.content['multipart/form-data'].schema.additionalProperties,false);}
+assert.match(api['x-modules-policy'].validation,/no extraction or package code execution/);assert.match(api['x-modules-policy'].atomicity,/BYTEA.*one transaction.*P09/);
+console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; A01 inert modules, exact dependencies, strict archives and transactional imports. Previous operations/schemas retained; focused checker, not a general OpenAPI validator.`);
