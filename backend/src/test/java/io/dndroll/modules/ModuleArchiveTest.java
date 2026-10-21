@@ -38,6 +38,18 @@ class ModuleArchiveTest {
         byte[] content=json.writeValueAsBytes(Map.of("nodes",List.of()));var m=manifest(content);m.put("dependencies",List.of(Map.of("id",node,"version","2024-expansion-2","rules","2014")));
         assertEquals(1,validator.verify(zip(m,content,Map.of())).manifest().dependencies().size());
     }
+    @Test void v2ExplicitlyCarriesEmptyTypedGameplayWithoutGuessingFromDescriptions()throws Exception{
+        byte[] c=json.writeValueAsBytes(Map.of("nodes",List.of(node()),"play",Map.of("scenes",List.of(),"units",List.of(),"placements",List.of(),"admissionMode","REVIEW","approvedDependencyIds",List.of())));var m=manifest(c);m.put("formatVersion",2);
+        assertEquals(2,validator.verify(zip(m,c,Map.of())).manifest().formatVersion());
+    }
+    @Test void v1RetainsItsOriginalFullContentByteLimitWhenPromotedToAnEditingBaseline()throws Exception{
+        var nodes=new ArrayList<Map<String,Object>>();for(int i=0;i<104;i++){var n=node();n.put("id",UUID.randomUUID().toString());n.put("text","x".repeat(9900));nodes.add(n);}var last=node();last.put("id",UUID.randomUUID().toString());last.put("text","");nodes.add(last);
+        int remaining=ModuleArchive.JSON_LIMIT-json.writeValueAsBytes(Map.of("nodes",nodes)).length;assertTrue(remaining>0&&remaining<=10000);last.put("text","x".repeat(remaining));byte[] bytes=json.writeValueAsBytes(Map.of("nodes",nodes));assertEquals(ModuleArchive.JSON_LIMIT,bytes.length);assertEquals(105,validator.verify(zip(manifest(bytes),bytes,Map.of())).nodes().size());
+    }
+    @Test void v1InertDocumentsRetainMoreThanFourImageReferences()throws Exception{
+        var image=new java.awt.image.BufferedImage(2,2,java.awt.image.BufferedImage.TYPE_INT_RGB);var out=new ByteArrayOutputStream();javax.imageio.ImageIO.write(image,"png",out);byte[] bytes=out.toByteArray();var assets=new ArrayList<Map<String,Object>>();var files=new LinkedHashMap<String,byte[]>();var ids=new ArrayList<String>();
+        for(int i=0;i<5;i++){String id=UUID.randomUUID().toString();ids.add(id);files.put("assets/"+id,bytes);assets.add(Map.of("id",id,"mediaType","image/png","size",bytes.length,"sha256",hash(bytes)));}var n=node();n.put("kind","DOCUMENT");n.put("assetIds",ids);byte[] content=json.writeValueAsBytes(Map.of("nodes",List.of(n)));var manifest=manifest(content);manifest.put("assets",assets);assertEquals(5,validator.verify(zip(manifest,content,files)).nodes().getFirst().assetIds().size());
+    }
     @Test void rejectsWrongVersionsCoercedNumbersUnknownFieldsAndDuplicateJsonKeys()throws Exception{
         var content=content();
         for(var patch:List.of(Map.of("formatVersion",(Object)2),Map.of("formatVersion",(Object)"1"),Map.of("moduleVersion",(Object)"01.2.3"),Map.of("moduleVersion",(Object)"1.2"),Map.of("rules",(Object)"2024"),Map.of("script",(Object)"run()"),Map.of("moduleId",(Object)"1-1-1-1-1"))){var m=manifest(content);m.putAll(patch);invalid(zip(m,content,Map.of()));}

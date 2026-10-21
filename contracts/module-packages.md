@@ -34,8 +34,9 @@ All IDs are stable canonical UUIDs; node identity is unique across kinds. Name
 all node/image/dependency references must resolve inside the package declarations.
 References/cycles are data only. Rendering uses escaped text, never HTML/Markdown
 execution; TRIGGER is an inert descriptive placeholder until A03.
-V1 deliberately stores descriptions and stable links; typed placement/resource/
-operation payloads require a later explicit format revision before A02/A03 use.
+V1 deliberately stores descriptions and stable links. [A02 v2](module-lifecycle.md)
+adds explicit typed scene/unit/placement definitions; v1 remains valid and promotes
+to an editable v2 document with empty play. Trigger operations remain A03 work.
 
 ## Authority, preview and import
 

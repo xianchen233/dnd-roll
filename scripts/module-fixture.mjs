@@ -18,3 +18,10 @@ export function moduleFixture({moduleId=randomUUID(),version='1.0.0',rules='5R',
  const manifest={format:'dnd-roll.module',formatVersion:1,moduleId,moduleVersion:version,name,rules,rights:'Synthetic original acceptance fixture; permitted sharing',dependencies:[{id:dependencyId,version:'expansion-2',rules:'2014'}],content:{size:content.length,sha256:hash(content)},assets:[{id:imageId,mediaType:'image/png',size:image.length,sha256:hash(image)}]};
  return {manifest,bytes:zipEntries({'manifest.json':JSON.stringify(manifest),'content.json':content,['assets/'+imageId]:image})};
 }
+export function lifecycleFixture(sheet){
+ const moduleId=randomUUID(),scene=randomUUID(),unit=randomUUID(),document=randomUUID(),secret=randomUUID(),placement=randomUUID(),imageId=randomUUID(),image=sourcePng();
+ const node=(id,kind,name,visibility='DM',assets=[])=>({id,kind,name,text:'Synthetic original preparation',visibility,nodeIds:[],assetIds:assets,dependencyIds:[]});
+ const definition={nodes:[node(scene,'SCENE','A02 tower'),node(unit,'UNIT',sheet.name),node(document,'DOCUMENT','A02 public clue','PUBLIC',[imageId]),node(secret,'DOCUMENT','SECRET_A02_PREPARATION')],play:{scenes:[{nodeId:scene,width:24,height:16,gridSize:48,map:{assetId:imageId,gridSize:48,offsetX:0,offsetY:0,distancePerCell:5}}],units:[{nodeId:unit,sheet,hidden:true,shareFull:false}],placements:[{id:placement,sceneId:scene,unitId:unit,x:2,y:3,hidden:true}],admissionMode:'REVIEW',approvedDependencyIds:[]}};
+ const content=Buffer.from(JSON.stringify(definition)),manifest={format:'dnd-roll.module',formatVersion:2,moduleId,moduleVersion:'1.0.0',name:'A02 original tower',rules:'5R',rights:'Synthetic original fixture; permitted sharing',dependencies:[],content:{size:content.length,sha256:hash(content)},assets:[{id:imageId,mediaType:'image/png',size:image.length,sha256:hash(image)}]};
+ return {manifest,definition,scene,unit,document,secret,placement,imageId,image,bytes:zipEntries({'manifest.json':JSON.stringify(manifest),'content.json':content,['assets/'+imageId]:image})};
+}

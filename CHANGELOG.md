@@ -11,6 +11,14 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Added
 
+- Add independent module customizations with immutable source/editing baselines,
+  versioned full-definition editing, v2 typed scenes/cards/placements and save-as
+  template ZIPs. New campaigns receive fresh assets, units, notes and permissions;
+  ongoing HP/resources, story progress and historical records stay independent.
+- Add a Chinese customization editor and independent story-progress workspace,
+  exact uncertain-command retry, explicit template identities and campaign entry.
+  V19 stores copies, pinned instance provenance/mappings and durable receipts;
+  campaign creation and image cleanup honor immediate and deferred rollback.
 - Add a current-DM-only inert module library with ZIP identity/version manifests,
   bounded strict JSON/image/hash/reference validation, exact missing-dependency
   previews, explicit legacy confirmation and independent copies. Chinese import
@@ -142,6 +150,8 @@ and successful CI runs do not by themselves constitute a release.
   the original playable campaign available through the optional demo profile.
 
 ### Fixed
+
+- Prevent cross-campaign transitions from pairing the next campaign with the previous scene when loading maps, fog and unit controls.
 
 - Keep scene create/switch commands from disappearing when a background list read
   supersedes their preflight. Preserve the command's own expected version and

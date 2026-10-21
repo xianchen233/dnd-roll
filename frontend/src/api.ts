@@ -5,6 +5,14 @@ import type { Catalog,ContentData,ContentFilters,ContentChoice,ContentPreview,Co
 import type {DiceCommand,DiceTextCommand,Roll,RollList,Initiative,InitiativeGenerate,InitiativeConfirm,InitiativeHistory} from './dice';
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
 export class Api {
+  moduleCustomizations(c:string):Promise<import('./modules').CustomizationListing>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-customizations`);}
+  moduleCustomization(c:string,id:string):Promise<import('./modules').Customization>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}`);}
+  createModuleCustomization(c:string,body:import('./modules').LifecycleCommand&{packageId:string;name:string}):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations`,body);}
+  editModuleCustomization(c:string,id:string,body:import('./modules').LifecycleCommand&{name:string;document:import('./modules').ModuleDefinition}):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}`,body);}
+  saveModuleTemplate(c:string,id:string,body:import('./modules').LifecycleCommand&{moduleId:string;moduleVersion:string;name:string}):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/templates`,body);}
+  launchModuleCampaign(c:string,id:string,body:import('./modules').LifecycleCommand&{name:string}):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/campaigns`,body);}
+  moduleInstance(c:string):Promise<import('./modules').ModuleInstance>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-instance`);}
+  saveModuleProgress(c:string,body:import('./modules').LifecycleCommand&{progress:Record<string,string>}):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-instance`,body);}
   modulePackages(c:string):Promise<import('./modules').ModuleListing>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-packages`);}
   async previewModule(c:string,file:File):Promise<import('./modules').ModulePreview>{return this.moduleUpload(c,file);}
   async importModule(c:string,command:import('./modules').ModuleCommand,file:File):Promise<{id:string;version:number}>{return this.moduleUpload(c,file,command);}

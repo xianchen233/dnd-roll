@@ -14,6 +14,7 @@ const [apiText, eventText, readme, accounts, scenes, assets, tokens, mapVisibili
   read('../contracts/characters.md'),
 ]);
 const api = JSON.parse(apiText);
+for(const [suffix,method]of [['/module-customizations','get'],['/module-customizations','post'],['/module-customizations/{id}','get'],['/module-customizations/{id}','post'],['/module-customizations/{id}/templates','post'],['/module-customizations/{id}/campaigns','post'],['/module-instance','get'],['/module-instance','post']])assert.ok(api.paths['/api/campaigns/{campaignId}'+suffix]?.[method],`A02 lifecycle operation missing: ${method} ${suffix}`);
 for(const [suffix,method] of [['','get'],['','post'],['/preview','post'],['/{id}/content','get']])assert.ok(api.paths['/api/campaigns/{campaignId}/module-packages'+suffix]?.[method],`A01 operation missing: ${method} ${suffix}`);
 for(const [path,method] of [['/api/admin/backups','get'],['/api/admin/backups','post'],['/api/admin/backups/migration','post'],['/api/admin/backups/{id}/content','get']])assert.ok(api.paths[path]?.[method],`P09 operation missing: ${method} ${path}`);
 for(const [suffix,method] of [['/notes','get'],['/notes','post'],['/notes/{id}','get'],['/notes/{id}','post'],['/notes/{id}/history','get'],['/notes/export','get'],['/note-attachments','post'],['/note-attachments/{id}/content','get']])assert.ok(api.paths['/api/campaigns/{campaignId}'+suffix]?.[method],`P08 operation missing: ${method} ${suffix}`);
@@ -768,10 +769,16 @@ for(const field of Object.keys(moduleCommand)){const missing={...moduleCommand};
 for(const invalid of [{...moduleCommand,actor:'forged'},{...moduleCommand,expectedVersion:0.5},{...moduleCommand,createCopy:'false'}])assert.throws(()=>validate(schemas.ModuleCommand,invalid));
 const moduleManifest={format:'dnd-roll.module',formatVersion:1,moduleId:id,moduleVersion:'1.2.3',name:'Synthetic',rules:'5R',rights:'Original',dependencies:[],content:{size:10,sha256:'a'.repeat(64)},assets:[]};
 validate(schemas.ModuleManifest,moduleManifest);
-for(const invalid of [{...moduleManifest,moduleVersion:'01.2.3'},{...moduleManifest,formatVersion:2},{...moduleManifest,script:'run()'},{...moduleManifest,rules:'2024'}])assert.throws(()=>validate(schemas.ModuleManifest,invalid));
+validate(schemas.ModuleManifest,{...moduleManifest,formatVersion:2});
+for(const invalid of [{...moduleManifest,moduleVersion:'01.2.3'},{...moduleManifest,formatVersion:3},{...moduleManifest,script:'run()'},{...moduleManifest,rules:'2024'}])assert.throws(()=>validate(schemas.ModuleManifest,invalid));
 const moduleNode={id,kind:'SCENE',name:'Literal text',text:'<script>literal</script>',visibility:'DM',nodeIds:[],assetIds:[],dependencyIds:[]};validate(schemas.ModuleDocument,{nodes:[moduleNode]});
 for(const invalid of [{...moduleNode,script:'x'},{...moduleNode,assetIds:[id,id]},{...moduleNode,text:'x'.repeat(10001)}])assert.throws(()=>validate(schemas.ModuleNode,invalid));
 const moduleRoot=api.paths['/api/campaigns/{campaignId}/module-packages'];assert.match(moduleRoot.post['x-idempotency'].authorization,/current DM before receipt replay/);
 for(const [suffix,fields]of [['',['command','file']],['/preview',['file']]]){const post=api.paths['/api/campaigns/{campaignId}/module-packages'+suffix].post;assert.deepEqual(post.requestBody.content['multipart/form-data'].schema.required.sort(),fields);assert.equal(post.requestBody.content['multipart/form-data'].schema.additionalProperties,false);}
 assert.match(api['x-modules-policy'].validation,/no extraction or package code execution/);assert.match(api['x-modules-policy'].atomicity,/BYTEA.*one transaction.*P09/);
-console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; A01 inert modules, exact dependencies, strict archives and transactional imports. Previous operations/schemas retained; focused checker, not a general OpenAPI validator.`);
+const moduleDefinition={nodes:[moduleNode],play:{scenes:[{nodeId:id,width:20,height:15,gridSize:48,map:null}],units:[],placements:[],admissionMode:'REVIEW',approvedDependencyIds:[]}};
+validate(schemas.ModuleDefinition,moduleDefinition);
+for(const key of Object.keys(moduleDefinition.play)){const play={...moduleDefinition.play};delete play[key];assert.throws(()=>validate(schemas.ModuleDefinition,{...moduleDefinition,play}));}
+for(const name of ['ModuleCopyCommand','ModuleEditCommand','ModuleTemplateCommand','ModuleLaunchCommand','ModuleProgressCommand']){assert.equal(schemas[name].additionalProperties,false);assert.ok(schemas[name].required.includes('requestId'));assert.ok(schemas[name].required.includes('expectedVersion'));}
+for(const suffix of ['/module-customizations','/module-customizations/{id}','/module-customizations/{id}/templates','/module-customizations/{id}/campaigns','/module-instance'])assert.match(api.paths['/api/campaigns/{campaignId}'+suffix].post['x-idempotency'].authorization,/current DM before receipt replay/);
+console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; A02 independent customizations, typed v2 templates and campaign instances. Previous operations retained; focused checker, not a general OpenAPI validator.`);

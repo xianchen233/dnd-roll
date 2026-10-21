@@ -1,5 +1,13 @@
 # TDD evidence
 
+## A02 actual TDD (2026-10-22)
+
+Executed HTTP/archive/strict JSON/private-header/rollback failures and fixes,
+typed v2 boundaries, V18 preservation and full regression evidence are recorded
+in [A02 evidence](../docs/a02-tdd.md). Tests use a real isolated PostgreSQL schema;
+unit tests do not require a database or network. Source package/copy baselines and
+independent campaign state/receipts are verified across restart and isolated restore.
+
 ## P09 actual TDD (2026-10-21–22)
 
 Detailed executed RED/GREEN, environment failures, full checks and real isolated

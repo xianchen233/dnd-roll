@@ -30,7 +30,9 @@ describe('complete character workspace', () => {
     fireEvent.change(screen.getByLabelText('角色名称'), { target: { value: '草稿' } }); await click('保存角色卡'); await click('重试同一角色操作');
     expect(api.updateCharacter.mock.calls[0][2]).toEqual(api.updateCharacter.mock.calls[1][2]);
     await screen.findByText('角色请求已确认；当前数据已从服务器刷新。');
-    api.character.mockReturnValueOnce(read.promise); await click('刷新角色卡'); expect(screen.queryByText('角色请求已确认；当前数据已从服务器刷新。')).not.toBeInTheDocument();
+    // The manual refresh and a post-save background refresh may overlap; all
+    // reads during this simulated outage fail rather than one falling back to success.
+    api.character.mockReturnValue(read.promise); await click('刷新角色卡'); expect(screen.queryByText('角色请求已确认；当前数据已从服务器刷新。')).not.toBeInTheDocument();
     await act(async () => read.reject(new Error('offline'))); expect(await screen.findByText(/刷新失败/)).toBeInTheDocument();
   });
   it('clears private data and pending commands when full permission is revoked', async () => {

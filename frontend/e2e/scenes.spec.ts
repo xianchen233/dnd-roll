@@ -17,6 +17,8 @@ test('DM creates a preparation scene, switches both real sessions, then returns 
     await login(dm, required('E2E_DM_USERNAME'), required('E2E_DM_PASSWORD'));
     await login(player, required('E2E_PLAYER_USERNAME'), required('E2E_PLAYER_PASSWORD'));
     await expect(player.getByRole('combobox', { name: '选择战役' })).not.toHaveValue('');
+    // Use the opt-in demo fixture explicitly; A02 can create earlier-sorted campaigns.
+    await player.getByRole('combobox', { name: '选择战役' }).selectOption('84b37902-114a-4a26-9f66-4041022a2024');
     campaignId = await player.getByRole('combobox', { name: '选择战役' }).inputValue();
     await expect(dm.getByRole('combobox', { name: '选择战役' }).locator(`option[value="${campaignId}"]`)).toHaveCount(1);
     await dm.getByRole('combobox', { name: '选择战役' }).selectOption(campaignId);

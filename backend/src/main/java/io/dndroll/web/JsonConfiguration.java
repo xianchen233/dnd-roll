@@ -9,6 +9,7 @@ import tools.jackson.databind.MapperFeature;
 public class JsonConfiguration {
     @Bean JsonMapperBuilderCustomizer strictNumbers() {
         return builder -> builder.disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT).disable(MapperFeature.ALLOW_COERCION_OF_SCALARS)
-            .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+            .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .enable(tools.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION);
     }
 }

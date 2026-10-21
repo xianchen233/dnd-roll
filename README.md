@@ -78,6 +78,6 @@ P02d 在逻辑网格上交付服务器生成的安全地图，默认全遮盖，
 
 角色卡支持一人多角、独立资源、来源计算与 DM 覆盖、历史及结构化传输；规则目录支持来源/版本/准入筛选和服务器预览后明确填卡。所有投骰由服务器产生并保留逐骰及来源；5R 先攻以独立角色参战，由 DM 明确确认次序。契约见 [P03](contracts/characters.md)、[P04](contracts/content.md)、[P05](contracts/dice-initiative.md)。
 
-手动战斗将攻击、目标和投骰关联；DM 裁定命中并明确确认最终生命/临时生命/资源值，更正使用当前版本并保留原操作和后续变化。当前角色控制者可结束回合；DM 可跳过/切换/调整次序、放行回合外移动。探索移动保持自由，回合外投骰与行动仍可用；状态效果与到期移除继续由 DM 确认。见 [P06](contracts/combat.md)。RP、团队/DM资料、完整一致备份与异机恢复、首版容量/触屏/TLS验收仍待 P07–P10，模组与自动结算为 M3。具体范围和实际证据见[实施路线](docs/implementation-plan.md)、[验收记录](docs/verification.md)与[设计方案](docs/product-design.md)。
+手动战斗将攻击、目标和投骰关联；DM 裁定命中并明确确认最终生命/临时生命/资源值，更正使用当前版本并保留原操作和后续变化。当前角色控制者可结束回合；DM 可跳过/切换/调整次序、放行回合外移动。探索移动保持自由，回合外投骰与行动仍可用；状态效果与到期移除继续由 DM 确认。见 [P06](contracts/combat.md)。RP时间线、团队/DM资料、完整一致备份和本地/容器首版验收见 P07–P10；模板库、定制副本与独立战役见 [A01](contracts/module-packages.md) / [A02](contracts/module-lifecycle.md)。选择性更新/手动触发、限定自动结算和移动预算仍待 A03–A06。云端部署/HTTPS/WSS/物理跨主机恢复及真实手机验证继续后置。具体范围和实际证据见[实施路线](docs/implementation-plan.md)、[验收记录](docs/verification.md)与[设计方案](docs/product-design.md)。
 
 仓库仅包含应用代码和自主设计资料。工作区的本地规则原文、全文索引、模型、私人战役与下载的运行时不随仓库分发。来源与资料边界见 [说明](docs/local-sources.md)。

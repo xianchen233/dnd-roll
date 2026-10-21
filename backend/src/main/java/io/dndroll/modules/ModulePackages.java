@@ -13,7 +13,7 @@ public final class ModulePackages {
     public record Summary(UUID id,ModuleArchive.Manifest manifest,String sha256,List<ModuleArchive.Dependency> missingDependencies) {}
     public record Listing(long campaignVersion,List<Summary> packages) {}
     public record Preview(ModuleArchive.Manifest manifest,String sha256,List<ModuleArchive.Node> nodes,
-        List<ModuleArchive.Dependency> missingDependencies,UUID existingId,boolean requiresLegacyConfirmation) {}
+        List<ModuleArchive.Dependency> missingDependencies,UUID existingId,boolean requiresLegacyConfirmation,ModuleBlueprint.Document document) {}
     public record Stored(UUID id,ModuleArchive.Manifest manifest,String sha256) {}
     public record Command(UUID requestId,long expectedVersion,boolean createCopy,boolean confirmLegacy) {}
     public record Ack(UUID id,long version) {}
@@ -32,7 +32,7 @@ public final class ModulePackages {
         return m.dependencies().stream().filter(d->entries.stream().noneMatch(e->e.id().toString().equals(d.id())&&e.source().revision().equals(d.version())&&e.source().rules().equals(d.rules()))).toList();
     }
     public Listing list(UUID c,String actor){return campaigns.locked(c,()->{dm(c,actor);return new Listing(campaigns.campaignVersion(c),store.list(c).stream().map(s->new Summary(s.id(),s.manifest(),s.sha256(),missing(c,actor,s.manifest()))).toList());});}
-    public Preview preview(UUID c,String actor,byte[] bytes){return campaigns.locked(c,()->{dm(c,actor);var verified=verify(bytes);var existing=existing(store.list(c),verified);return new Preview(verified.manifest(),verified.sha256(),verified.nodes(),missing(c,actor,verified.manifest()),existing==null?null:existing.id(),!verified.manifest().rules().equals("5R"));});}
+    public Preview preview(UUID c,String actor,byte[] bytes){return campaigns.locked(c,()->{dm(c,actor);var verified=verify(bytes);var existing=existing(store.list(c),verified);return new Preview(verified.manifest(),verified.sha256(),verified.nodes(),missing(c,actor,verified.manifest()),existing==null?null:existing.id(),!verified.manifest().rules().equals("5R"),verified.document());});}
     public Ack importPackage(UUID c,String actor,Command command,byte[] bytes){
         if(command.requestId()==null||command.expectedVersion()<0)throw CharacterSheet.invalid();
         return campaigns.actorLocked(actor,()->campaigns.locked(c,()->{

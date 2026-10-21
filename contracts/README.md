@@ -128,3 +128,15 @@ library, bounded archive validation, exact dependencies and explicit import.
 `POST /api/campaigns/{campaignId}/module-packages`
 `POST /api/campaigns/{campaignId}/module-packages/preview`
 `GET /api/campaigns/{campaignId}/module-packages/{id}/content`
+
+[A02 module lifecycle](module-lifecycle.md) adds immutable editing baselines,
+independent editable definitions, save-as v2 templates and new playable campaigns.
+
+`GET /api/campaigns/{campaignId}/module-customizations`
+`POST /api/campaigns/{campaignId}/module-customizations`
+`GET /api/campaigns/{campaignId}/module-customizations/{id}`
+`POST /api/campaigns/{campaignId}/module-customizations/{id}`
+`POST /api/campaigns/{campaignId}/module-customizations/{id}/templates`
+`POST /api/campaigns/{campaignId}/module-customizations/{id}/campaigns`
+`GET /api/campaigns/{campaignId}/module-instance`
+`POST /api/campaigns/{campaignId}/module-instance`

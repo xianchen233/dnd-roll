@@ -18,7 +18,7 @@ public final class ModuleArchive {
     public record Manifest(String format,int formatVersion,String moduleId,String moduleVersion,
         String name,String rules,String rights,List<Dependency> dependencies,Content content,List<Asset> assets) {}
     public record Node(String id,String kind,String name,String text,String visibility,List<String> nodeIds,List<String> assetIds,List<String> dependencyIds) {}
-    public record Verified(Manifest manifest,List<Node> nodes,String sha256) {}
+    public record Verified(Manifest manifest,List<Node> nodes,String sha256,ModuleBlueprint.Document document) {}
     public static final int MAX_BYTES=10*1024*1024, JSON_LIMIT=1024*1024;
     private static final long EXPANDED_LIMIT=32L*1024*1024;
     private final JsonMapper json=JsonMapper.builder().enable(tools.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION).build();
@@ -34,7 +34,7 @@ public final class ModuleArchive {
                 }
                 JsonNode m=readJson(zip,"manifest.json");
                 object(m,"format","formatVersion","moduleId","moduleVersion","name","rules","rights","dependencies","content","assets");
-                if(!text(m.get("format"),1,40).equals("dnd-roll.module")||number(m.get("formatVersion"),1,1)!=1)throw invalid();
+                if(!text(m.get("format"),1,40).equals("dnd-roll.module")||number(m.get("formatVersion"),1,2)<1)throw invalid();
                 id(m.get("moduleId"));String version=text(m.get("moduleVersion"),5,20);
                 if(!version.matches("(0|[1-9][0-9]{0,5})\\.(0|[1-9][0-9]{0,5})\\.(0|[1-9][0-9]{0,5})"))throw invalid();
                 text(m.get("name"),1,100);rules(m.get("rules"));text(m.get("rights"),1,1000);
@@ -46,23 +46,35 @@ public final class ModuleArchive {
                 var expected=new HashSet<>(Set.of("manifest.json","content.json"));for(String asset:assets)expected.add("assets/"+asset);
                 if(!names.equals(expected))throw invalid();
                 byte[] content=bytes(zip,"content.json",manifest.content().size(),JSON_LIMIT,manifest.content().sha256());
-                JsonNode c=json.readTree(content);object(c,"nodes");array(c.get("nodes"),500);var ids=new HashSet<String>();
-                for(var n:c.get("nodes")) {
-                    object(n,"id","kind","name","text","visibility","nodeIds","assetIds","dependencyIds");
-                    if(!ids.add(id(n.get("id")))||!Set.of("CHAPTER","SCENE","UNIT","ENCOUNTER","DOCUMENT","REWARD","TRIGGER").contains(text(n.get("kind"),1,20))
-                        ||!Set.of("DM","PUBLIC").contains(text(n.get("visibility"),1,6)))throw invalid();
-                    text(n.get("name"),1,100);text(n.get("text"),0,10000);
-                }
-                var nodes=new ArrayList<Node>();
-                for(var n:c.get("nodes")){references(n.get("nodeIds"),ids);references(n.get("assetIds"),assets);references(n.get("dependencyIds"),dependencies);nodes.add(json.treeToValue(n,Node.class));}
+                var document=ModuleBlueprint.parse(json.readTree(content),manifest);var nodes=document.nodes();
                 for(var a:manifest.assets())AssetImage.validate(bytes(zip,"assets/"+a.id(),a.size(),MAX_BYTES,a.sha256()),a.mediaType());
-                try(var in=Files.newInputStream(archive,LinkOption.NOFOLLOW_LINKS)){return new Verified(manifest,List.copyOf(nodes),hash(in.readNBytes(MAX_BYTES+1)));}
+                try(var in=Files.newInputStream(archive,LinkOption.NOFOLLOW_LINKS)){return new Verified(manifest,List.copyOf(nodes),hash(in.readNBytes(MAX_BYTES+1)),document);}
             }
         } catch(IOException|RuntimeException e) {throw invalid();}
     }
     private JsonNode readJson(ZipFile zip,String name)throws IOException {
         var e=zip.getEntry(name);if(e==null||e.getSize()>JSON_LIMIT)throw invalid();
         try(var in=zip.getInputStream(e)){byte[] b=in.readNBytes(JSON_LIMIT+1);if(b.length>JSON_LIMIT)throw invalid();return json.readTree(b);}
+    }
+    public Verified verify(byte[] bytes){
+        if(bytes==null||bytes.length<1||bytes.length>MAX_BYTES)throw invalid();Path temp=null;
+        try{temp=Files.createTempFile("dnd-module-",".zip");Files.write(temp,bytes);return verify(temp);}
+        catch(IOException e){throw new DomainException("MODULE_UNAVAILABLE",503,"Module validation unavailable");}
+        finally{if(temp!=null)try{Files.deleteIfExists(temp);}catch(IOException ignored){}}
+    }
+    /** Reads only an already validated archive; never extracts host paths. */
+    public Map<String,byte[]> images(byte[] bytes){
+        verify(bytes);var images=new LinkedHashMap<String,byte[]>();
+        try(var in=new ZipInputStream(new ByteArrayInputStream(bytes))){for(ZipEntry e;(e=in.getNextEntry())!=null;)if(e.getName().startsWith("assets/"))images.put(e.getName().substring(7),in.readNBytes(MAX_BYTES+1));}
+        catch(IOException e){throw invalid();}return images;
+    }
+    public byte[] export(Manifest source,ModuleBlueprint.Document document,Map<String,byte[]> images,String moduleId,String version,String name){
+        ModuleBlueprint.validate(document,source);byte[] content=json.writeValueAsBytes(document);
+        var m=new Manifest(source.format(),2,moduleId,version,name,source.rules(),source.rights(),source.dependencies(),new Content(content.length,hash(content)),source.assets());
+        try{var out=new ByteArrayOutputStream();try(var zip=new ZipOutputStream(out)){
+            var files=new LinkedHashMap<String,byte[]>();files.put("manifest.json",json.writeValueAsBytes(m));files.put("content.json",content);source.assets().forEach(a->files.put("assets/"+a.id(),images.get(a.id())));
+            for(var e:files.entrySet()){var entry=new ZipEntry(e.getKey());entry.setTime(0);zip.putNextEntry(entry);zip.write(e.getValue());zip.closeEntry();}
+        }byte[] bytes=out.toByteArray();verify(bytes);return bytes;}catch(IOException e){throw invalid();}
     }
     private static byte[] bytes(ZipFile zip,String name,long size,int max,String sha)throws IOException {
         var e=zip.getEntry(name);if(e==null||size<1||size>max||e.getSize()!=size)throw invalid();

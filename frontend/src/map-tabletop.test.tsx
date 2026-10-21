@@ -17,6 +17,14 @@ function setup() {
 }
 afterEach(() => vi.unstubAllGlobals());
 describe('map invalidation in the shared tabletop', () => {
+  it('does not read a new campaign map using the previous campaign scene during a scope transition',async()=>{
+    const {api,p}=setup(),view=render(<Tabletop {...p}/>);await waitFor(()=>expect(screen.getByTestId('canvas')).toHaveAttribute('data-url','blob:public'));
+    const read=deferred<typeof scene>();api.scene.mockReturnValueOnce(read.promise);api.mapView.mockImplementation(async(c:string)=>({sceneId:c==='other'?'new-scene':'s',sceneVersion:8,map:{distancePerCell:5}}));
+    view.rerender(<Tabletop {...p} campaigns={[...p.campaigns,{id:'other',name:'另一个团',role:'PLAYER'}]} campaignId="other"/>);
+    expect(api.mapView.mock.calls.filter(args=>args[0]==='other')).toEqual([]);
+    expect(api.mapImage.mock.calls.filter(args=>args[0]==='other'&&args[1]==='s')).toEqual([]);
+    await act(async()=>read.resolve({...scene,id:'new-scene',campaignId:'other'}));await waitFor(()=>expect(api.mapView).toHaveBeenCalledWith('other'));
+  });
   it.each(['manual', 'realtime/reconnect/periodic'] as const)('clears old revealed pixels before a %s snapshot read, including a failed read', async source => {
     const { api, p, revoke } = setup(); render(<Tabletop {...p} />); await waitFor(() => expect(screen.getByTestId('canvas')).toHaveAttribute('data-url', 'blob:public'));
     const read = deferred<typeof scene>(); api.scene.mockReturnValueOnce(read.promise);
