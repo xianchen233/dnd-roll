@@ -1,6 +1,6 @@
 # 继续工作的入口
 
-## P09 已实现并完成本机隔离恢复；交付验收仍在进行（2026-10-22）
+## P09 功能与本地/容器验收通过；云端联验按用户要求后置（2026-10-22）
 
 沿用 feat/accounts-and-invitations / [草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，
 不合并、不发布。开工63ad3af已独立核验push39618022510/PR39618030841六job完整日志；
@@ -16,9 +16,20 @@ P09契约 [backups.md](../contracts/backups.md)，实际RED/GREEN及准备错误
 最终102unit+118真实IT串行复验已通过，零失败/错误/跳过；停PG并清除数据库环境后
 独立102unit也通过。之前并行连接耗尽的失败完整保留，不冒充行为RED。
 
-下一步：提交/推送原分支；按精确SHA独立
-核对push/PR六job完整日志、新标准Compose44流程、十组实际容器重启及独立新项目恢复。
-再更新验收文档并独立核验文档新HEAD。用户已有尚未准备环境的云服务器，明确要求
+代码 **f6c9130c0bbdd7d6dd1aa9ddf235074bee827cb0** 的
+[push39633129367](https://github.com/xianchen233/dnd-roll/actions/runs/39633129367) 与
+[PR39633137675](https://github.com/xianchen233/dnd-roll/actions/runs/39633137675)
+均completed/success。重新读取六份完整日志，两组均102unit+118真实IT零失败/错误/跳过、
+225前端/构建、87契约、标准Compose44流程、十组实际db/backend重启通过；随后各自
+十组新seed→实际迁移归档→源实例停止→独立dnd-roll-restored项目/全新卷离线恢复→
+待确认行动保持及十组fresh-session verify全部通过，每组43条PASS与RESTORE VERIFIED。
+首次严格检查在PR尚in_progress时拒绝通过，完成后重新取得六份才通过。证据在外置
+p09-code-ci-verified.log、p09-ci-f6c9130c0bbdd7d6dd1aa9ddf235074bee827cb0.json、
+p09-job-{jobId}.log；凭据仅内存。完成文档的新HEAD也须独立核验，不沿用代码SHA结果。
+
+下一可执行包为 **P10完整测试团与功能验收**：先按产品首版验收逐项建立证据清单，
+在恢复后的目标上运行跨功能完整测试团、重试/断网/权限与容量/触屏检查，缺口如实保留。
+用户已有尚未准备环境的云服务器，明确要求
 整体功能完成后，将云环境搭建、部署和物理异机恢复统一联验；本轮不连接/部署云端。
 该最终门槛保持未通过，不阻止后续P10功能验收准备；P10/容量/触屏/TLS/A/M2不冒称完成。
 

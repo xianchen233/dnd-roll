@@ -65,6 +65,22 @@ memory; neither dumps nor game data are committed. P01–P08 are not redeveloped
   pass, with strict command shape/operator policy checks. Independent deepEqual
   against entry HEAD preserves all83 prior operations and every prior schema.
 
+## Exact delivered-code CI
+
+Code f6c9130c0bbdd7d6dd1aa9ddf235074bee827cb0 was pushed on the existing branch.
+Push39633129367 and PR39633137675 completed/success. Independently downloaded all
+six complete job logs and asserted each run's102unit+118 real IT with zero failures,
+errors or skips,225frontend/build,87contracts,44production browsers,10actual
+database/backend restart groups, and a second10group seed/verify across a real
+migration archive into a separate dnd-roll-restored project with fresh volumes.
+Each browser log has43PASS lines plus RESTORE VERIFIED, including the pending
+manual decision/roll/resource invariants after target startup. First strict check
+refused the still-in-progress PR run; re-fetch after completion passed. Evidence:
+external p09-code-ci-first-check.log, p09-code-ci-verified.log, p09-job-{jobId}.log
+and p09-ci-f6c9130c0bbdd7d6dd1aa9ddf235074bee827cb0.json. Final documentation HEAD
+also requires independently checked push/PR logs. Existing PR #1 stays open/draft
+against main. No merge/release. Cloud physical recovery remains deferred below.
+
 ## Full checks and actual isolated recovery
 
 The complete backend initially passed101unit+118 real IT in

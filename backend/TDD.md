@@ -4,8 +4,11 @@
 
 Detailed executed RED/GREEN, environment failures, full checks and real isolated
 database/assets recovery are recorded in [P09 evidence](../docs/p09-tdd.md).
-All original tests remain. Physical other-host transfer and exact delivered-SHA
-CI are tracked separately in verification/continuation; do not infer completion.
+All original tests remain. Code f6c9130 push39633129367/PR39633137675 six full logs
+were independently verified:102unit+118real IT,225frontend/build,87contracts,
+44browsers, ten actual restart groups and separate-project/fresh-volume recovery
+with pending decisions and ten fresh-session checks pass. Documentation HEAD is
+checked separately; physical cloud recovery remains deferred by the user.
 
 ## P07 最终完成
 

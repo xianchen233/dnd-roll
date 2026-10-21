@@ -1,6 +1,9 @@
 # P09: deployment backup, restore and migration
 
-Status: in progress. P01–P08 remain complete. An export of campaign records or a
+Status: functionality and local/isolated-container acceptance passed (code f6c9130,
+push39633129367 / PR39633137675, six full logs independently verified). Physical
+cloud deployment/recovery remains deferred by the user as recorded below.
+P01–P08 remain complete. An export of campaign records or a
 restart of the original database is not a deployment restore. No merge/release.
 
 Ordered slices: a write admission/draining and versioned archive validation;
@@ -8,7 +11,9 @@ b real PostgreSQL logical dump plus all committed immutable files; c persistent
 manual/daily jobs, operator management/download and automatic retention; d offline
 restore into a separate empty database and new asset root, migration write fence;
 e original regressions, real restored-state/receipt/access checks and exact-SHA CI.
-Each behavior starts with an executed focused failure. Do not close P09 before e.
+Behavior changes use executed focused failures; supplemental direct-GREEN tests
+are identified in docs/p09-tdd.md. Slice e passed for local/container acceptance;
+do not claim the deferred physical other-host gate or P10/M2 is complete.
 
 ## Authority and consistency
 

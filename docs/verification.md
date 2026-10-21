@@ -1,6 +1,6 @@
 # 阶段验收记录
 
-## P09 本机隔离恢复通过；最终交付验收进行中（2026-10-22）
+## P09 功能、本地与容器恢复验收通过；云端门槛后置（2026-10-22）
 
 开工HEAD63ad3af独立获取两组完整日志通过：push39618022510/PR39618030841，
 87unit+114IT/221前端/83契约/43浏览器/十组容器重启。原分支和草稿PR #1不变。
@@ -21,10 +21,20 @@ P09契约 contracts/backups.md，操作手册 deploy/backups.md，逐项实际RE
   p09-source-fence-restart.log、p09-offline-restore-2.log和p09-pending-verify.log。
   两端Java、preview和PG已按CommandLine/data核对停止，四端口无监听，数据/素材保留。
 
-代码提交/精确SHA双CI、新标准Compose独立项目恢复仍待本轮推送核验。
+代码 **f6c9130c0bbdd7d6dd1aa9ddf235074bee827cb0** 的
+[push39633129367](https://github.com/xianchen233/dnd-roll/actions/runs/39633129367) 与
+[PR39633137675](https://github.com/xianchen233/dnd-roll/actions/runs/39633137675)
+均completed/success，六份完整日志重新获取并严格核对：每组102unit+118真实IT零失败/
+错误/跳过、225前端/构建、87契约、44生产Chrome、十组实际db/backend容器重启通过。
+每组随后新增十组seed、真实迁移下载、源backend停止、独立dnd-roll-restored项目/新卷
+离线恢复，RESTORE VERIFIED、待确认行动不自动应用和十组新会话业务核验全部通过，
+43条PASS。首次核验因PR仍in_progress拒绝通过；完成后重取六份通过，未用旧绿替代。
+外置p09-code-ci-verified.log、p09-ci-f6c9130c0bbdd7d6dd1aa9ddf235074bee827cb0.json
+及p09-job-{jobId}.log留证。完成文档提交的新HEAD也独立核验两组完整日志。
 物理跨主机转移尚未执行，不拿本机/同runner隔离目标冒称异机实测。用户明确要求
 整体功能完成后再为已有云服务器准备环境，并将部署与物理恢复统一联验，当前后置。
-P09交付CI门槛待核验；P01–P08已完成，P10/A/M2及容量/触屏/TLS门槛保留，不合并/发布。
+P09功能/本地/容器验收已通过；物理云端联验仍未通过。P01–P08保持完成，下一可执行
+包P10完整测试团与功能验收；P10/A/M2及容量/触屏/TLS门槛保留，不合并/发布。
 
 ## P08 已完成；下一包 P09 尚未开工（2026-10-21）
 
