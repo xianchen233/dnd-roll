@@ -483,3 +483,9 @@ P04代码a7ef388的push39460581794/PR39460588799六job全success，逐份日志�
   Notes/history/visibility/imageSHA/exports and original receipts deepEqual;
   current removal/rejoin/private cursor/search/download boundaries hold. Evidence
   p08-restart-{seed,verify}.log/process JSON outside repo. Delivered SHA dual CI pending.
+
+- Delivered code 1450e5db875c49e29d6446183d9f3851a32ff757 push39615748242/PR39615751296 six jobs all success.
+  Six complete logs independently fetched and verified:87 units+114 real IT,
+  221 frontend/build,83 contracts, both standard Compose43 browser suites and
+  ten actual db/backend restart groups all pass. P08 complete; completion-document
+  HEAD independently checked, P09/P10/A and M2 remain pending.

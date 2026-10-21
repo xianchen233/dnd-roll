@@ -1,8 +1,9 @@
 # P08: team notes and DM preparation
 
-Status: in progress. P01–P07 remain complete; P08 closes only after full old/new
-checks, migration, production browsers, actual service/container restart and exact
-delivered SHA push/PR CI. No merge or release. P09/P10/A remain pending.
+Status: P08 complete. Code 1450e5d passed full local acceptance and exact-SHA
+push39615748242/PR39615751296 six jobs, including both standard Compose43 browser
+flows and ten real container restart groups. Completion-document HEAD is checked
+independently. No merge or release. P09/P10/A remain pending.
 
 Ordered slices: a durable notes/history/current authorization and receipts; b
 private persistent images, search/paging/export; c Chinese workspace with uncertain

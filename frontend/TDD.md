@@ -457,3 +457,9 @@ P04代码a7ef388的push39460581794/PR39460588799六job全success，逐份日志�
   UI copy describes backup as unavailable without work-package jargon.
 - Ten actual Java/PostgreSQL restart groups pass with new authenticated sessions;
   standard Compose and exact delivered SHA push/PR full logs still required.
+
+- Delivered code 1450e5db875c49e29d6446183d9f3851a32ff757 push39615748242/PR39615751296 six jobs all success.
+  Six complete logs independently fetched and verified:87 units+114 real IT,
+  221 frontend/build,83 contracts, both standard Compose43 browser suites and
+  ten actual db/backend restart groups all pass. P08 complete; completion-document
+  HEAD independently checked, P09/P10/A and M2 remain pending.

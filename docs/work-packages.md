@@ -1,5 +1,36 @@
 # 全量工作包与依赖
 
+## P08 已完成；下一包 P09 尚未开工（2026-10-21）
+
+沿用 feat/accounts-and-invitations / [草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，不合并、不发布。工作区与最新HEAD以Git实际状态为准。
+P08代码 **1450e5db875c49e29d6446183d9f3851a32ff757** 的 [push39615748242](https://github.com/xianchen233/dnd-roll/actions/runs/39615748242) 与
+[PR39615751296](https://github.com/xianchen233/dnd-roll/actions/runs/39615751296) 均completed/success，frontend/backend/browser六job全绿，PR open/draft/main。
+逐份重新获取六份完整日志，严格确认两组均87unit+114真实PG集成（零失败/错误/跳过）、221前端/生产构建、83契约、
+标准Compose完整43浏览器及十组seed→实际db/backend容器重启→十组新会话verify全PASS。
+证据在仓库外 p08-ci-1450e5db875c49e29d6446183d9f3851a32ff757.json、p08-job-{jobId}.log及p08-code-ci-verified.log；认证仅在内存。
+首次推送后PR API短暂仍返回旧SHA，严格核验拒绝通过；待PR更新才确认新SHA与两组run，不拿旧HEAD结果替代。
+
+契约 [notes.md](../contracts/notes.md)：TEAM由当前成员共同编辑、DM资料仅当前DM可见，创建后可见性固定。
+持久图片、实际编辑者及不可变历史、版本/独立回执、字面搜索/分页、完整Markdown/JSON导出及附件清单均遵守当前权限。
+中文工作区保留原文件/原请求精确重试；断网、重连、切团、失权清理旧数据与blob，不静默覆盖冲突草稿。
+实际RED/GREEN见两端TDD：notes两条404→2GREEN、图片404→5GREEN、前端7RED→7GREEN、入口RED→GREEN、契约缺路径RED→83操作GREEN。
+真实浏览器发现详情回读覆盖输入、WS刷新覆盖未确认状态；补两条聚焦测试实际9项2fail→9GREEN并修复，四条新增生产流程全通过。
+准备/环境错误与初次迁移夹具比较失败均如实保留，未冒充行为RED。修复夹具清理后原列/行/15checksum全部保留并通过。
+
+本地独立无数据库87unit、完整87+114后端、221前端/构建、83契约、43生产Chrome（原39保留，60秒/零重试）、V15全部旧表原列/行/15checksum，
+及十组真实Java/PG停止/确认旧端口关闭/同库同素材根启动/新会话verify亦通过。原75HTTP操作及全部原schema与开工HEAD结构相等。
+笔记/历史/图片SHA/导出/原回执完整保留，撤权/重入仍检查当前权限。外置p08-backend-final.log、p08-unit-no-db.log、p08-frontend-final-copy.log、
+p08-build-final-copy.log、p08-contract-final.log、p08-browser-full.log、p08-restart-{seed,verify}.log及进程证据JSON。
+本地验收Java/preview/PG已停止，8080/5173/55432无监听；数据库、素材及证据留存仓库外p08-final-stopped.log/p08-stopped-processes.json。
+
+**P01–P08完成；整个M2、P09/P10/A仍未完成。** 本次完成状态文档提交的新HEAD也必须独立核验push/PR完整日志；恢复工作时不可只读本段即假定最新HEAD已绿。
+下一步：先按AGENTS读交接/验收/必读契约，fetch独立核对最新HEAD（含本文档）的push/PR Checks；再进入 **P09 备份、恢复与迁移**。
+先写契约并按序切片：每日自动备份默认7份、手动生成/下载与失败可见；暂停新写入并等待在途操作后数据库逻辑归档+不可变素材+版本清单；
+校验版本/引用/文件哈希和待确认结果，隔离目标数据库及素材根实际恢复，迁移时旧主机停止写入；轮换不得删除RP/笔记/战斗历史或仍被历史引用的图片。
+不能把P07/P08记录导出当部署备份，也不能用同库进程重启代替异机恢复。每切片实际RED→GREEN→完整回归；P01–P08不重复开发。
+保留P10完整测试团、容量/触屏/TLS与异机恢复门槛。不创建外部定时任务、不合并、不发布。以下为此前历史记录。
+
+
 ## P07 已完成；下一包 P08 尚未开工（2026-10-21）
 
 继续 feat/accounts-and-invitations / [草稿PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，
@@ -232,6 +263,6 @@ P04a–e全部完成，最终代码SHA的本地与push/PR完整CI全通过，结
 
 a身份与不可变编辑、b持久图片和当前权限引用、c统一分页/检索/场次/完整导出、d中文UI与P03/P05/P06共用机器人入口、e全部原回归/迁移/真实浏览器/九组真实服务及容器重启均已完成。最终84unit+108IT、211前端、75契约、39浏览器、V12全部旧列/行/12checksum与精确代码SHA的push/PR完整日志全通过。下一包P08尚未开工；P09/P10/A和M2仍未完成，完成文档HEAD继续独立核验。
 
-### P08 有序切片（本地验收通过，双CI待核验，2026-10-21）
+### P08 有序切片（已完成，2026-10-21）
 
-契约 contracts/notes.md。a共享/私密/历史与回执、b持久图片/搜索/完整导出、c中文工作区已实现且聚焦RED→GREEN；d本地87unit+114IT/221前端/83契约/43浏览器/十组真实Java+PG重启通过；精确代码SHA双CI待核验，不提前关闭P08。下一步及实际结果见continuation/verification；P09/P10/A及M2仍未完成。
+契约 contracts/notes.md。a共享/私密/历史与回执、b持久图片/搜索/完整导出、c中文工作区已实现且聚焦RED→GREEN；d本地87unit+114IT/221前端/83契约/43浏览器/十组真实Java+PG重启通过；精确代码1450e5d的push39615748242/PR39615751296六job与两组标准Compose完整流程/十组容器重启全部通过，P08完成。下一包P09尚未开工。下一步及实际结果见continuation/verification；P09/P10/A及M2仍未完成。
