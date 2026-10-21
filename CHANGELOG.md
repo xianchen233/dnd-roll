@@ -151,6 +151,8 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Fixed
 
+- Keep builtin module dependencies automatically admitted when creating a campaign;
+  map only copied custom approvals so later P04 content-policy edits remain valid.
 - Prevent cross-campaign transitions from pairing the next campaign with the previous scene when loading maps, fog and unit controls.
 
 - Keep scene create/switch commands from disappearing when a background list read

@@ -58,6 +58,9 @@ exported as inert preparation. Source custom catalog dependencies are copied int
 the new campaign with fresh IDs and explicit source-to-runtime mappings. All scene,
 asset, card, placement and note IDs are fresh; control is assigned only to the new
 DM. Maps start fully covered; visibility cannot reveal hidden units. New campaign
+keeps builtin dependencies automatically admitted; only copied custom entries
+enter P04's approval list, so the returned policy can be edited normally.
+New campaign
 has no source RP/dice/combat/history/turn/session/progress. Card initial-state
 history records the module creation. Current runtime data uses the existing P02–P08
 APIs; there is no parallel resource implementation.

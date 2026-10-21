@@ -35,8 +35,11 @@ public class ModuleCampaignProvisioner implements ModuleLifecycle.Provisioner {
         // Dependency identities remain pinned in the instance source; mutable target entries receive fresh IDs.
         var dependencies=verified.manifest().dependencies().stream().map(ModuleArchive.Dependency::id).toList();
         for(var entry:content.entries(source))if(dependencies.contains(entry.id().toString())){UUID id=UUID.randomUUID();content.entry(c,new ContentEntry(id,entry.data(),false,entry.license(),entry.attribution(),entry.changes()));mapping.get("dependencies").put(entry.id().toString(),id);}
+        // Builtins are always admitted by P04. Only copied custom entries belong
+        // in its approval list, otherwise saving that returned policy would fail.
+        var approved=document.play().approvedDependencyIds().stream().filter(mapping.get("dependencies")::containsKey).map(mapping.get("dependencies")::get).toList();
         for(String id:dependencies)mapping.get("dependencies").putIfAbsent(id,UUID.fromString(id));
-        content.policy(c,new ContentService.Policy(document.play().admissionMode(),document.play().approvedDependencyIds().stream().map(mapping.get("dependencies")::get).toList()));
+        content.policy(c,new ContentService.Policy(document.play().admissionMode(),approved));
         for(var a:verified.manifest().assets()){
             var image=AssetImage.validate(bytes.get(a.id()),a.mediaType());UUID id=UUID.randomUUID();String key=publish(source,image.bytes());var meta=new AssetService.Asset(id,image.mediaType(),image.bytes().length,image.width(),image.height());assets.insertAsset(c,new AssetService.Stored(meta,key,image.sha256()));mapping.get("assets").put(a.id(),id);
         }

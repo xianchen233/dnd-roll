@@ -15,7 +15,7 @@ DM可完整编辑、另存新身份/版本并导出；新团拥有独立素材�
 版本/回执/并发/精确依赖、即时及延迟提交回滚均通过。未知提交结果先用新事务source锁
 及已提交元数据确认再清理新图。切团仅使用匹配当前战役的场景，避免跨域地图/控制读取。
 
-本地完整115unit+132真实IT，最终模块14unit+12HTTP，零失败/错误/跳过；停PG并清除
+本地最终完整116unit+133真实IT（含模块14unit+13HTTP），零失败/错误/跳过；停PG并清除
 数据库环境后Maven离线116unit亦通过。243前端/生产构建、99契约、完整51生产Chrome
 （原49保留、60秒/零retry）、V18全部旧列/行/18checksum通过。旧91操作/schema保持，
 仅增加显式manifest v2及可选完整定义预览。十二组实际Java/PG重启、新会话逐字段
@@ -29,7 +29,12 @@ DM可完整编辑、另存新身份/版本并导出；新团拥有独立素材�
 归档和独立项目/新卷离线恢复后原件/基线/副本/两团资源/剧情/旧记录/权限及回执保持。
 完整团两次逐字段比较、待确认结果、恢复后3流程及9会话/100棋子/72消息容量errors=0。
 a02-code-ci-verified.log、a02-ci-7d16737df7c72b748dc81bdf9ce46c2cae57d464.json和
-a02-job-{jobId}.log在仓库外.tools。A02关闭；完成文档的新HEAD仍须独立核验同等证据。
+a02-job-{jobId}.log在仓库外.tools。A02关闭。
+
+最终复核另补内置依赖准入往返：保持builtin自动准入，只映射复制的自定义批准条目，
+新团可继续保存P04策略。实际HTTP400 RED→完整116+133 GREEN见a02-policy-full-final.log。
+含此修正的最终HEAD须按116+133/243/构建/99/51重取同等六日志，不沿用7d16737结果；
+最终索引为外.tools的a02-head-ci-verified.log、a02-ci-{HEAD}.json及原PR #1。
 
 本地验收Java/preview/PG均已按实际身份停止，8080/8081/5173/55432无监听。
 原source fence、p09-target-database.json和p09-restored-assets-final保持；证据/运行时在

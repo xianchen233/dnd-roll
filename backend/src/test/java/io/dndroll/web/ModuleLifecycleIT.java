@@ -147,4 +147,11 @@ class ModuleLifecycleIT {
         finally{jdbc.execute("drop trigger if exists "+fn+" on module_lifecycle_receipt");jdbc.execute("drop function "+fn+"()");}
         var result=tree(dm.post(copies(c)+"/"+id+"/campaigns",request),200);assertEquals(result,tree(dm.post(copies(c)+"/"+id+"/campaigns",request),200));assertEquals(1,jdbc.queryForObject("select count(*) from campaign where name=?",Integer.class,name));assertEquals(before.size()+2,files().size());
     }
+    @Test void builtinDependencyApprovalDoesNotPreventLaterContentPolicyEdits()throws Exception{
+        var dm=dm();UUID c=campaign(dm);var builtin=dm.read("/api/campaigns/"+c+"/content").get("entries").get(0);String dependency=builtin.get("id").asString();var source=builtin.get("source");String id=imageCopy(dm,c,List.of(Map.of("id",dependency,"version",source.get("revision").asString(),"rules",source.get("rules").asString())));
+        var definition=imageDocument();((tools.jackson.databind.node.ObjectNode)definition.get("play")).set("approvedDependencyIds",json.valueToTree(List.of(dependency)));edit(dm,c,id,0,definition);
+        String target=tree(dm.post(copies(c)+"/"+id+"/campaigns",fresh(1,"内置规则新团")),200).get("id").asString(),path="/api/campaigns/"+target+"/content";var policy=dm.read(path);
+        tree(dm.post(path+"/settings",Map.of("requestId",UUID.randomUUID(),"expectedVersion",policy.get("campaignVersion").asLong(),"mode","FREE","approvedIds",policy.get("approvedIds"))),200);
+        assertEquals("FREE",dm.read(path).get("mode").asString());assertTrue(dm.read(path).get("approvedIds").isEmpty());
+    }
 }
