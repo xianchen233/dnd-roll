@@ -426,3 +426,34 @@ P04代码a7ef388的push39460581794/PR39460588799六job全success，逐份日志�
   frontend logs201/build/65 contracts; both standard Compose35 browser suites
   and eight actual db/backend restart groups passed. P06 complete; completion-
   document HEAD is independently checked as well.
+# P08 actual TDD (2026-10-21)
+
+- p08-frontend-red.log: seven actual assertion failures against a minimal workspace
+  (missing notes/forms). Implement create/edit/current versions/history, exact file/
+  body retry, scope/role invalidation, independent denial and blob cleanup. Initial
+  green: six pass and one ambiguous history text query; scope that query to history
+  region (no assertion removed). Seven workspace checks then pass.
+- p08-entry-red.log: existing App missing team notes button. Add Tabletop entry;
+  full suite initially 218pass/1fail because test clicked before campaign selection
+  enabled the button. Wait for enabled control; p08-entry-green.log 12/12 pass.
+- First build rejected unsupported ByRoleOptions exact in new test helper; removed
+  that option. p08-build-final.log production build passes (existing size advisory).
+  Two shell-generated edit attempts failed on quoting without writing source; use
+  saved p08-wire.cjs instead. These preparation errors are not behavior RED.
+- Full frontend rerun, real production browsers, migration/restart and exact SHA
+  push/PR CI remain acceptance work; P08/M2 are not complete.
+- Real production p08-browser-focused.log:2 pass/2 fail. Detail fetch could
+  overwrite typing, and realtime refresh could replace uncertain-result status.
+  Add two focused cases: p08-editor-invalidation-red.log9 tests/2 assertion failures;
+  disable editing until detail resolves and preserve pending operation in a ref
+  across refresh. p08-editor-invalidation-green.log9/9 pass, p08-browser-fixed.log4/4.
+- Real dual editors, original image SHA/history/search/export, private DM payload/
+  socket isolation, committed-response abort with identical create/edit retry,
+  actual offline/native socket close/new CONNECTED and membership removal covered.
+- p08-browser-full.log43 production Chrome pass (2.0m), all original39 unchanged,
+  workers1, original60s/zero retries. Screenshot notes-dm.png visually checked.
+- Final p08-frontend-final-copy.log21 files/221 tests pass; production build
+  p08-build-final-copy.log passes, existing >500kB chunk advisory remains.
+  UI copy describes backup as unavailable without work-package jargon.
+- Ten actual Java/PostgreSQL restart groups pass with new authenticated sessions;
+  standard Compose and exact delivered SHA push/PR full logs still required.

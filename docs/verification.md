@@ -1,5 +1,28 @@
 # 阶段验收记录
 
+## P08 本地验收通过；精确提交双 CI 待核验（2026-10-21）
+
+沿用 feat/accounts-and-invitations / [草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，不合并、不发布。P01–P07保持完成。
+开工 fetch 独立核验本地/origin/PR HEAD 1a4f0df32d6cf49eeabc1a87c58e0462aca10a85，clean/open/draft/main。
+重新获取六份完整日志确认 push39486986615 / PR39486993922 全success：84unit+108IT、211前端/构建、75契约、39浏览器、九组容器重启。
+Checks连接器两次失败后使用认证REST，认证仅在内存；证据仓库外 p08-entry-ci-verified.log。
+
+契约 [notes.md](../contracts/notes.md)：TEAM共同编辑、DM私密、固定可见性、实际编辑者及不可变历史、独立持久回执、
+同团同可见性图片、权限化字面搜索/分页/完整Markdown与JSON导出。中文入口支持原文件/原请求精确重试、权限失效清理。
+实际RED/GREEN记录见两端TDD：notes404两条→2GREEN、图片404→5GREEN、前端7RED→7GREEN、入口RED→GREEN、契约缺路径RED→83操作GREEN。
+真实浏览器另发现详情响应覆盖输入、WS刷新覆盖未确认状态；补两条聚焦测试实际9项2fail→9GREEN后，四条新增生产Chrome全部通过。
+环境/准备错误、迁移测试自身新增外团夹具导致的初次失败均保留，不充作行为RED；修复夹具清理后完整旧数据断言保留并通过。
+
+最终本地：独立移除所有数据库环境变量的87unit；完整87unit+114真实PG/HTTP/WS/迁移，零失败/错误/跳过；221前端/生产构建；
+83契约及原75HTTP操作/全部原schema结构相等；完整43生产Chrome（含全部原39，60秒/零重试）；V15全部旧表原列/行/15checksum通过。
+十组seed→实际Java与PG停止、确认旧端口关闭→同库同素材根启动→新会话verify全PASS，笔记/历史/图片SHA/导出/回执完整保留，撤权/重入仍检查当前权限。
+外置日志：p08-backend-final.log、p08-unit-no-db.log、p08-frontend-final-copy.log、p08-build-final-copy.log、p08-contract-final.log、
+p08-browser-full.log、p08-restart-{seed,verify}.log、p08-restart-{before,after}.json及p08-restart-stopped.log。
+
+**P08d/P08/M2尚未关闭。** 下一步：提交/推送原分支，逐份获取精确代码SHA的push/PR六job完整日志，确认上述计数、两组标准Compose43浏览器及十组db/backend容器重启。
+通过后才关闭P08并交接P09；完成状态文档的新HEAD也独立核验。P09/P10/A、容量/触屏/TLS、数据库+素材一致备份及异机恢复门槛继续保留。
+运行时/凭据/私有证据均在 D:/workspace/dnd/.tools，勿提交。当前进程以现场核对为准；操作前核验CommandLine/data，不复用旧PID。以下为此前历史。
+
 ## P07 已完成；下一包 P08 尚未开工（2026-10-21）
 
 继续 feat/accounts-and-invitations / [草稿PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，

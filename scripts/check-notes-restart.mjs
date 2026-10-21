@@ -1,0 +1,27 @@
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {readFile,writeFile} from 'node:fs/promises';
+import {Session,required,hash,privateHeaders,sourcePng} from './acceptance-support.mjs';
+
+const [mode,file]=process.argv.slice(2);assert.ok(['seed','verify'].includes(mode));assert.ok(file);
+const dm=await new Session().login(required('E2E_DM_USERNAME'),required('E2E_DM_PASSWORD')),player=await new Session().login(required('E2E_PLAYER_USERNAME'),required('E2E_PLAYER_PASSWORD'));
+const upload=async(session,root,command)=>{const form=new FormData();form.append('command',new Blob([JSON.stringify(command)],{type:'application/json'}));form.append('file',new Blob([sourcePng()],{type:'image/png'}),'ignored.png');return (await session.call(root+'/note-attachments',{method:'POST',multipart:form})).json();};
+if(mode==='seed'){
+ const campaign=await dm.post('/campaigns',{requestId:randomUUID(),name:`ZZZ P08 restart ${randomUUID().slice(0,8)}`},201),root='/campaigns/'+campaign.id,invite=await dm.post(root+'/invitations',{requestId:randomUUID(),expectedVersion:0},201);await player.post('/invitations/accept',{token:invite.token});const version=(await player.get(root+'/notes')).campaignVersion;
+ const publicUpload={requestId:randomUUID(),expectedVersion:version,visibility:'TEAM'},privateUpload={requestId:randomUUID(),expectedVersion:version,visibility:'DM'},image=await upload(player,root,publicUpload),privateImage=await upload(dm,root,privateUpload);
+ const create={requestId:randomUUID(),expectedVersion:version,visibility:'TEAM',title:'Shared restart note',text:'Original note %_',attachments:[image.id]},created=await player.post(root+'/notes',create),edit={requestId:randomUUID(),expectedVersion:0,title:'Shared corrected note',text:'Corrected by DM',attachments:[],reason:'Retain original image in history'},edited=await dm.post(root+'/notes/'+created.id,edit);
+ const secret={requestId:randomUUID(),expectedVersion:version,visibility:'DM',title:'SECRET_DM_NOTES',text:'SECRET_PASSAGE',attachments:[privateImage.id]},secretAck=await dm.post(root+'/notes',secret);
+ const revokedCreate={requestId:randomUUID(),expectedVersion:version,visibility:'TEAM',title:'Before revocation',text:'Membership rechecked on retry',attachments:[]},revokedAck=await player.post(root+'/notes',revokedCreate);
+ const publicExport=await player.get(root+'/notes/export?format=json'),dmExport=await dm.get(root+'/notes/export?format=json'),history=await player.get(root+'/notes/'+created.id+'/history');
+ const bytes=await player.call(root+'/note-attachments/'+image.id+'/content');privateHeaders(bytes);const sha=hash(Buffer.from(await bytes.arrayBuffer()));await player.call(root+'/note-attachments/'+privateImage.id+'/content',{status:404});
+ await writeFile(file,JSON.stringify({root,version,publicUpload,privateUpload,image,privateImage,create,created,edit,edited,secret,secretAck,revokedCreate,revokedAck,publicExport,dmExport,history,sha},null,2),{flag:'wx'});
+ console.log('PASS: notes seed saves shared/DM separation, actual editors/history, persistent image SHA, complete exports and original receipts');
+}else{
+ const s=JSON.parse(await readFile(file,'utf8'));
+ assert.deepEqual(await player.get(s.root+'/notes/'+s.created.id+'/history'),s.history);assert.deepEqual(await player.get(s.root+'/notes/export?format=json'),s.publicExport);assert.deepEqual(await dm.get(s.root+'/notes/export?format=json'),s.dmExport);
+ assert.deepEqual(await player.post(s.root+'/notes',s.create),s.created);assert.deepEqual(await dm.post(s.root+'/notes/'+s.created.id,s.edit),s.edited);assert.deepEqual(await dm.post(s.root+'/notes',s.secret),s.secretAck);assert.deepEqual(await upload(player,s.root,s.publicUpload),s.image);assert.deepEqual(await upload(dm,s.root,s.privateUpload),s.privateImage);
+ const bytes=await player.call(s.root+'/note-attachments/'+s.image.id+'/content');privateHeaders(bytes);assert.equal(hash(Buffer.from(await bytes.arrayBuffer())),s.sha);await player.call(s.root+'/notes/'+s.secretAck.id,{status:404});await player.call(s.root+'/notes/'+s.secretAck.id+'/history',{status:404});await player.call(s.root+'/notes?before='+s.secretAck.id,{status:404});await player.call(s.root+'/note-attachments/'+s.privateImage.id+'/content',{status:404});assert.equal((await player.get(s.root+'/notes?q=SECRET_PASSAGE')).notes.length,0);
+ const members=await dm.get(s.root+'/members');await dm.post(s.root+'/members/'+encodeURIComponent(required('E2E_PLAYER_USERNAME'))+'/remove',{requestId:randomUUID(),expectedVersion:members.campaignVersion},204);await player.post(s.root+'/notes',s.revokedCreate,403);await player.call(s.root+'/notes/export?format=json',{status:403});await player.call(s.root+'/note-attachments/'+s.image.id+'/content',{status:403});
+ const management=await dm.get(s.root+'/members'),invite=await dm.post(s.root+'/invitations',{requestId:randomUUID(),expectedVersion:management.campaignVersion},201);await player.post('/invitations/accept',{token:invite.token});assert.deepEqual(await player.post(s.root+'/notes',s.revokedCreate),s.revokedAck);assert.deepEqual(await player.get(s.root+'/notes/'+s.created.id+'/history'),s.history);assert.doesNotMatch(JSON.stringify(await player.get(s.root+'/notes/export?format=json')),/SECRET_DM_NOTES|SECRET_PASSAGE/);
+ console.log('PASS: actual restart preserves notes/history/visibility/image hashes/exports and receipts; fresh sessions, removal/rejoin and private search/cursor/download boundaries hold');
+}

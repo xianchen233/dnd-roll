@@ -97,3 +97,15 @@ images, immutable edits, unified dice/action search, sessions and record exports
 `GET /api/campaigns/{campaignId}/messages/{id}/history`
 `POST /api/campaigns/{campaignId}/attachments`
 `GET /api/campaigns/{campaignId}/attachments/{id}/content`
+
+[P08 team notes and DM preparation](notes.md) adds collaborative TEAM notes and
+immutable DM-only materials, histories, persistent images and authorized exports.
+
+`GET /api/campaigns/{campaignId}/notes`
+`POST /api/campaigns/{campaignId}/notes`
+`GET /api/campaigns/{campaignId}/notes/{id}`
+`POST /api/campaigns/{campaignId}/notes/{id}`
+`GET /api/campaigns/{campaignId}/notes/{id}/history`
+`GET /api/campaigns/{campaignId}/notes/export`
+`POST /api/campaigns/{campaignId}/note-attachments`
+`GET /api/campaigns/{campaignId}/note-attachments/{id}/content`

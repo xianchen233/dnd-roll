@@ -447,3 +447,39 @@ P04代码a7ef388的push39460581794/PR39460588799六job全success，逐份日志�
   browsers and all eight actual db/backend restart groups passed. Six complete
   logs independently fetched/checked. P06 complete; completion-document HEAD
   still requires its own exact-SHA checks.
+# P08 actual TDD (2026-10-21)
+
+- Entry fetch: local/origin/PR HEAD 1a4f0df identical, clean, open/draft/main.
+  Fresh authenticated API and full six job logs verified push39486986615 and
+  PR39486993922: 84unit+108IT/211frontend/75contracts/39browsers/9 restart groups.
+  Evidence outside repo: p08-entry-ci-verified.log. Checks connector failed twice;
+  existing Git credentials used only in memory for REST API (no source-control CI CLI).
+- First p08-notes-red.log was environment failure (Tomcat tempDir denied), not RED.
+  Configured external java.io.tmpdir; initial PG launch lacked port 55432, corrected
+  by identity-checked stop/start. p08-notes-red-2.log: 2 assertion failures, /notes
+  expected200 actual404. Minimal persistent notes/history/current auth/receipts and
+  exports: p08-notes-green.log 2/2 pass.
+- p08-images-red.log: 5 executed, 4pass/1assertion failure, missing note-attachments
+  expected200 actual404. Add distinct immutable TEAM/DM images and same-visibility
+  references: p08-images-green.log 5/5 pass. Tests include shared editors/history,
+  current DM loss, image ownership, old-image retention, literal query, >50 complete
+  export, strict JSON/CSRF, private cursors/foreign IDs, concurrent create/edit and
+  deferred receipt-failure rollback. Original failures retained.
+- Added database-free image commit-acknowledgment/rollback/unknown outcome tests and
+  V15 all-table old-column/row/15-checksum migration checks. Full checks in progress;
+  no claim of P08 completion until browser, real restart and delivered SHA dual CI.
+- First complete run:87 units passed,114 IT with one migration-fixture failure:
+  the test inserted a foreign campaign after its baseline, then compared that new
+  row to the old snapshot. Remove that fixture before final comparison; all old
+  columns/rows and15 checksums remain asserted. Focused migration then passes.
+- p08-unit-no-db.log:87 units pass with all TEST_DATABASE_* and DATABASE_* removed.
+  p08-backend-final.log:87 units+114 real PostgreSQL/HTTP/WS/migration tests,
+  zero failures/errors/skips, BUILD SUCCESS. V15 original data preserved.
+- p08-contract-red.log missing route RED; after documenting routes,
+  p08-contract-final.log83 operations pass. Independent deepEqual confirms every
+  original75 operation and old schema retained against entry HEAD1a4f0df.
+- Ten seed groups then actual Java/PG stop, closed-port confirmation, new process
+  identities, same data/assets and ten fresh-session verify groups all pass.
+  Notes/history/visibility/imageSHA/exports and original receipts deepEqual;
+  current removal/rejoin/private cursor/search/download boundaries hold. Evidence
+  p08-restart-{seed,verify}.log/process JSON outside repo. Delivered SHA dual CI pending.

@@ -83,5 +83,15 @@
 .timeline-entry button { margin: 4px; }
 .timeline-text { white-space: pre-wrap; }
 .timeline-workspace pre { white-space: pre-wrap; max-height: 360px; overflow: auto; }
+.notes-workspace { max-width: 1180px; margin: 24px auto; padding: 24px; background: #161b22; color: #e6e0d2; border: 1px solid #7e765f; border-radius: 12px; }
+.notes-workspace fieldset { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 16px 0; padding: 16px; min-width: 0; border: 1px solid #5c625f; }
+.notes-workspace label { display: flex; flex-direction: column; gap: 6px; flex: 1 1 240px; min-width: 0; }
+.notes-workspace input, .notes-workspace select, .notes-workspace textarea { background: #111c24; color: #e6e0d2; border: 1px solid #647275; padding: 10px; border-radius: 5px; max-width: 100%; }
+.notes-workspace textarea { min-height: 140px; width: 100%; }
+.notes-workspace fieldset p { flex-basis: 100%; }
+.notes-list { display: grid; gap: 14px; }
+.note-entry { padding: 18px; border: 1px solid #5c625f; border-radius: 8px; overflow-wrap: anywhere; }
+.note-entry h3 { margin-top: 0; }
+.note-entry small { color: #b8c6cb; }
 .timeline-image { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin: 12px 0; }
 .timeline-image img { max-width: 100%; max-height: 480px; object-fit: contain; }

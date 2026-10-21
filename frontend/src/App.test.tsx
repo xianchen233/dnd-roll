@@ -7,6 +7,10 @@ import { Api, ApiError } from './api';
 vi.mock('./MapCanvas', () => ({ MapCanvas: () => <div data-testid="pixi-mock">地图渲染替身</div> }));
 vi.mock('./realtime', () => ({ connectRealtime: () => () => {} }));
 describe('tabletop interface', () => {
+  it('opens the team note workspace for a current player',async()=>{
+    const api={getCsrf:vi.fn().mockResolvedValue({}),me:vi.fn().mockResolvedValue({username:'player'}),campaigns:vi.fn().mockResolvedValue([{id:'c',name:'长夜',role:'PLAYER'}]),scene:vi.fn().mockResolvedValue({id:'s',campaignId:'c',name:'林地',width:24,height:16,gridSize:48,version:0,tokens:[]}),notes:vi.fn().mockResolvedValue({campaignVersion:0,notes:[],next:''})};
+    render(<App api={withSafeMapReads(api) as unknown as Api}/>);const button=await screen.findByRole('button',{name:'打开团队笔记与 DM 资料'});await waitFor(()=>expect(button).toBeEnabled());fireEvent.click(button);await screen.findByLabelText('笔记标题');expect(api.notes).toHaveBeenCalled();
+  });
   it.each(['hidden', 'revoked'] as const)('clears selection and coordinates on same-scene %s and never restores them on regrant or a late movement receipt', async reason => {
     let resolve!: (value: unknown) => void;
     const posted = new Promise(yes => { resolve = yes; });

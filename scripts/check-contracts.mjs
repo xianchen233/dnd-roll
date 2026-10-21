@@ -14,6 +14,7 @@ const [apiText, eventText, readme, accounts, scenes, assets, tokens, mapVisibili
   read('../contracts/characters.md'),
 ]);
 const api = JSON.parse(apiText);
+for(const [suffix,method] of [['/notes','get'],['/notes','post'],['/notes/{id}','get'],['/notes/{id}','post'],['/notes/{id}/history','get'],['/notes/export','get'],['/note-attachments','post'],['/note-attachments/{id}/content','get']])assert.ok(api.paths['/api/campaigns/{campaignId}'+suffix]?.[method],`P08 operation missing: ${method} ${suffix}`);
 const event = JSON.parse(eventText);
 const resolve = (schema) => schema.$ref
   ? schema.$ref.slice(2).split('/').reduce((value, key) => value[key], api)
@@ -743,4 +744,15 @@ assert.match(api['x-timeline-policy'].authorization,/before pagination.*search.*
 assert.match(api['x-timeline-policy'].retention,/No expiry.*backup rotation/);
 assert.match(api['x-timeline-policy'].atomicity,/atomically.*uncertain.*fresh campaign lock/);
 for(const path of ['/messages','/messages/{id}','/attachments','/timeline/sessions'])assert.match(api.paths['/api/campaigns/{campaignId}'+path].post['x-idempotency'].authorization,/before receipt replay/);
-console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; P07 durable identities/edits/images, filtered timeline/references/search/exports and shared bot paths. Previous operations/schemas retained; focused checker, not a general OpenAPI validator.`);
+const noteCreate={requestId:id,expectedVersion:0,visibility:'TEAM',title:'Team plan',text:'Plain <script>text</script> %_',attachments:[]};
+const noteEdit={requestId:id,expectedVersion:0,title:'Corrected',text:'Updated',attachments:[id],reason:'Spelling'};
+for(const [schema,sample]of [[schemas.NoteCreate,noteCreate],[schemas.NoteEdit,noteEdit],[schemas.NoteUpload,{requestId:id,expectedVersion:0,visibility:'DM'}]]){
+ validate(schema,sample);for(const field of Object.keys(sample)){const missing={...sample};delete missing[field];assert.throws(()=>validate(schema,missing));assert.throws(()=>validate(schema,{...sample,[field]:null}));}
+ for(const forged of ['actor','storageKey','sourceSheet','hidden','canEdit'])assert.throws(()=>validate(schema,{...sample,[forged]:'forged'}));
+ assert.throws(()=>validate(schema,{...sample,expectedVersion:0.5}));
+}
+for(const invalid of [{...noteCreate,visibility:'PLAYER'},{...noteCreate,attachments:[id,id]},{...noteCreate,text:'x'.repeat(16001)},{...noteCreate,title:''}])assert.throws(()=>validate(schemas.NoteCreate,invalid));
+assert.throws(()=>validate(schemas.NoteEdit,{...noteEdit,visibility:'TEAM'}));
+assert.match(api['x-notes-policy'].visibility,/before receipt replay.*filter before search\/pagination/);
+for(const suffix of ['/notes','/notes/{id}','/note-attachments'])assert.match(api.paths['/api/campaigns/{campaignId}'+suffix].post['x-idempotency'].authorization,/before receipt replay/);
+console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; P08 shared/private notes, history/images/search/export and current authorization. Previous operations/schemas retained; focused checker, not a general OpenAPI validator.`);
