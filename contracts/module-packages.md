@@ -1,6 +1,7 @@
 # A01: module package identity and import validation
 
-Status: in development. A02 customization/campaign creation, A03 updates/triggers
+Status: completed (2026-10-22), code 2a9bb2a; local and exact-SHA push/PR CI passed.
+A02 customization/campaign creation, A03 updates/triggers
 and automation are separate work packages. Packages are inert DM preparation;
 import never creates a playable campaign, executes rules or runs package code.
 

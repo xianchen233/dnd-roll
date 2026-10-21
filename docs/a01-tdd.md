@@ -75,12 +75,17 @@ push39643825879 / PR39643836476 的六份完整日志并逐项断言：102unit+1
   固定输出中的“persistent source write fence verified”不代表本次建立了migration
   fence；不据此冒称隔离恢复/物理异机恢复通过。原源端fence始终保留。
 - 最终按实际身份停止Java/production preview/PG，8080/8081/5173/55432无监听。
-  离线无库unit复验结果与当前状态见continuation/verification。
+  停PG并清除数据库环境后，a01-unit-no-db.log离线109unit零失败/错误/跳过通过。
 
 ## 交付与下一步
 
-代码和本地验收已完成；当前代码SHA的push/PR全日志及新增模块容器重启/隔离恢复
-仍须独立核验，核验通过之前不关闭A01。CI已加入第十一组module seed/verify，
+代码 **2a9bb2a9c2455cda06944d7068b88854378972d6** 的push39651535455 /
+PR39651544111均completed/success。独立下载六份完整日志后严格断言通过：每组
+109+124零失败/错误/跳过、234/构建、91契约、49浏览器、原43PASS、4条MODULE VERIFIED、
+完整团两次逐字段比较、恢复后3流程及9会话/100棋子/72消息容量errors=0。A01关闭。
+外置a01-code-ci-verified.log、a01-ci-2a9bb2a9c2455cda06944d7068b88854378972d6.json
+及a01-job-{jobId}.log保留。完成文档HEAD也必须重新取得同等完整证据。
+CI已加入第十一组module seed/verify，
 以及真实迁移归档→独立项目/全新卷恢复后的原ZIP/副本/依赖/回执/权限验证。
 原十组、完整团、恢复后3流程和容量全部保留。
 
