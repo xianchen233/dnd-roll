@@ -33,12 +33,18 @@ services:
       DEMO_PLAYER_USERNAME: ${DEMO_PLAYER_USERNAME:-player}
       DEMO_PLAYER_PASSWORD: ${DEMO_PLAYER_PASSWORD:-}
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
-      ASSET_STORAGE_ROOT: /var/lib/dnd-roll/assets
+      ASSET_STORAGE_ROOT: ${ASSET_STORAGE_ROOT:-/var/lib/dnd-roll/assets}
+      BACKUP_STORAGE_ROOT: /var/lib/dnd-roll/backups
+      BACKUP_OPERATOR_USERNAME: ${BACKUP_OPERATOR_USERNAME:-}
+      BACKUPS_DAILY_ENABLED: ${BACKUPS_DAILY_ENABLED:-true}
+      BACKUPS_RETENTION: ${BACKUPS_RETENTION:-7}
       # This service is reachable only through the trusted Compose web proxy.
       SERVER_FORWARD_HEADERS_STRATEGY: framework
       JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=70
     volumes:
       - asset_data:/var/lib/dnd-roll/assets
+      - backup_data:/var/lib/dnd-roll/backups
+    stop_grace_period: 45s
     depends_on:
       db:
         condition: service_healthy
@@ -54,3 +60,4 @@ services:
 volumes:
   postgres_data:
   asset_data:
+  backup_data:

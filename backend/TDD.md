@@ -1,5 +1,12 @@
 # TDD evidence
 
+## P09 actual TDD (2026-10-21–22)
+
+Detailed executed RED/GREEN, environment failures, full checks and real isolated
+database/assets recovery are recorded in [P09 evidence](../docs/p09-tdd.md).
+All original tests remain. Physical other-host transfer and exact delivered-SHA
+CI are tracked separately in verification/continuation; do not infer completion.
+
 ## P07 最终完成
 
 代码5d96a72的push39485707929/PR39485715062六份完整日志已重新读取并严格核对全通过：84unit+108IT、211前端/构建、75契约、两组39浏览器和九组实际容器重启。独立无库84unit及本地全量、九组实际Java/PG重启亦通过。原始失败与当时pending状态保留如下，最新入口见docs/continuation.md。完成文档HEAD另独立核验，不合并、不发布。

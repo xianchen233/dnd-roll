@@ -1,5 +1,31 @@
 # 阶段验收记录
 
+## P09 本机隔离恢复通过；最终交付验收进行中（2026-10-22）
+
+开工HEAD63ad3af独立获取两组完整日志通过：push39618022510/PR39618030841，
+87unit+114IT/221前端/83契约/43浏览器/十组容器重启。原分支和草稿PR #1不变。
+P09契约 contracts/backups.md，操作手册 deploy/backups.md，逐项实际RED/GREEN、
+未伪装的环境错误及修复在 [p09-tdd.md](p09-tdd.md)。
+
+- 本地完整后端曾101unit+118IT通过；增加存储失败/停写登录覆盖后，聚焦102+4通过。
+  并行浏览器服务使后续一轮耗尽100连接（15上下文error），已保留真实失败；停止
+  两端应用/preview后，最终p09-backend-final-serial.log串行102unit+118IT通过，零失败/
+  错误/跳过。PG停止、数据库环境清除后p09-unit-no-db.log独立102unit也通过。
+- 最终225前端、生产构建、87契约和44生产Chrome通过；原43流程、60秒和零retry保留。
+  原83操作及所有旧schema与开工HEAD deepEqual；不新增/改写任何Flyway迁移。
+- 十组seed后，真实迁移ZIP下载成功；源进程实际停止/新进程启动后，fresh login读取
+  持久任务且写入仍503。源端再次停止后，用打包离线命令恢复独立新库/新素材根，
+  逐表行数/摘要、17checksum、引用及302文件校验通过。待确认行动/骰子/资源不自动
+  改变，十组新会话verify全部PASS，当前隐藏/撤权/旧回执安全保持。
+- 外置日志p09-browser-full.log、p09-restore-{seed,verify}.log、p09-migration-backup.log、
+  p09-source-fence-restart.log、p09-offline-restore-2.log和p09-pending-verify.log。
+  两端Java、preview和PG已按CommandLine/data核对停止，四端口无监听，数据/素材保留。
+
+代码提交/精确SHA双CI、新标准Compose独立项目恢复仍待本轮推送核验。
+物理跨主机转移尚未执行，不拿本机/同runner隔离目标冒称异机实测。用户明确要求
+整体功能完成后再为已有云服务器准备环境，并将部署与物理恢复统一联验，当前后置。
+P09交付CI门槛待核验；P01–P08已完成，P10/A/M2及容量/触屏/TLS门槛保留，不合并/发布。
+
 ## P08 已完成；下一包 P09 尚未开工（2026-10-21）
 
 沿用 feat/accounts-and-invitations / [草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，不合并、不发布。工作区与最新HEAD以Git实际状态为准。

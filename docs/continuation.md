@@ -1,5 +1,34 @@
 # 继续工作的入口
 
+## P09 已实现并完成本机隔离恢复；交付验收仍在进行（2026-10-22）
+
+沿用 feat/accounts-and-invitations / [草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，
+不合并、不发布。开工63ad3af已独立核验push39618022510/PR39618030841六job完整日志；
+P01–P08保持完成，不重复开发。当前HEAD和工作区始终以Git实际状态为准。
+
+P09契约 [backups.md](../contracts/backups.md)，实际RED/GREEN及准备错误见
+[p09-tdd.md](p09-tdd.md)。部署管理员独立授权、手动/每日默认7份、失败/轮换警告、
+停写等待在途操作、真实PG逻辑归档+不可变素材、严格版本/哈希/引用/逐表摘要校验、
+隔离空库/新素材根离线恢复与持续源端停写、中文管理和下载已实现。
+225前端/构建、87契约、原83操作/全部旧schema结构保持、44生产Chrome通过。
+十组实际备份→独立目标库/新根302文件恢复→新会话业务verify和待确认行动保持均PASS。
+源实例真实重启后仍停写，目标启动前源实例已停止；两端应用及preview已停止。
+最终102unit+118真实IT串行复验已通过，零失败/错误/跳过；停PG并清除数据库环境后
+独立102unit也通过。之前并行连接耗尽的失败完整保留，不冒充行为RED。
+
+下一步：提交/推送原分支；按精确SHA独立
+核对push/PR六job完整日志、新标准Compose44流程、十组实际容器重启及独立新项目恢复。
+再更新验收文档并独立核验文档新HEAD。用户已有尚未准备环境的云服务器，明确要求
+整体功能完成后，将云环境搭建、部署和物理异机恢复统一联验；本轮不连接/部署云端。
+该最终门槛保持未通过，不阻止后续P10功能验收准备；P10/容量/触屏/TLS/A/M2不冒称完成。
+
+运行时/私有证据在仓库外.tools。p09-acceptance.jar、start-p09-backend.ps1、
+run-p09-evidence.ps1和p09-final-*证据留存；新seed必须新前缀（wx拒覆盖）。
+source browser库和browser-assets保留，p09-backups/write-fence保持；恢复目标配置
+p09-target-database.json及p09-restored-assets-final保留，不打印凭据。后续验收应使用
+恢复后的目标配置和素材根；不要解除源fence后与目标并行写入。PG及两端应用/preview
+已核对实际身份停止，8080/8081/5173/55432均无监听。以下是历史交接记录。
+
 ## P08 已完成；下一包 P09 尚未开工（2026-10-21）
 
 沿用 feat/accounts-and-invitations / [草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，不合并、不发布。工作区与最新HEAD以Git实际状态为准。

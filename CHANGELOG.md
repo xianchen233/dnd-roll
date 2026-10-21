@@ -11,6 +11,15 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Added
 
+- Add deployment-operator backup management, persistent manual/daily jobs, seven
+  successful automatic archives by default, authenticated ZIP downloads and
+  visible interruption, generation and retention failures. Backup rotation never
+  deletes live images or game histories.
+- Add write admission/draining, consistent PostgreSQL 18 logical archives with
+  immutable map/RP/note images, strict versioned manifests and offline restore
+  into an empty isolated database and new asset root. Migration backups retain a
+  durable source write fence across failure/restart; restore compares all table
+  rows/digests, migrations, image references and file hashes before activation.
 - Add collaborative team notes and DM-only preparation, immutable visibility,
   versioned edits with actual editor history, persistent PNG/JPEG images, literal
   search, pagination and complete Markdown/JSON record exports with image manifests.

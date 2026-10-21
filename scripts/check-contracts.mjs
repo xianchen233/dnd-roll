@@ -14,6 +14,7 @@ const [apiText, eventText, readme, accounts, scenes, assets, tokens, mapVisibili
   read('../contracts/characters.md'),
 ]);
 const api = JSON.parse(apiText);
+for(const [path,method] of [['/api/admin/backups','get'],['/api/admin/backups','post'],['/api/admin/backups/migration','post'],['/api/admin/backups/{id}/content','get']])assert.ok(api.paths[path]?.[method],`P09 operation missing: ${method} ${path}`);
 for(const [suffix,method] of [['/notes','get'],['/notes','post'],['/notes/{id}','get'],['/notes/{id}','post'],['/notes/{id}/history','get'],['/notes/export','get'],['/note-attachments','post'],['/note-attachments/{id}/content','get']])assert.ok(api.paths['/api/campaigns/{campaignId}'+suffix]?.[method],`P08 operation missing: ${method} ${suffix}`);
 const event = JSON.parse(eventText);
 const resolve = (schema) => schema.$ref
@@ -755,4 +756,9 @@ for(const invalid of [{...noteCreate,visibility:'PLAYER'},{...noteCreate,attachm
 assert.throws(()=>validate(schemas.NoteEdit,{...noteEdit,visibility:'TEAM'}));
 assert.match(api['x-notes-policy'].visibility,/before receipt replay.*filter before search\/pagination/);
 for(const suffix of ['/notes','/notes/{id}','/note-attachments'])assert.match(api.paths['/api/campaigns/{campaignId}'+suffix].post['x-idempotency'].authorization,/before receipt replay/);
-console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; P08 shared/private notes, history/images/search/export and current authorization. Previous operations/schemas retained; focused checker, not a general OpenAPI validator.`);
+validate(schemas.BackupCommand,{requestId:id,expectedVersion:0});
+for(const invalid of [{requestId:id},{expectedVersion:0},{requestId:id,expectedVersion:-1},{requestId:id,expectedVersion:0.5},{requestId:id,expectedVersion:0,actor:'forged'},{requestId:id,expectedVersion:0,storageRoot:'/private'}])assert.throws(()=>validate(schemas.BackupCommand,invalid));
+for(const path of ['/api/admin/backups','/api/admin/backups/migration'])assert.match(api.paths[path].post['x-idempotency'].authorization,/operator before receipt replay/);
+assert.match(api['x-backups-policy'].retention,/no deletion of game histories or live files/);
+assert.match(api['x-backups-policy'].migration,/durable source write fence.*isolated empty-target restore/);
+console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; P09 operator backups, draining, retention and isolated restore. Previous operations/schemas retained; focused checker, not a general OpenAPI validator.`);

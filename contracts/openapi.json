@@ -7206,6 +7206,544 @@
         },
         "x-note-permission": "current membership and immutable TEAM/DM visibility on list, detail, history, search, cursor, export, bytes and retry"
       }
+    },
+    "/api/admin/backups": {
+      "get": {
+        "summary": "P09 deployment operator backup",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Current operator authorized result",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Generic input, authority, conflict or storage failure",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Generic input, authority, conflict or storage failure",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Generic input, authority, conflict or storage failure",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Generic input, authority, conflict or storage failure",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Generic input, authority, conflict or storage failure",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Generic input, authority, conflict or storage failure",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          }
+        },
+        "x-operator-permission": "configured deployment operator; campaign DM membership does not grant access"
+      },
+      "post": {
+        "summary": "P09 deployment operator backup",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current operator authorized result",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Generic input, authority, conflict or storage failure",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Generic input, authority, conflict or storage failure",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Generic input, authority, conflict or storage failure",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Generic input, authority, conflict or storage failure",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Generic input, authority, conflict or storage failure",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Generic input, authority, conflict or storage failure",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          }
+        },
+        "x-operator-permission": "configured deployment operator; campaign DM membership does not grant access",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackupCommand"
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "namespace": "deployment-backups",
+          "authorization": "current configured operator before receipt replay",
+          "samePayload": "original task acknowledgment; never rerun a failed task",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT"
+        }
+      }
+    },
+    "/api/admin/backups/migration": {
+      "post": {
+        "summary": "P09 deployment operator backup",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current operator authorized result",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Generic input, authority, conflict or storage failure",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Generic input, authority, conflict or storage failure",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Generic input, authority, conflict or storage failure",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Generic input, authority, conflict or storage failure",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Generic input, authority, conflict or storage failure",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Generic input, authority, conflict or storage failure",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          }
+        },
+        "x-operator-permission": "configured deployment operator; campaign DM membership does not grant access",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackupCommand"
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "namespace": "deployment-backups",
+          "authorization": "current configured operator before receipt replay",
+          "samePayload": "original task acknowledgment; never rerun a failed task",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT"
+        }
+      }
+    },
+    "/api/admin/backups/{id}/content": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/Uuid"
+          }
+        }
+      ],
+      "get": {
+        "summary": "P09 deployment operator backup",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Current operator authorized result",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              },
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Generic input, authority, conflict or storage failure",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Generic input, authority, conflict or storage failure",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Generic input, authority, conflict or storage failure",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Generic input, authority, conflict or storage failure",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Generic input, authority, conflict or storage failure",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Generic input, authority, conflict or storage failure",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          }
+        },
+        "x-operator-permission": "configured deployment operator; campaign DM membership does not grant access"
+      }
     }
   },
   "components": {
@@ -12592,6 +13130,124 @@
           "attachments"
         ],
         "additionalProperties": false
+      },
+      "BackupCommand": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion"
+        ],
+        "properties": {
+          "requestId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "expectedVersion": {
+            "$ref": "#/components/schemas/Version"
+          }
+        }
+      },
+      "BackupAck": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "version"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "version": {
+            "$ref": "#/components/schemas/Version"
+          }
+        }
+      },
+      "BackupJob": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "actor",
+          "expectedVersion",
+          "kind",
+          "state",
+          "at",
+          "finishedAt",
+          "bytes"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "actor": {
+            "type": "string"
+          },
+          "expectedVersion": {
+            "$ref": "#/components/schemas/Version"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "MANUAL",
+              "AUTOMATIC",
+              "MIGRATION"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "RUNNING",
+              "COMPLETE",
+              "FAILED",
+              "INTERRUPTED",
+              "EXPIRED"
+            ]
+          },
+          "at": {
+            "$ref": "#/components/schemas/UtcInstant"
+          },
+          "finishedAt": {
+            "type": "string"
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "BackupStatus": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "retention",
+          "paused",
+          "jobs",
+          "retentionFailed"
+        ],
+        "properties": {
+          "version": {
+            "$ref": "#/components/schemas/Version"
+          },
+          "retention": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365
+          },
+          "paused": {
+            "type": "boolean"
+          },
+          "jobs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupJob"
+            }
+          },
+          "retentionFailed": {
+            "type": "boolean"
+          }
+        }
       }
     }
   },
@@ -12698,5 +13354,11 @@
     "visibility": "immutable TEAM/DM; current authorization before receipt replay; filter before search/pagination; no hidden counts",
     "images": "independent persistent images; same campaign and visibility foreign keys; prior revisions retain references",
     "export": "complete current-permission history and image manifest, not deployment backup"
+  },
+  "x-backups-policy": {
+    "authorization": "configured deployment operator before receipt replay or bytes; no campaign DM escalation",
+    "consistency": "close write admission before draining in-flight requests and table SHARE locks; immutable referenced files plus full logical database",
+    "retention": "seven successful automatic archives by default; no deletion of game histories or live files; manual archives retained",
+    "migration": "durable source write fence survives failure and restart; offline isolated empty-target restore validates versions, rows, references and hashes"
   }
 }

@@ -109,3 +109,10 @@ immutable DM-only materials, histories, persistent images and authorized exports
 `GET /api/campaigns/{campaignId}/notes/export`
 `POST /api/campaigns/{campaignId}/note-attachments`
 `GET /api/campaigns/{campaignId}/note-attachments/{id}/content`
+
+[P09 deployment backups](backups.md) require separately configured operator authority.
+
+`GET /api/admin/backups`
+`POST /api/admin/backups`
+`POST /api/admin/backups/migration`
+`GET /api/admin/backups/{id}/content`

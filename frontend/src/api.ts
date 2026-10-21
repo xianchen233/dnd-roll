@@ -5,6 +5,8 @@ import type { Catalog,ContentData,ContentFilters,ContentChoice,ContentPreview,Co
 import type {DiceCommand,DiceTextCommand,Roll,RollList,Initiative,InitiativeGenerate,InitiativeConfirm,InitiativeHistory} from './dice';
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
 export class Api {
+  backups():Promise<import('./backups').BackupStatus>{return this.call('/admin/backups');}
+  createBackup(body:VersionedCommand,migration=false):Promise<{id:string;version:number}>{return this.post(`/admin/backups${migration?'/migration':''}`,body);}
   notes(c:string,filters:import('./notes').NoteFilters,before=''):Promise<import('./notes').NoteListing>{return this.call(`/campaigns/${encodeURIComponent(c)}/notes?${new URLSearchParams({...filters,...(before?{before}:{})})}`);}
   note(c:string,id:string):Promise<import('./notes').Note>{return this.call(`/campaigns/${encodeURIComponent(c)}/notes/${encodeURIComponent(id)}`);}
   createNote(c:string,body:import('./notes').NoteCreate):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/notes`,body);}

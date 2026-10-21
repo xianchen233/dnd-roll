@@ -1,5 +1,9 @@
 # Docker Compose 部署
 
+P09 备份管理、每日任务、停写迁移与隔离恢复的配置和可执行流程见
+[备份与迁移操作手册](backups.md)。仅显式配置的部署管理员可读取整个部署备份；
+战役 DM 权限不会自动获得该访问权。实际验收与未通过门槛以 docs/verification.md 为准。
+
 标准运行方式为应用与 PostgreSQL 分开容器，通过内部网络连接。需要 Docker Engine/Desktop 和 Compose v2。当前主机尚无 Docker，本轮本地数据库测试运行的是同版本 PostgreSQL 原生二进制；容器构建/启动结果以验收记录为准。
 
 在仓库根目录：
