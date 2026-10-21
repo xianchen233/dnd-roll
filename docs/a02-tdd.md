@@ -82,3 +82,48 @@ a02-entry-ci-verified.json、a02-entry-job-{jobId}.log，不沿用旧代理的�
 完整后端115+132、最终模块14+12、99契约及旧操作/schema保持均通过。
 全量51浏览器最终复验、服务重启、备份、无数据库116unit和精确提交双CI正在按序验收。
 未通过前不关闭A02或整体M3。后续A03–A06仍按work-packages保留。
+
+## 最终本地验收
+
+- `a02-browser-full-confirmed.log`：完整51生产Chrome流程2.5m通过，保留原49流程，
+  60秒/零retry和全部错误收集不变。原演示团的首次及刷新后选择均使用稳定夹具ID；
+  切域scope真实产品问题已用先失败的聚焦测试修复。243前端/生产构建和99契约通过。
+- `a02-restart.log`确认Java/PG实际停止，旧监听关闭后启动PG；Windows外部进程
+  管道等待使旧helper在PG已启动后卡住。核对进程身份后只停止该helper，分步启动
+  Java并继续核验，未把准备问题当RED。`a02-process-before.json/after.json`
+  保存Java 41280→33036、PG 40792→40904及真实CommandLine。
+- `a02-lifecycle-restart-verify.log`、`a02-module-restart-verify.log`、
+  `a02-old-restart-verify.log`：十二组新会话逐字段核验全部通过；模板ZIP/图片/基线/
+  副本/独立角色资源/场景/笔记/剧情/旧记录/权限及原始回执保持；原十组业务全PASS。
+- `a02-party-restart-verify.log`：完整DM+两玩家测试团、未结束回合、待确认行动、
+  原骰子、卡历史、公开/私密导出及地图/RP图片SHA保持。
+- `a02-backup-local.log`：真实手动PostgreSQL逻辑归档+素材备份成功，ZIP保存在外.tools，
+  已读清单确认V19及module_customization/module_instance/module_lifecycle_receipt
+  摘要、原ZIP字节和图片文件清单。此轮manual模式不设置目标write-fence；原脚本
+  共享成功文案含fence字样，不把该文案当成新执行迁移停写的证据。
+- Java/production preview已按实际身份停止，PG已关闭；8080/8081/5173/55432无监听。
+  `a02-final-stopped.json`确认原source fence、恢复素材与目标配置保留。
+  独立清除数据库环境并Maven离线116unit通过（a02-unit-no-db.log），零失败/错误/跳过。
+
+代码7d16737已推送；push39666272709/PR39666278838精确HEAD双CI仍须完整核验，
+尤其标准Compose51浏览器、十二组容器重启及独立项目/新卷离线恢复。
+GitHub连接器更新PR元数据返回集成权限403，已用现有仓库Git凭据更新原open/draft
+PR #1（a02-pr-updated.log）；未合并、未发布，也未创建另一PR。
+
+## 精确代码SHA远端验收与关闭
+
+7d16737df7c72b748dc81bdf9ce46c2cae57d464的push39666272709和PR39666278838六job
+均completed/success。fetch确认local/origin/PR HEAD一致后重新获取六份完整日志，
+`a02-check-ci.mjs`严格断言两组116unit+132真实IT零失败/错误/跳过、243前端/生产构建、
+99契约、51生产Chrome。每组原43PASS、4MODULE VERIFIED、4LIFECYCLE VERIFIED：
+十二组seed→实际db/backend容器重启→新会话verify，以及真实完整迁移归档→停止源写入→
+独立dnd-roll-restored项目/新卷离线恢复→全部组新会话verify均通过。A02原件ZIP/图片、
+编辑基线/定制副本、独立两团身份/资源/剧情/笔记/旧记录/权限和所有原始请求回执保持。
+完整团逐字段比较两次、未确认手动结果不自动应用、恢复后手机模拟/新团3流程，以及
+9独立会话/100棋子/72消息容量errors=0均通过。
+
+仓库外证据：a02-code-ci-verified.log、a02-ci-7d16737df7c72b748dc81bdf9ce46c2cae57d464.json，
+a02-job-119452046075/119452046241/119452046255/119452067587/119452068038/119452068264.log。
+PR浏览器组51流程4.6m，push组实际时长以对应完整日志为准；未提高60秒单流程上限或加retry。
+A02功能及本地/容器验收关闭；完成状态文档新HEAD也必须独立验证同样完整的push/PR证据。
+下一包A03未开工；A03–A06、整体M3、云端最终联验和真实手机验证保持未完成。
