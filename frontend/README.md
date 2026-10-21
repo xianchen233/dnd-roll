@@ -89,8 +89,15 @@ turns, while DMs skip/switch/reorder/stop or temporarily grant out-of-turn movem
 Exploration stays free; out-of-turn rolls/actions remain available. DM duration
 confirmation stays in character sheets. Private journals are server-filtered.
 
-The complete suite has35 real production-browser cases, including four P06 cases;
-all31 earlier cases remain unchanged. Run browser acceptance and restart seeds
+The complete suite has 47 production-browser cases, retaining all 44 P01–P09
+cases and adding a continuous DM/two-player campaign and two touch-emulated phone
+flows. Run browser acceptance and restart seeds
 serially: they share test accounts, and member removal closes that account's
 sockets. Native offline tests verify real close/new CONNECTED, never fabricated
 STOMP. Actual failures, RED/GREEN and exact-SHA CI are in docs/verification.md.
+
+At widths up to 700px, the phone navigation shows one workspace at a time. Card,
+dice and RP drafts/uncertain commands stay mounted when changing tabs; campaign
+changes or access denial clear them. Arrow keys/Home/End move between phone tabs.
+The touch tests cover 360/390px Chromium emulation, not physical-device certification.
+Capacity and full-party restart commands are described in docs/p10-acceptance.md.

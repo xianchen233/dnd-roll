@@ -102,3 +102,32 @@
 .backup-workspace ul { display: grid; gap: 12px; padding: 0; list-style: none; }
 .backup-workspace li { display: flex; flex-wrap: wrap; gap: 14px; padding: 14px; border: 1px solid #5c625f; border-radius: 6px; overflow-wrap: anywhere; }
 .backup-workspace a { color: #e8c773; }
+
+/* Phone navigation retains mounted drafts and pending request identities. */
+.mobile-navigation { display: none; }
+.workspace-slot { display: contents; }
+@media (max-width: 700px) {
+  .topbar { height: auto; min-height: 64px; padding: 12px; gap: 8px; flex-wrap: wrap; }
+  .topbar-right { gap: 8px; flex-wrap: wrap; }
+  .topbar-right strong { max-width: 120px; overflow-wrap: anywhere; }
+  .campaign-toolbar { padding: 10px 12px; gap: 8px; flex-wrap: wrap; }
+  .campaign-toolbar > button:not(.quiet) { display: none; }
+  .mobile-navigation { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 10px 12px; }
+  .mobile-navigation [aria-selected=true] { background: #c9a365; color: #14212a; border-color: #c9a365; }
+  .mobile-navigation button, .app-shell button, .app-shell select { min-height: 44px; }
+  .tabletop { min-height: 0; }
+  .tabletop[data-mobile-map=false] .map-panel, .tabletop[data-mobile-map=false] .inspector,
+  .tabletop[data-mobile-map=false] .sidebar > :is(.eyebrow,.campaign-create,.section-heading,.hint,.unit-list) { display: none; }
+  .workspace-slot[data-mobile-visible=false] { display: none; }
+  .workspace-slot[data-mobile-visible=true] { display: block; min-width: 0; }
+  .sidebar { min-width: 0; padding: 12px; }
+  .sidebar select { min-width: 0; }
+  .character-workspace, .dice-workspace, .combat-workspace, .timeline-workspace, .notes-workspace, .backup-workspace { margin: 10px; padding: 12px; min-width: 0; overflow-wrap: anywhere; }
+  .character-layout nav { padding-right: 0; }
+  .calculations, .content-results { grid-template-columns: minmax(0,1fr); }
+  .sheet-fields, .sheet-array, .sheet-object { padding: 10px; }
+  .resource-actions > div { min-width: 0; max-width: 100%; }
+  .app-shell input, .app-shell select, .app-shell textarea { max-width: 100%; min-width: 0; font-size: 16px; }
+  .app-shell input[type=checkbox] { width: 20px; height: 20px; }
+  .app-shell pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+}

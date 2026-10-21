@@ -1,5 +1,38 @@
 # 实施路线与分工
 
+<!-- P10 current -->
+## P10 本地功能验收通过；交付代码双 CI 待核验（2026-10-22）
+
+沿用 feat/accounts-and-invitations / [草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，不合并、不发布。
+开工 befd8c1 已 fetch 并独立核验 push39634782600 / PR39634789666 六份完整日志，
+102+118、225/构建、87契约、44浏览器、十组实际容器重启与隔离恢复43PASS全部通过。
+P01–P08和P09功能/本地/容器验收保持；P10契约 contracts/p10-acceptance.md，
+逐项产品矩阵、实际RED/GREEN/准备错误和容量数据见 [p10-acceptance.md](p10-acceptance.md)。
+
+新增手机工作区导航，跨标签保留挂载草稿/原请求，切团/失权清理；1个真实缺导航RED→GREEN，
+再加直接GREEN边界覆盖。227前端/生产构建、87契约、47生产Chrome（原44保留、60秒、零retry）
+和最终新3流程16.8s通过。连续DM+两玩家同团覆盖双角色/代管/异角色RP、秘密地图像素、
+准入/骰子/分组先攻/第二轮/手动应用及更正/到期提醒/团队笔记和实际断网撤权。
+102unit+118真实IT串行零失败/错误/跳过；停PG/清除数据库环境后Maven离线102unit通过。
+实际Java+PG重启后完整团所有公开/私密快照、原骰子/待确认行动、十组原业务新会话核验通过。
+
+9独立HTTP会话/100棋子/72消息的本机容量通过：2.66MB地图p95 764ms，组合读取p95 152ms，
+完整备份3.92MB/1.55s；Java working set峰值568.7MB，PG进程求和366.6MB（含共享页重复）。
+不是WAN/TLS/2vCPU云主机性能保证；物理手机尚未实测。CI新增完整团重启/隔离恢复逐字段
+比较，以及恢复后新团/手机/容量和容器内存证据，尚待提交后按精确SHA执行核验。
+
+本地Java/production preview/PG已按实际身份停止，8080/8081/5173/55432无监听；
+原 source fence、p09-target-database.json和p09-restored-assets-final保持。凭据/证据均在外.tools。
+最终p10-backend-final.log、p10-unit-no-db.log、p10-frontend-final.log、p10-browser-full.log、
+p10-final-browser-focus.log、p10-restart-{seed,verify}.log、p10-campaign-restart-verify.log、
+p10-capacity-local.json/p10-capacity-processes.json及p10-final-stopped.log留存。
+
+下一步：提交/推送原分支，核验精确代码SHA的push/PR六job、完整47浏览器、真实容器重启、
+完整团/十组实际隔离恢复和恢复后3流程/容量；通过后才关闭P10本地/容器功能验收。
+云环境准备、部署、公共HTTPS/WSS和物理跨主机恢复按用户要求留到整体功能完成后统一联验。
+这些最终门槛及物理手机/A/M2仍未完成，不以本地结果冒称完整P10或发布完成。
+<!-- /P10 current -->
+
 ## P09 功能及本地/容器验收通过；云端联验后置（2026-10-22）
 
 P01–P08保持完成。契约contracts/backups.md及操作手册deploy/backups.md：独立部署

@@ -116,3 +116,7 @@ immutable DM-only materials, histories, persistent images and authorized exports
 `POST /api/admin/backups`
 `POST /api/admin/backups/migration`
 `GET /api/admin/backups/{id}/content`
+
+[P10 integrated acceptance](p10-acceptance.md) composes the first-edition campaign,
+phone navigation, restart/recovery and bounded capacity measurements. Deferred
+physical cloud deployment/recovery and release gates remain separately tracked.

@@ -473,3 +473,20 @@ P04代码a7ef388的push39460581794/PR39460588799六job全success，逐份日志�
   221 frontend/build,83 contracts, both standard Compose43 browser suites and
   ten actual db/backend restart groups all pass. P08 complete; completion-document
   HEAD independently checked, P09/P10/A and M2 remain pending.
+# P10 phone navigation and complete campaign (2026-10-22)
+
+Executed `npm test -- --run src/mobile-navigation.test.tsx`: 1 failed because the
+phone workspace tablist did not exist (external p10-mobile-navigation-red.log).
+Added phone navigation, keyboard focus, mounted draft preservation and narrow
+single-column styles; the same test passed (p10-mobile-navigation-green-2.log).
+Added campaign-switch/access-denial coverage, directly GREEN, 2 tests total.
+Root-directory npm invocation and boolean|undefined build error were preparation/
+typing failures, not behavioral RED. First browser fixture used damageDice instead
+of existing dice and correctly received 400; corrected the fixture, not validation.
+
+Final 227 frontend tests/build and 47 production Chrome cases pass, retaining all
+44 original browser scenarios. New 360/390px touch-emulated tests tap all six card
+groups, retain drafts/exact uncertain resource bodies across tabs, consume only
+once and operate dice/RP without horizontal document overflow. The new continuous
+DM/two-player campaign is direct-GREEN composed acceptance of existing features.
+Full evidence and pending cloud/physical gates: docs/p10-acceptance.md.

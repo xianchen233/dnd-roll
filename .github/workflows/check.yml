@@ -106,6 +106,7 @@ jobs:
         working-directory: frontend
       - name: Verify ten persistence groups across backend and PostgreSQL restart
         run: |
+          node scripts/check-campaign-restart.mjs capture "$RUNNER_TEMP/p10-campaign-restart.json"
           node scripts/check-asset-restart.mjs seed "$RUNNER_TEMP/asset-restart.json"
           node scripts/check-token-restart.mjs seed "$RUNNER_TEMP/token-restart.json"
           node scripts/check-map-restart.mjs seed "$RUNNER_TEMP/map-restart.json"
@@ -130,8 +131,10 @@ jobs:
           node scripts/check-combat-restart.mjs verify "$RUNNER_TEMP/combat-restart.json"
           node scripts/check-timeline-restart.mjs verify "$RUNNER_TEMP/timeline-restart.json"
           node scripts/check-notes-restart.mjs verify "$RUNNER_TEMP/notes-restart.json"
+          node scripts/check-campaign-restart.mjs verify "$RUNNER_TEMP/p10-campaign-restart.json"
       - name: Restore a complete migration archive into a separate Compose project
         run: |
+          node scripts/check-campaign-restart.mjs capture "$RUNNER_TEMP/p10-campaign-restore.json"
           for group in asset token map p02 character content dice combat timeline notes; do
             node "scripts/check-$group-restart.mjs" seed "$RUNNER_TEMP/restore-$group.json"
           done
@@ -151,9 +154,17 @@ jobs:
           curl --fail --retry 40 --retry-delay 3 --retry-all-errors --max-time 5 --retry-max-time 120 http://localhost:8081/api/auth/csrf > /dev/null
           export E2E_BASE_URL=http://localhost:8081
           node scripts/check-pending-backup.mjs verify "$RUNNER_TEMP/restore-pending.json"
+          node scripts/check-campaign-restart.mjs verify "$RUNNER_TEMP/p10-campaign-restore.json"
           for group in asset token map p02 character content dice combat timeline notes; do
             node "scripts/check-$group-restart.mjs" verify "$RUNNER_TEMP/restore-$group.json"
           done
+          npm --prefix frontend run test:e2e -- p10-campaign.spec.ts mobile.spec.ts
+          node scripts/check-capacity.mjs "$RUNNER_TEMP/p10-capacity.json" &
+          capacity_pid=$!
+          while kill -0 "$capacity_pid" 2>/dev/null; do
+            docker stats --no-stream --format '{{json .}}' >> "$RUNNER_TEMP/p10-memory.jsonl"
+          done
+          wait "$capacity_pid"
       - name: Save container logs
         if: always()
         run: |
@@ -168,3 +179,5 @@ jobs:
             frontend/playwright-report
             compose.log
             restored-compose.log
+            ${{ runner.temp }}/p10-capacity.json
+            ${{ runner.temp }}/p10-memory.jsonl

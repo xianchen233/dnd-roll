@@ -11,6 +11,13 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Added
 
+- Add phone workspace navigation for character/resources, dice, RP/logs and notes,
+  with touch-sized controls, keyboard tab navigation and mounted draft/uncertain
+  request preservation across workspaces. Campaign changes and access denial
+  still dispose private state.
+- Add a continuous DM/two-player acceptance campaign, 360/390px touch-emulated
+  checks, whole-party restart/recovery comparisons and a bounded nine-session
+  capacity workload with real map/history/backup measurements.
 - Add deployment-operator backup management, persistent manual/daily jobs, seven
   successful automatic archives by default, authenticated ZIP downloads and
   visible interruption, generation and retention failures. Backup rotation never
