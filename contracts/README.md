@@ -142,7 +142,8 @@ independent editable definitions, save-as v2 templates and new playable campaign
 `POST /api/campaigns/{campaignId}/module-instance`
 
 [A03 selective updates](module-updates.md) begins with current-DM read-only
-three-way comparison; selection/apply and manual execution are pending.
+three-way comparison. A03b customization selection/apply is available below;
+live-instance updates and manual execution remain pending.
 
 `POST /api/campaigns/{campaignId}/module-customizations/{id}/update-preview`
 
