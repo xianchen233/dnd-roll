@@ -5,6 +5,11 @@ import type { Catalog,ContentData,ContentFilters,ContentChoice,ContentPreview,Co
 import type {DiceCommand,DiceTextCommand,Roll,RollList,Initiative,InitiativeGenerate,InitiativeConfirm,InitiativeHistory} from './dice';
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
 export class Api {
+  moduleUpdateOptions(c:string,id:string,body:{expectedVersion:number;packageId:string}):Promise<import('./modules').ModuleUpdatePreviewResult>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/update-options`,body);}
+  moduleUpdateImpact(c:string,id:string,body:import('./modules').ModuleUpdateImpactRequest):Promise<import('./modules').ModuleUpdateImpact>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/update-impact`,body);}
+  applyModuleUpdate(c:string,id:string,body:import('./modules').ModuleUpdateApply):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/updates`,body);}
+  moduleUpdates(c:string,id:string):Promise<import('./modules').ModuleUpdateEvidence[]>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/updates`);}
+  moduleUpdateRecoveryUrl(c:string,id:string,version:number):string{return `/api/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/updates/${encodeURIComponent(version)}/content`;}
   moduleCustomizations(c:string):Promise<import('./modules').CustomizationListing>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-customizations`);}
   moduleCustomization(c:string,id:string):Promise<import('./modules').Customization>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}`);}
   previewModuleUpdate(c:string,id:string,body:{expectedVersion:number;packageId:string}):Promise<import('./modules').ModuleUpdatePreviewResult>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/update-preview`,body);}

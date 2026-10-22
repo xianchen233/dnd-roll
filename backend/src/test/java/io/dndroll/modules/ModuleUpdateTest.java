@@ -5,6 +5,37 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ModuleUpdateTest {
+    ModuleArchive.Verified verified(ModuleBlueprint.Document d,String rights,List<ModuleArchive.Asset> assets,List<ModuleArchive.Dependency> deps){return new ModuleArchive.Verified(new ModuleArchive.Manifest("dnd-roll.module",2,a,"1.0.0","test","5R",rights,deps,new ModuleArchive.Content(1,"a".repeat(64)),assets),d.nodes(),"a".repeat(64),d);}
+    @Test void manifestChangesBindActualImageBytesAndRightsWithBothAssetClosures(){
+        byte[] old={1,2},next={3,4};var oldAsset=new ModuleArchive.Asset(a,"image/png",2,ModuleArchive.hash(old));var newAsset=new ModuleArchive.Asset(a,"image/png",2,ModuleArchive.hash(next));
+        var base=verified(doc(),"original",List.of(oldAsset),List.of());var incoming=verified(doc(),"changed rights",List.of(newAsset),List.of());
+        var changes=ModuleUpdate.comparePackages(base,base,incoming);assertEquals(Set.of("/manifest/rights","/manifest/assets/"+a+"/sha256"),changes.stream().map(ModuleUpdate.Change::path).collect(java.util.stream.Collectors.toSet()));
+        var choices=changes.stream().map(c->new ModuleUpdate.Selection(c.path(),"INCOMING")).toList();var prepared=ModuleUpdate.prepare(base,base,incoming,Map.of(a,old),Map.of(a,next),choices);
+        assertEquals("changed rights",prepared.manifest().rights());assertArrayEquals(next,prepared.images().get(a));
+        assertThrows(io.dndroll.domain.DomainException.class,()->ModuleUpdate.prepare(base,base,incoming,Map.of(a,old),Map.of(a,old),choices));
+        var kept=ModuleUpdate.prepare(base,base,incoming,Map.of(a,old),Map.of(a,next),changes.stream().map(c->new ModuleUpdate.Selection(c.path(),"KEEP")).toList());assertArrayEquals(old,kept.images().get(a));
+    }
+    @Test void assembledDocumentCannotKeepDanglingNodeOrDependencyReferences(){
+        var base=verified(doc(node(a,"one","")),"original",List.of(),List.of());
+        var reference=new ModuleArchive.Node(b,"DOCUMENT","two","","DM",List.of(a),List.of(),List.of());var incoming=verified(doc(reference,node(a,"one","")),"original",List.of(),List.of());
+        var local=verified(doc(),"original",List.of(),List.of());
+        assertThrows(io.dndroll.domain.DomainException.class,()->ModuleUpdate.prepare(base,local,incoming,Map.of(),Map.of(),List.of(new ModuleUpdate.Selection("/nodes/"+a,"KEEP"),new ModuleUpdate.Selection("/nodes/"+b,"INCOMING"))));
+    }
+    @Test void explicitChoicesPreserveLocalFieldsAndResolveConflicts(){
+        var base=doc(node(a,"base","base"));var local=doc(node(a,"local","local"));var next=doc(node(a,"base","upstream"));
+        var selected=ModuleUpdate.select(base,local,next,List.of(new ModuleUpdate.Selection("/nodes/"+a+"/name","KEEP"),new ModuleUpdate.Selection("/nodes/"+a+"/text","INCOMING")));
+        assertEquals("local",selected.nodes().getFirst().name());assertEquals("upstream",selected.nodes().getFirst().text());
+    }
+    @Test void choicesMustCoverEveryChangeExactlyOnceWithoutForgedPaths(){
+        var base=doc(node(a,"old",""));var next=doc(node(a,"new",""));var s=new ModuleUpdate.Selection("/nodes/"+a+"/name","INCOMING");
+        for(var choices:List.of(List.<ModuleUpdate.Selection>of(),List.of(s,s),List.of(new ModuleUpdate.Selection("/nodes/"+a+"/name","AUTO")),List.of(new ModuleUpdate.Selection("/actor","INCOMING"))))
+            assertThrows(io.dndroll.domain.DomainException.class,()->ModuleUpdate.select(base,base,next,choices));
+    }
+    @Test void selectionsHandleStableIdentityAddDeleteAndNullableValues(){
+        var base=doc(node(a,"one",""));var next=doc(node(b,"two",""));
+        var selected=ModuleUpdate.select(base,base,next,List.of(new ModuleUpdate.Selection("/nodes/"+a,"INCOMING"),new ModuleUpdate.Selection("/nodes/"+b,"INCOMING")));
+        assertEquals(next,selected);
+    }
     final String a="10000000-0000-4000-8000-000000000001",b="10000000-0000-4000-8000-000000000002";
     ModuleArchive.Node node(String id,String name,String text){return new ModuleArchive.Node(id,"DOCUMENT",name,text,"DM",List.of(),List.of(),List.of());}
     ModuleBlueprint.Document doc(ModuleArchive.Node... nodes){return new ModuleBlueprint.Document(List.of(nodes),ModuleBlueprint.empty());}

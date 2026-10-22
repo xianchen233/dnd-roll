@@ -11,6 +11,12 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Added
 
+- Add current-DM selective customization updates with explicit KEEP/INCOMING
+  decisions, server-recomputed hash-bound impact, validated image/dependency
+  closure, atomic durable receipts and downloadable before-image recovery ZIPs.
+  V20 retains effective archives and immutable update provenance. Existing live
+  campaigns remain independent; selection UI and live-instance updates are pending.
+
 - Add a current-DM-only three-way template comparison against the immutable
   baseline and saved customization. Stable identities survive list reordering;
   field edits and delete/edit conflicts show all three values in Chinese UI.

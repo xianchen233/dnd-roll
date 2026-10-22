@@ -11,6 +11,13 @@ import tools.jackson.databind.json.JsonMapper;
 
 @Repository
 public class JdbcModuleLifecycleStore implements Store {
+    public byte[] effectiveArchive(UUID c,UUID id){var rows=jdbc.query("select bytes from module_customization_archive where campaign_id=? and customization_id=?",(r,n)->r.getBytes(1),c,id);return rows.isEmpty()?null:rows.getFirst();}
+    public byte[] beforeArchive(UUID c,UUID id,long version){return jdbc.queryForObject("select before_archive from module_customization_update where campaign_id=? and customization_id=? and version=?",byte[].class,c,id,version);}
+    public void updateArchive(UUID c,UUID id,byte[] bytes,byte[] before,UpdateEvidence evidence){
+        jdbc.update("insert into module_customization_update(campaign_id,customization_id,version,evidence,before_archive) values (?,?,?,?::jsonb,?)",c,id,evidence.version(),json.writeValueAsString(evidence),before);
+        jdbc.update("insert into module_customization_archive(campaign_id,customization_id,bytes) values (?,?,?) on conflict(campaign_id,customization_id) do update set bytes=excluded.bytes",c,id,bytes);
+    }
+    public List<UpdateEvidence> updates(UUID c,UUID id){return jdbc.query("select evidence from module_customization_update where campaign_id=? and customization_id=? order by version",(r,n)->json.readValue(r.getString(1),UpdateEvidence.class),c,id);}
     private final JdbcTemplate jdbc;private final JsonMapper json;
     public JdbcModuleLifecycleStore(JdbcTemplate jdbc,JsonMapper json){this.jdbc=jdbc;this.json=json;}
     public List<Summary> list(UUID c){return jdbc.query("select id,name,version,source_package_id from module_customization where campaign_id=? order by created_at,id",(r,n)->new Summary(r.getObject(1,UUID.class),r.getString(2),r.getLong(3),r.getObject(4,UUID.class)),c);}

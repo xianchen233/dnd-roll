@@ -14,6 +14,7 @@ const [apiText, eventText, readme, accounts, scenes, assets, tokens, mapVisibili
   read('../contracts/characters.md'),
 ]);
 const api = JSON.parse(apiText);
+for(const [suffix,method]of [['update-options','post'],['update-impact','post'],['updates','post'],['updates','get'],['updates/{version}/content','get']])assert.ok(api.paths['/api/campaigns/{campaignId}/module-customizations/{id}/'+suffix]?.[method],`A03b missing ${method} ${suffix}`);
 assert.equal(api.paths['/api/campaigns/{campaignId}/module-customizations/{id}/update-preview']?.post?.['x-read-only'],true,'A03 read-only update preview missing');
 for(const [suffix,method]of [['/module-customizations','get'],['/module-customizations','post'],['/module-customizations/{id}','get'],['/module-customizations/{id}','post'],['/module-customizations/{id}/templates','post'],['/module-customizations/{id}/campaigns','post'],['/module-instance','get'],['/module-instance','post']])assert.ok(api.paths['/api/campaigns/{campaignId}'+suffix]?.[method],`A02 lifecycle operation missing: ${method} ${suffix}`);
 for(const [suffix,method] of [['','get'],['','post'],['/preview','post'],['/{id}/content','get']])assert.ok(api.paths['/api/campaigns/{campaignId}/module-packages'+suffix]?.[method],`A01 operation missing: ${method} ${suffix}`);
@@ -130,6 +131,12 @@ assert.deepEqual(api.paths['/api/auth/csrf'].get.security, []);
 assert.deepEqual(api.paths['/api/auth/login'].post.security, []);
 assert.equal(api.paths['/api/auth/logout'].post.responses['204'].content, undefined);
 const schemas = api.components.schemas;
+const updateSelection={path:'/nodes/00000000-0000-4000-8000-000000000001/text',choice:'INCOMING'};
+validate(schemas.ModuleUpdateSelection,updateSelection);
+for(const invalid of [{...updateSelection,choice:'AUTO'},{...updateSelection,actor:'forged'},{path:updateSelection.path}])assert.throws(()=>validate(schemas.ModuleUpdateSelection,invalid));
+const updateImpact={expectedVersion:0,packageId:'00000000-0000-4000-8000-000000000001',selections:[updateSelection]};validate(schemas.ModuleUpdateImpactRequest,updateImpact);
+for(const invalid of [{...updateImpact,expectedVersion:0.5},{...updateImpact,selections:null},{...updateImpact,impactHash:'forged'}])assert.throws(()=>validate(schemas.ModuleUpdateImpactRequest,invalid));
+validate(schemas.ModuleUpdateApply,{...updateImpact,requestId:updateImpact.packageId,sha256:'a'.repeat(64),impactHash:'b'.repeat(64)});
 const updatePreviewBody={expectedVersion:0,packageId:'10000000-0000-4000-8000-000000000001'};
 validate(schemas.ModuleUpdatePreviewRequest,updatePreviewBody);
 for(const field of Object.keys(updatePreviewBody)){const broken={...updatePreviewBody};delete broken[field];assert.throws(()=>validate(schemas.ModuleUpdatePreviewRequest,broken));}

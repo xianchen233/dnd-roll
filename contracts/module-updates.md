@@ -32,7 +32,50 @@ have no receipts, version increments, events or runtime side effects. Existing
 instances, resource values, turns, progress, RP/dice/combat/history remain intact.
 Preview is not permission or a promise that a later apply will still succeed.
 
-## Remaining ordered slices
+## Customization selection and atomic application (A03b)
+
+Current-DM-only routes under `/api/campaigns/{campaignId}/module-customizations/{id}`:
+
+- POST `/update-options` accepts the A03a request and includes definition changes
+  plus `/manifest/rights`, stable-ID assets and exact dependencies. Original
+  source/baseline remain immutable; current metadata comes from the last applied
+  effective archive. Package display name/version are provenance, not selections.
+- POST `/update-impact` accepts exactly `{expectedVersion,packageId,selections}`.
+  Each selection is `{path,choice:KEEP|INCOMING}`. Every change, including conflicts
+  and local-only edits, needs exactly one decision. Duplicate/unknown/missing
+  paths and other choices reject. No default adoption or implicit conflict fix.
+  Server assembles the document, rights, old/new asset bytes and dependencies,
+  validates all internal references and actual image hashes, and re-verifies the
+  complete bounded ZIP. Missing exact catalog dependencies remain visible.
+  Response adds `{impactHash,document,manifest}` to the A03a result shape.
+  The hash binds campaign/copy/version, original source hash, effective archive,
+  incoming archive hash, exact selections, assembled ZIP and dependency readiness.
+  Both preparation POSTs are read-only with no receipts or version changes.
+- POST `/updates` adds exactly `{requestId,sha256,impactHash}` to the impact body.
+  Current DM and campaign/copy scope precede durable receipt replay. Same actor,
+  request and exact payload return the original acknowledgement; changed payload
+  conflicts. Fresh stale versions, changed impact/hash and unresolved dependencies
+  reject. Server recomputes everything in the same locked transaction as apply.
+  Document/version, effective ZIP, immutable actor/choices/provenance/before-image
+  and receipt commit together, including deferred-commit failure rollback.
+- GET `/updates` returns ordered evidence including the complete previous copy.
+- GET `/updates/{version}/content` downloads a validated ZIP assembled from that
+  before-image document and retained image bytes, under a stable recovery module
+  identity. It can be imported as a separate template/copy; recovery does not
+  overwrite the current copy or undo live play. Unknown/foreign targets are 404
+  after authorization. History and download enforce current DM on every read.
+
+V20 adds effective-archive and immutable-update tables; original V1–V19 files,
+source package, baseline, existing instances and histories remain unchanged.
+Save-as and new campaign creation use the assembled definitions/assets/rights.
+Instances retain original source package/hash provenance plus customization
+version and the effective manifest used at creation. Existing live instances
+are never updated by A03b. BYTEA and JSON evidence are included in P09 archives.
+No-store/private, nosniff and CSRF follow the existing module boundary.
+The TypeScript client exposes these routes; Chinese selection/uncertain-retry UI
+remains A03e work. Actual checks and limitations: `docs/a03b-tdd.md`.
+
+## Ordered slices
 
 1. A03b: explicit per-item KEEP/INCOMING/conflict decisions, server-recomputed
    version/hash-bound impact preview, atomic apply with durable idempotency,

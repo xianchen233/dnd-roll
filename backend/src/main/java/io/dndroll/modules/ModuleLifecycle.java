@@ -20,12 +20,19 @@ public final class ModuleLifecycle {
     public record Progress(UUID requestId,long expectedVersion,Map<String,String> progress) {}
     public record UpdatePreviewRequest(long expectedVersion,UUID packageId) {}
     public record UpdatePreview(long version,UUID packageId,String sha256,List<ModuleUpdate.Change> changes,List<ModuleArchive.Dependency> missingDependencies) {}
+    public record ImpactRequest(long expectedVersion,UUID packageId,List<ModuleUpdate.Selection> selections) {}
+    public record ApplyUpdate(UUID requestId,long expectedVersion,UUID packageId,List<ModuleUpdate.Selection> selections,String sha256,String impactHash) {}
+    public record Impact(long version,UUID packageId,String sha256,String impactHash,ModuleBlueprint.Document document,ModuleArchive.Manifest manifest,List<ModuleUpdate.Change> changes,List<ModuleArchive.Dependency> missingDependencies) {}
+    public record UpdateEvidence(long version,String actor,UUID requestId,UUID packageId,String sha256,String impactHash,List<ModuleUpdate.Selection> selections,Copy before) {}
     public record Ack(UUID id,long version) {}
     public record Receipt(String fingerprint,String kind,Ack result) {}
     public interface Store {
         List<Summary> list(UUID c);Copy copy(UUID c,UUID id);void copy(UUID c,Copy value,boolean create);
         Instance instance(UUID c);void instance(UUID c,Instance value,boolean create);
         Receipt receipt(String actor,UUID request);void receipt(UUID c,String actor,UUID request,Receipt value);
+        byte[] effectiveArchive(UUID c,UUID id);void updateArchive(UUID c,UUID id,byte[] bytes,byte[] before,UpdateEvidence evidence);
+        List<UpdateEvidence> updates(UUID c,UUID id);
+        byte[] beforeArchive(UUID c,UUID id,long version);
     }
     public interface Provisioner {Map<String,Map<String,UUID>> create(UUID source,UUID target,String actor,String name,ModuleArchive.Verified verified,ModuleBlueprint.Document document,Map<String,byte[]> images);}
     private final Store store;private final CharacterService.Store campaigns;private final ModulePackages packages;private final ContentService content;private final Provisioner provisioner;private final SceneService.Events events;
@@ -34,16 +41,49 @@ public final class ModuleLifecycle {
     private void dm(UUID c,String actor){AccountPolicy.dm(campaigns.role(c,actor));}
     private Copy target(UUID c,UUID id){var value=store.copy(c,id);if(value==null)throw missing();return value;}
     private Instance instance(UUID c){var value=store.instance(c);if(value==null)throw missing();return value;}
-    private ModuleArchive.Verified source(UUID c,Copy copy,String actor){return archive.verify(packages.download(c,copy.sourcePackageId(),actor));}
+    private byte[] sourceBytes(UUID c,Copy copy,String actor){byte[] effective=store.effectiveArchive(c,copy.id());return effective==null?packages.download(c,copy.sourcePackageId(),actor):effective;}
+    private ModuleArchive.Verified source(UUID c,Copy copy,String actor){return archive.verify(sourceBytes(c,copy,actor));}
     private List<ModuleArchive.Dependency> missing(UUID c,String actor,ModuleArchive.Manifest manifest){var entries=content.list(c,actor,"","","","","").entries();return manifest.dependencies().stream().filter(d->entries.stream().noneMatch(e->e.id().toString().equals(d.id())&&e.source().revision().equals(d.version())&&e.source().rules().equals(d.rules()))).toList();}
     public Listing list(UUID c,String actor){return campaigns.locked(c,()->{dm(c,actor);return new Listing(campaigns.campaignVersion(c),store.list(c));});}
     public Detail detail(UUID c,UUID id,String actor){return campaigns.locked(c,()->{dm(c,actor);var v=target(c,id);return new Detail(v.id(),v.name(),v.version(),v.sourcePackageId(),v.sourceSha256(),v.baseline(),v.document(),missing(c,actor,source(c,v,actor).manifest()));});}
     public Instance readInstance(UUID c,String actor){return campaigns.locked(c,()->{dm(c,actor);return instance(c);});}
     public UpdatePreview previewUpdate(UUID c,UUID id,String actor,UpdatePreviewRequest r){return campaigns.locked(c,()->{
         dm(c,actor);var copy=target(c,id);if(r.expectedVersion()<0||r.packageId()==null)throw ModuleBlueprint.invalid();AccountPolicy.version(copy.version(),r.expectedVersion());
-        var original=source(c,copy,actor);var incoming=archive.verify(packages.download(c,r.packageId(),actor));
+        var original=archive.verify(packages.download(c,copy.sourcePackageId(),actor));var incoming=archive.verify(packages.download(c,r.packageId(),actor));
         if(!original.manifest().moduleId().equals(incoming.manifest().moduleId())||!original.manifest().rules().equals(incoming.manifest().rules())||original.manifest().moduleVersion().equals(incoming.manifest().moduleVersion()))throw new DomainException("MODULE_VERSION_CONFLICT",409,"Choose a different version of the same module and rules family");
         return new UpdatePreview(copy.version(),r.packageId(),incoming.sha256(),ModuleUpdate.compare(copy.baseline(),copy.document(),incoming.document()),missing(c,actor,incoming.manifest()));
+    });}
+    private record Planned(Impact impact,byte[] bytes,byte[] before) {}
+    public UpdatePreview updateOptions(UUID c,UUID id,String actor,UpdatePreviewRequest r){return campaigns.locked(c,()->{
+        var preview=previewUpdate(c,id,actor,r);var copy=target(c,id);var current=source(c,copy,actor);
+        current=new ModuleArchive.Verified(current.manifest(),copy.document().nodes(),current.sha256(),copy.document());
+        return new UpdatePreview(copy.version(),r.packageId(),preview.sha256(),ModuleUpdate.comparePackages(archive.verify(packages.download(c,copy.sourcePackageId(),actor)),current,archive.verify(packages.download(c,r.packageId(),actor))),preview.missingDependencies());
+    });}
+    private Planned plan(UUID c,UUID id,String actor,ImpactRequest r){
+        dm(c,actor);var copy=target(c,id);previewUpdate(c,id,actor,new UpdatePreviewRequest(r.expectedVersion(),r.packageId()));
+        byte[] originalBytes=packages.download(c,copy.sourcePackageId(),actor),before=sourceBytes(c,copy,actor),incomingBytes=packages.download(c,r.packageId(),actor);
+        var original=archive.verify(originalBytes);var current=archive.verify(before);var incoming=archive.verify(incomingBytes);
+        current=new ModuleArchive.Verified(current.manifest(),copy.document().nodes(),current.sha256(),copy.document());
+        var prepared=ModuleUpdate.prepare(original,current,incoming,archive.images(before),archive.images(incomingBytes),r.selections());
+        byte[] bytes=archive.export(prepared.manifest(),prepared.document(),prepared.images(),original.manifest().moduleId(),original.manifest().moduleVersion(),copy.name());
+        var result=archive.verify(bytes);var absent=missing(c,actor,result.manifest());
+        String hash=DiceService.fingerprint(json,List.of(c,id,copy.version(),copy.sourceSha256(),ModuleArchive.hash(before),incoming.sha256(),r.selections(),result.sha256(),absent));
+        return new Planned(new Impact(copy.version(),r.packageId(),incoming.sha256(),hash,prepared.document(),result.manifest(),prepared.changes(),absent),bytes,before);
+    }
+    public Impact impactUpdate(UUID c,UUID id,String actor,ImpactRequest r){return campaigns.locked(c,()->plan(c,id,actor,r).impact());}
+    public List<UpdateEvidence> updates(UUID c,UUID id,String actor){return campaigns.locked(c,()->{dm(c,actor);target(c,id);return store.updates(c,id);});}
+    public byte[] recoverUpdate(UUID c,UUID id,long version,String actor){return campaigns.locked(c,()->{
+        dm(c,actor);target(c,id);var evidence=store.updates(c,id).stream().filter(v->v.version()==version).findFirst().orElseThrow(ModuleLifecycle::missing);
+        byte[] bytes=store.beforeArchive(c,id,version);var verified=archive.verify(bytes);
+        return archive.export(verified.manifest(),evidence.before().document(),archive.images(bytes),UUID.nameUUIDFromBytes((id+":"+version).getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString(),"1.0.0",evidence.before().name());
+    });}
+    public Ack applyUpdate(UUID c,UUID id,String actor,ApplyUpdate r){return command(c,id,actor,r.requestId(),r.expectedVersion(),"UPDATE",r,()->{
+        var planned=plan(c,id,actor,new ImpactRequest(r.expectedVersion(),r.packageId(),r.selections()));var impact=planned.impact();
+        if(!Objects.equals(r.sha256(),impact.sha256())||!Objects.equals(r.impactHash(),impact.impactHash()))throw new DomainException("MODULE_IMPACT_CONFLICT",409,"Review the current impact before applying");
+        if(!impact.missingDependencies().isEmpty())throw new DomainException("MODULE_DEPENDENCIES_MISSING",409,"Resolve exact module dependencies before applying");
+        var old=target(c,id);var next=new Copy(id,old.name(),old.version()+1,old.sourcePackageId(),old.sourceSha256(),old.baseline(),impact.document());
+        store.updateArchive(c,id,planned.bytes(),planned.before(),new UpdateEvidence(next.version(),actor,r.requestId(),r.packageId(),r.sha256(),r.impactHash(),List.copyOf(r.selections()),old));
+        store.copy(c,next,false);return new Ack(id,next.version());
     });}
     private interface Mutation {Ack apply();}
     private Ack command(UUID c,UUID id,String actor,UUID request,long expected,String kind,Object body,Mutation change){
@@ -64,13 +104,13 @@ public final class ModuleLifecycle {
         CharacterSheet.text(r.name(),100,true);var v=target(c,id);ModuleBlueprint.validate(r.document(),source(c,v,actor).manifest());store.copy(c,new Copy(id,r.name(),v.version()+1,v.sourcePackageId(),v.sourceSha256(),v.baseline(),r.document()),false);return new Ack(id,v.version()+1);
     });}
     public Ack save(UUID c,UUID id,String actor,Save r){return command(c,id,actor,r.requestId(),r.expectedVersion(),"TEMPLATE",r,()->{
-        var v=target(c,id);byte[] source=packages.download(c,v.sourcePackageId(),actor);var verified=archive.verify(source);
+        var v=target(c,id);byte[] source=sourceBytes(c,v,actor);var verified=archive.verify(source);
         // Save-as never aliases an existing identity, even when its bytes happen to match.
         if(packages.list(c,actor).packages().stream().anyMatch(p->p.manifest().moduleId().equals(r.moduleId())&&p.manifest().moduleVersion().equals(r.moduleVersion())))throw new DomainException("MODULE_VERSION_CONFLICT",409,"Choose an unused template identity/version");
         byte[] bytes=archive.export(verified.manifest(),v.document(),archive.images(source),r.moduleId(),r.moduleVersion(),r.name());var result=packages.importPackage(c,actor,new ModulePackages.Command(UUID.randomUUID(),campaigns.campaignVersion(c),false,true),bytes);return new Ack(result.id(),result.version());
     });}
     public Ack launch(UUID c,UUID id,String actor,Launch r){return command(c,id,actor,r.requestId(),r.expectedVersion(),"CAMPAIGN",r,()->{
-        CharacterSheet.text(r.name(),100,true);var v=target(c,id);byte[] bytes=packages.download(c,v.sourcePackageId(),actor);var verified=archive.verify(bytes);ModuleBlueprint.validate(v.document(),verified.manifest());
+        CharacterSheet.text(r.name(),100,true);var v=target(c,id);byte[] bytes=sourceBytes(c,v,actor);var verified=archive.verify(bytes);ModuleBlueprint.validate(v.document(),verified.manifest());
         if(!missing(c,actor,verified.manifest()).isEmpty())throw new DomainException("MODULE_DEPENDENCIES_MISSING",409,"Resolve exact module dependencies before campaign creation");
         if(!verified.manifest().rules().equals("5R"))throw new DomainException("MODULE_RULES_UNSUPPORTED",409,"Live campaigns require an explicitly adapted 5R template");
         UUID target=UUID.randomUUID();var mapping=provisioner.create(c,target,actor,r.name(),verified,v.document(),archive.images(bytes));store.instance(target,new Instance(0,new Source(c,v.sourcePackageId(),v.sourceSha256(),verified.manifest(),id,v.version()),v.document(),mapping,Map.of()),true);return new Ack(target,0);

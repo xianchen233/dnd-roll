@@ -74,6 +74,67 @@ class ModuleLifecycleIT {
         long version=dm.read(copies(c)).get("campaignVersion").asLong();
         return tree(upload(dm,c,command(version,false,false),bytes),200).get("id").asString();
     }
+    Map<String,Object> selection(String pkg,long version){return Map.of("expectedVersion",version,"packageId",pkg,"selections",List.of(Map.of("path","/nodes/"+module+"/text","choice","INCOMING")));}
+    @Test void selectiveUpdateBindsImpactAndPersistsBeforeImageWithSingleEffectRetry()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=copy(dm,c),pkg=candidate(dm,c,id),path=copies(c)+"/"+id;var before=dm.read(path);
+        var body=selection(pkg,0);int receipts=jdbc.queryForObject("select count(*) from module_lifecycle_receipt",Integer.class);
+        var impact=tree(dm.post(path+"/update-impact",body),200);assertEquals(before,dm.read(path));assertEquals(receipts,jdbc.queryForObject("select count(*) from module_lifecycle_receipt",Integer.class));
+        var apply=new LinkedHashMap<String,Object>(body);apply.put("requestId",UUID.randomUUID());apply.put("impactHash",impact.get("impactHash").asString());apply.put("sha256",impact.get("sha256").asString());
+        var wrong=new LinkedHashMap<>(apply);wrong.put("impactHash","0".repeat(64));tree(dm.post(path+"/updates",wrong),409);
+        var ack=tree(dm.post(path+"/updates",apply),200);assertEquals(1,ack.get("version").asLong());assertEquals(ack,tree(dm.post(path+"/updates",apply),200));
+        var after=dm.read(path);assertEquals(before.get("baseline"),after.get("baseline"));assertEquals(before.get("sourcePackageId"),after.get("sourcePackageId"));assertEquals("upstream revision",after.get("document").get("nodes").get(0).get("text").asString());
+        var history=dm.read(path+"/updates");assertEquals(1,history.size());assertEquals(before.get("document"),history.get(0).get("before").get("document"));assertEquals(pkg,history.get(0).get("packageId").asString());
+        var recovered=dm.client.send(HttpRequest.newBuilder(URI.create("http://localhost:"+port+path+"/updates/1/content")).GET().build(),HttpResponse.BodyHandlers.ofByteArray());assertEquals(200,recovered.statusCode());assertEquals(before.get("document"),json.valueToTree(new ModuleArchive().verify(recovered.body()).document()));
+        assertEquals(ack,tree(dm.post(path+"/updates",apply),200));
+        wrong.put("requestId",apply.get("requestId"));tree(dm.post(path+"/updates",wrong),409);
+        tree(dm.post(path+"/updates",new LinkedHashMap<>(apply){{put("requestId",UUID.randomUUID());}}),409);
+        var player=member(c,"PLAYER");tree(player.post(path+"/update-impact",body),403);tree(player.get(path+"/updates"),403);
+        jdbc.update("update campaign_member set role='PLAYER' where campaign_id=? and username=?",c,dm.username);tree(dm.post(path+"/updates",apply),403);
+    }
+    @Test void selectiveUpdateRejectsIncompleteSelectionsAndRollsBackReceiptFailure()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=copy(dm,c),pkg=candidate(dm,c,id),path=copies(c)+"/"+id;var before=dm.read(path);
+        tree(dm.post(path+"/update-impact",Map.of("expectedVersion",0,"packageId",pkg,"selections",List.of())),400);
+        var body=selection(pkg,0);var impact=tree(dm.post(path+"/update-impact",body),200);var apply=new LinkedHashMap<String,Object>(body);UUID request=UUID.randomUUID();apply.put("requestId",request);apply.put("impactHash",impact.get("impactHash").asString());apply.put("sha256",impact.get("sha256").asString());
+        jdbc.execute("alter table module_lifecycle_receipt add constraint reject_update_receipt check (request_id <> '"+request+"'::uuid)");
+        try{tree(dm.post(path+"/updates",apply),500);assertEquals(before,dm.read(path));assertEquals(0,dm.read(path+"/updates").size());}finally{jdbc.execute("alter table module_lifecycle_receipt drop constraint reject_update_receipt");}
+        tree(dm.post(path+"/updates",apply),200);
+    }
+    @Test void selectiveUpdateUsesSelectedImageBytesInSaveAsAndRecoversLocalBeforeImage()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=imageCopy(dm,c,List.of()),path=copies(c)+"/"+id;var before=dm.read(path);var archive=new ModuleArchive();var source=archive.verify(imageArchive(List.of()));
+        var image=new java.awt.image.BufferedImage(4,4,java.awt.image.BufferedImage.TYPE_INT_RGB);image.setRGB(0,0,0x00ff00);var out=new ByteArrayOutputStream();javax.imageio.ImageIO.write(image,"png",out);byte[] bytes=out.toByteArray();var m=source.manifest();
+        var updated=new ModuleArchive.Manifest(m.format(),2,m.moduleId(),"2.0.0",m.name(),m.rules(),"Changed image rights",m.dependencies(),m.content(),List.of(new ModuleArchive.Asset(imageId,"image/png",bytes.length,ModuleArchive.hash(bytes))));
+        String pkg=tree(upload(dm,c,command(2,false,false),archive.export(updated,source.document(),Map.of(imageId,bytes),m.moduleId(),"2.0.0",m.name())),200).get("id").asString();
+        var options=tree(dm.post(path+"/update-options",Map.of("expectedVersion",0,"packageId",pkg)),200);var choices=new ArrayList<Map<String,String>>();for(var change:options.get("changes"))choices.add(Map.of("path",change.get("path").asString(),"choice","INCOMING"));assertTrue(choices.size()>=2);
+        var body=new LinkedHashMap<String,Object>();body.put("expectedVersion",0);body.put("packageId",pkg);body.put("selections",choices);var impact=tree(dm.post(path+"/update-impact",body),200);body.put("requestId",UUID.randomUUID());body.put("sha256",impact.get("sha256").asString());body.put("impactHash",impact.get("impactHash").asString());tree(dm.post(path+"/updates",body),200);
+        var saved=tree(dm.post(path+"/templates",Map.of("requestId",UUID.randomUUID(),"expectedVersion",1,"moduleId",UUID.randomUUID(),"moduleVersion","1.0.0","name","Updated images")),200);byte[] exported=jdbc.queryForObject("select archive from module_package where id=?",byte[].class,UUID.fromString(saved.get("id").asString()));assertArrayEquals(bytes,archive.images(exported).get(imageId));assertEquals("Changed image rights",archive.verify(exported).manifest().rights());assertEquals(before.get("baseline"),dm.read(path).get("baseline"));
+    }
+    @Test void selectiveUpdateDeferredCommitFailureLeavesNoArchiveEvidenceOrReceipt()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=copy(dm,c),pkg=candidate(dm,c,id),path=copies(c)+"/"+id;var before=dm.read(path);var body=new LinkedHashMap<String,Object>(selection(pkg,0));var plan=tree(dm.post(path+"/update-impact",body),200);body.put("requestId",UUID.randomUUID());body.put("sha256",plan.get("sha256").asString());body.put("impactHash",plan.get("impactHash").asString());String fn="a03_fail_"+c.toString().replace("-","");
+        jdbc.execute("create function "+fn+"() returns trigger language plpgsql as $$ begin if new.campaign_id='"+c+"'::uuid and new.result_kind='UPDATE' then raise exception 'injected deferred update failure'; end if; return new; end $$");
+        jdbc.execute("create constraint trigger "+fn+" after insert on module_lifecycle_receipt deferrable initially deferred for each row execute function "+fn+"()");
+        try{tree(dm.post(path+"/updates",body),500);assertEquals(before,dm.read(path));assertEquals(0,dm.read(path+"/updates").size());assertEquals(0,jdbc.queryForObject("select count(*) from module_customization_archive where customization_id=?",Integer.class,UUID.fromString(id)));}finally{jdbc.execute("drop trigger "+fn+" on module_lifecycle_receipt");jdbc.execute("drop function "+fn+"()");}
+        tree(dm.post(path+"/updates",body),200);
+    }
+    @Test void selectiveUpdateConcurrentRequestsApplyOnceAndPreserveLiveState()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=copy(dm,c),pkg=candidate(dm,c,id),path=copies(c)+"/"+id;
+        var body=selection(pkg,0);var impact=tree(dm.post(path+"/update-impact",body),200);var apply=new LinkedHashMap<String,Object>(body);apply.put("requestId",UUID.randomUUID());apply.put("sha256",impact.get("sha256").asString());apply.put("impactHash",impact.get("impactHash").asString());
+        try(var pool=Executors.newFixedThreadPool(2)){var f=pool.submit(()->dm.post(path+"/updates",apply));var s=pool.submit(()->dm.post(path+"/updates",apply));assertEquals(tree(f.get(),200),tree(s.get(),200));}
+        assertEquals(1,dm.read(path+"/updates").size());assertEquals(1,dm.read(path).get("version").asLong());
+        // An existing live campaign retains damaged HP, progress and old messages.
+        edit(dm,c,id,1,playable());String live=tree(dm.post(path+"/campaigns",fresh(2,"Live party")),200).get("id").asString();var instanceBefore=dm.read(instance(live));String root="/api/campaigns/"+live;String card=root+"/characters/"+instanceBefore.get("mapping").get("units").get("10000000-0000-4000-8000-000000000002").asString();
+        tree(dm.post(card+"/resources",Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"resourceId","hp","delta",-5,"reason","Live damage")),200);var cardBefore=dm.read(card);
+        var message=tree(dm.post(root+"/messages",Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"kind","OOC","characterId","","text","Persistent RP","attachments",List.of(),"replyTo","")),200);var messageBefore=dm.read(root+"/timeline/"+message.get("id").asString());
+        var options=tree(dm.post(path+"/update-options",Map.of("expectedVersion",2,"packageId",pkg)),200);var choices=new ArrayList<Map<String,String>>();for(var change:options.get("changes"))choices.add(Map.of("path",change.get("path").asString(),"choice","KEEP"));
+        var request=new LinkedHashMap<String,Object>();request.put("expectedVersion",2);request.put("packageId",pkg);request.put("selections",choices);var plan=tree(dm.post(path+"/update-impact",request),200);request.put("requestId",UUID.randomUUID());request.put("sha256",plan.get("sha256").asString());request.put("impactHash",plan.get("impactHash").asString());tree(dm.post(path+"/updates",request),200);
+        assertEquals(instanceBefore,dm.read(instance(live)));assertEquals(cardBefore,dm.read(card));assertEquals(messageBefore,dm.read(root+"/timeline/"+message.get("id").asString()));
+    }
+    @Test void selectiveUpdateReportsButCannotApplyMissingExactDependency()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=copy(dm,c),path=copies(c)+"/"+id;var before=dm.read(path);
+        String pkg=tree(upload(dm,c,command(2,false,false),archive("2.0.0","5R",List.of(Map.of("id",module,"version","missing","rules","5R")),"Missing")),200).get("id").asString();
+        var options=tree(dm.post(path+"/update-options",Map.of("expectedVersion",0,"packageId",pkg)),200);assertEquals(1,options.get("changes").size());
+        var body=Map.of("expectedVersion",0,"packageId",pkg,"selections",List.of(Map.of("path","/manifest/dependencies/"+module,"choice","INCOMING")));var plan=tree(dm.post(path+"/update-impact",body),200);assertEquals(1,plan.get("missingDependencies").size());
+        var apply=new LinkedHashMap<String,Object>(body);apply.put("requestId",UUID.randomUUID());apply.put("sha256",plan.get("sha256").asString());apply.put("impactHash",plan.get("impactHash").asString());tree(dm.post(path+"/updates",apply),409);assertEquals(before,dm.read(path));
+    }
     @Test void updatePreviewComparesThreeVersionsWithoutMutatingCopiesOrLiveCampaigns()throws Exception{
         var dm=dm();UUID c=campaign(dm);String id=copy(dm,c);String pkg=candidate(dm,c,id);String path=copies(c)+"/"+id;
         var local=(tools.jackson.databind.node.ObjectNode)dm.read(path).get("document").deepCopy();

@@ -145,3 +145,13 @@ independent editable definitions, save-as v2 templates and new playable campaign
 three-way comparison; selection/apply and manual execution are pending.
 
 `POST /api/campaigns/{campaignId}/module-customizations/{id}/update-preview`
+
+A03b adds explicit selections, recomputed impact, atomic customization updates,
+durable evidence and downloadable recovery archives. Chinese selection controls
+remain scheduled for A03e.
+
+`POST /api/campaigns/{campaignId}/module-customizations/{id}/update-options`
+`POST /api/campaigns/{campaignId}/module-customizations/{id}/update-impact`
+`POST /api/campaigns/{campaignId}/module-customizations/{id}/updates`
+`GET /api/campaigns/{campaignId}/module-customizations/{id}/updates`
+`GET /api/campaigns/{campaignId}/module-customizations/{id}/updates/{version}/content`
