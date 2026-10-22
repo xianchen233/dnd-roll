@@ -75,5 +75,8 @@ restored target/assets remain. Unit verification with PG stopped and no database
 environment is recorded separately in a03-unit-pg-stopped.log.
 
 No migration or persistence write path added. No template update or manual trigger
-has been applied. A03b–e and A04–A06/M3 remain unfinished. Cloud/TLS/physical recovery
+has been applied. Final review clarified the empty-result message to mean equal
+definition fields only; A03b still must compare manifest/images/dependencies and
+rights before impact/apply. This wording correction is not a behavior RED.
+A03b–e and A04–A06/M3 remain unfinished. Cloud/TLS/physical recovery
 and real phones stay deferred; no merge or release.

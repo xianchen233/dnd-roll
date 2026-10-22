@@ -7,7 +7,7 @@ export function ModuleUpdatePreview({api,campaignId,copyId,version,packageIds,on
  const epoch=useRef(0),locked=useRef(false);
  useLayoutEffect(()=>{epoch.current++;locked.current=false;setCandidate('');setResult(undefined);setBusy(false);setDenied(false);setMessage('');return()=>{epoch.current++;};},[api,campaignId,copyId,version]);
  async function compare(){if(locked.current||denied||!candidate)return;locked.current=true;setBusy(true);setResult(undefined);const e=++epoch.current;
-  try{const value=await api.previewModuleUpdate(campaignId,copyId,{expectedVersion:version,packageId:candidate});if(e!==epoch.current)return;setResult(value);setMessage(value.changes.length?'比较已完成；尚未应用更新。':'三个版本的内容一致。');}
+  try{const value=await api.previewModuleUpdate(campaignId,copyId,{expectedVersion:version,packageId:candidate});if(e!==epoch.current)return;setResult(value);setMessage(value.changes.length?'比较已完成；尚未应用更新。':'定义字段无差异；尚未应用更新。');}
   catch(error){if(e!==epoch.current)return;if(error instanceof ApiError&&(error.status===401||error.status===403)){setDenied(true);setCandidate('');setMessage('更新比较权限已失效。');onDenied();}
    else setMessage(error instanceof ApiError&&error.status===409?'副本版本或模板身份冲突，请重新载入副本。':'比较读取失败，请重试。');
   }finally{if(e===epoch.current){locked.current=false;setBusy(false);}}

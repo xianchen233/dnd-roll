@@ -20,7 +20,10 @@ is not a modification. Add/delete vs edit is a conflict at that object identity.
 Changes contain `{path,baseline,current,incoming,conflict}`. Absent values are
 JSON null; actual nullable map values remain distinguished by their path.
 Unchanged fields are omitted. A conflict means both sides changed differently
-from baseline. No field is chosen or written by preview.
+from baseline. No field is chosen or written by preview. A03a compares definition
+fields only: it does not yet diff manifest asset bytes, dependency declarations or
+rights. Empty changes mean identical definition fields, not identical packages or
+readiness to apply. Manifest/asset/dependency closure belongs to A03b's impact gate.
 
 Response `{version,packageId,sha256,changes,missingDependencies}` pins the
 candidate's immutable library identity/hash and current customization version.
