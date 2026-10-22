@@ -1,6 +1,7 @@
 import {useLayoutEffect,useRef,useState} from 'react';
 import {ApiError,type Api} from './api';
 import {emptySheet} from './characters';
+import {ModuleUpdatePreview} from './ModuleUpdatePreview';
 import type {Customization,CustomizationListing,ModuleDefinition,ModuleInstance,ModuleSummary} from './modules';
 type Props={api:Api;campaignId:string;revision:number;packages:ModuleSummary[];onDenied():void;onCreated?(id:string):void|Promise<void>;onTemplates?():void|Promise<unknown>};
 type Op={kind:'create';body:Parameters<Api['createModuleCustomization']>[1]}|{kind:'edit';id:string;body:Parameters<Api['editModuleCustomization']>[2]}|{kind:'template';id:string;body:Parameters<Api['saveModuleTemplate']>[2]}|{kind:'launch';id:string;body:Parameters<Api['launchModuleCampaign']>[2]}|{kind:'progress';body:Parameters<Api['saveModuleProgress']>[1]};
@@ -48,5 +49,6 @@ export function ModuleLifecycleWorkspace({api,campaignId,revision,packages,onDen
  <label>新战役名称<input value={campaignName} onChange={e=>setCampaignName(e.target.value)}/></label><button disabled={dirty||!campaignName.trim()||!!detail.missingDependencies.length} onClick={()=>void send({kind:'launch',id:detail.id,body:{requestId:crypto.randomUUID(),expectedVersion:detail.version,name:campaignName}})}>从定制副本创建新战役</button></fieldset>}
  {created&&<p>新战役 {created} <button onClick={()=>{const s=scope.current;void Promise.resolve(onCreated?.(created)).catch(()=>{if(valid(s))setMessage('战役已创建；列表读取失败，请刷新战役列表。');});}}>进入新战役</button></p>}
  {instance&&<fieldset disabled={disabled}><legend>本团独立剧情进度</legend><p>来源 {instance.source.manifest.name} · 定制版本 {instance.source.customizationVersion} · 进度版本 {instance.version}。角色生命与资源在原角色卡工作区维护。</p><label>剧情进度 JSON<textarea aria-label="剧情进度 JSON" rows={5} value={progress} onChange={e=>{progressDirty.current=true;setProgress(e.target.value);}}/></label><button onClick={()=>parse<Record<string,string>>(progress,p=>void send({kind:'progress',body:{requestId:crypto.randomUUID(),expectedVersion:instance.version,progress:p}}))}>保存剧情进度</button><details><summary>查看实例定义与独立身份映射</summary><pre>{JSON.stringify({document:instance.document,mapping:instance.mapping},null,2)}</pre></details></fieldset>}
+ {detail&&<ModuleUpdatePreview api={api} campaignId={campaignId} copyId={detail.id} version={detail.version} packageIds={packages.map(p=>({id:p.id,name:p.manifest.name+' · '+p.manifest.moduleVersion}))} onDenied={deny}/>}
  </>}</section>;
 }

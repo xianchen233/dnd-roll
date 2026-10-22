@@ -140,3 +140,6 @@
 .module-lifecycle textarea{width:100%;box-sizing:border-box;font-family:monospace;resize:vertical;line-height:1.5}
 .module-lifecycle pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:30rem;overflow:auto}
 .module-copy-list{display:flex;flex-wrap:wrap;gap:.5rem}
+.module-update-changes{max-height:36rem;overflow:auto;min-width:0}
+.module-update-changes details{padding:.75rem 0;border-bottom:1px solid var(--panel-line);overflow-wrap:anywhere}
+.module-update-changes dd{margin:.25rem 0 1rem;min-width:0}

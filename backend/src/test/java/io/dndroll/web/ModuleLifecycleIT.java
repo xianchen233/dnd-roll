@@ -65,6 +65,50 @@ class ModuleLifecycleIT {
         return tree(dm.post(copies(c),Map.of("requestId",UUID.randomUUID(),"expectedVersion",1,"packageId",pkg,"name","定制副本")),200).get("id").asString();
     }
     Map<String,Object> fresh(long version,String name){return Map.of("requestId",UUID.randomUUID(),"expectedVersion",version,"name",name);}
+    String candidate(Browser dm,UUID c,String id)throws Exception{
+        var detail=dm.read(copies(c)+"/"+id);
+        var d=(tools.jackson.databind.node.ObjectNode)detail.get("baseline").deepCopy();
+        ((tools.jackson.databind.node.ObjectNode)d.get("nodes").get(0)).put("text","upstream revision");
+        var archive=new ModuleArchive();var original=archive.verify(archive());
+        byte[] bytes=archive.export(original.manifest(),json.treeToValue(d,io.dndroll.modules.ModuleBlueprint.Document.class),Map.of(),module,"2.0.0","Next template");
+        long version=dm.read(copies(c)).get("campaignVersion").asLong();
+        return tree(upload(dm,c,command(version,false,false),bytes),200).get("id").asString();
+    }
+    @Test void updatePreviewComparesThreeVersionsWithoutMutatingCopiesOrLiveCampaigns()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=copy(dm,c);String pkg=candidate(dm,c,id);String path=copies(c)+"/"+id;
+        var local=(tools.jackson.databind.node.ObjectNode)dm.read(path).get("document").deepCopy();
+        ((tools.jackson.databind.node.ObjectNode)local.get("nodes").get(0)).put("text","local revision");edit(dm,c,id,0,local);
+        var before=dm.read(path);int receipts=jdbc.queryForObject("select count(*) from module_lifecycle_receipt",Integer.class);
+        var request=Map.of("expectedVersion",1,"packageId",pkg);
+        var preview=tree(dm.post(path+"/update-preview",request),200);
+        assertEquals(1,preview.get("version").asLong());assertEquals(pkg,preview.get("packageId").asString());assertEquals(1,preview.get("changes").size());
+        var change=preview.get("changes").get(0);assertTrue(change.get("conflict").asBoolean());assertEquals("local revision",change.get("current").asString());assertEquals("upstream revision",change.get("incoming").asString());
+        assertEquals(preview,tree(dm.post(path+"/update-preview",request),200));assertEquals(before,dm.read(path));assertEquals(receipts,jdbc.queryForObject("select count(*) from module_lifecycle_receipt",Integer.class));
+        edit(dm,c,id,1,playable());String target=tree(dm.post(path+"/campaigns",fresh(2,"In progress")),200).get("id").asString();
+        var live=dm.read(instance(target));String targetRoot="/api/campaigns/"+target;var scene=dm.read(targetRoot+"/scene");var card=dm.read(targetRoot+"/characters/"+live.get("mapping").get("units").get("10000000-0000-4000-8000-000000000002").asString());
+        tree(dm.post(path+"/update-preview",Map.of("expectedVersion",2,"packageId",pkg)),200);
+        assertEquals(live,dm.read(instance(target)));assertEquals(scene,dm.read(targetRoot+"/scene"));assertEquals(card,dm.read(targetRoot+"/characters/"+live.get("mapping").get("units").get("10000000-0000-4000-8000-000000000002").asString()));
+    }
+    @Test void updatePreviewChecksCurrentDmVersionScopeAndStrictBody()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=copy(dm,c);String pkg=candidate(dm,c,id);String path=copies(c)+"/"+id+"/update-preview";
+        var body=Map.of("expectedVersion",0,"packageId",pkg);var player=member(c,"PLAYER");tree(player.post(path,body),403);
+        tree(dm.post(path,Map.of("expectedVersion",1,"packageId",pkg)),409);tree(dm.post(path,Map.of("expectedVersion",0,"packageId",UUID.randomUUID())),404);
+        tree(dm.post(path,Map.of("expectedVersion",0,"packageId",pkg,"requestId",UUID.randomUUID())),400);
+        tree(dm.post(path,Map.of("expectedVersion",0,"packageId",dm.read(copies(c)+"/"+id).get("sourcePackageId").asString())),409);
+        tree(dm.post(copies(campaign(dm))+"/"+id+"/update-preview",body),404);
+        jdbc.update("update campaign_member set role='PLAYER' where campaign_id=? and username=?",c,dm.username);tree(dm.post(path,body),403);
+    }
+    @Test void updatePreviewRequiresSameModuleAndRulesButReportsExactMissingDependencies()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=copy(dm,c),path=copies(c)+"/"+id+"/update-preview";
+        var a=new ModuleArchive();var original=a.verify(archive());
+        byte[] other=a.export(original.manifest(),original.document(),Map.of(),UUID.randomUUID().toString(),"2.0.0","Other module");
+        String pkg=tree(upload(dm,c,command(2,false,false),other),200).get("id").asString();tree(dm.post(path,Map.of("expectedVersion",0,"packageId",pkg)),409);
+        pkg=tree(upload(dm,c,command(3,false,true),archive("3.0.0","2014",List.of(),"Other rules")),200).get("id").asString();tree(dm.post(path,Map.of("expectedVersion",0,"packageId",pkg)),409);
+        pkg=tree(upload(dm,c,command(4,false,false),archive("4.0.0","5R",List.of(Map.of("id",module,"version","exact-missing","rules","5R")),"Missing dependency")),200).get("id").asString();
+        var response=dm.post(path,Map.of("expectedVersion",0,"packageId",pkg));assertEquals("no-store, private",response.headers().firstValue("Cache-Control").orElse(""));assertEquals("nosniff",response.headers().firstValue("X-Content-Type-Options").orElse(""));
+        var preview=tree(response,200);assertEquals("exact-missing",preview.get("missingDependencies").get(0).get("version").asString());
+        var noCsrf=dm.client.send(HttpRequest.newBuilder(URI.create("http://localhost:"+port+path)).header("Content-Type","application/json").POST(HttpRequest.BodyPublishers.ofString(json.writeValueAsString(Map.of("expectedVersion",0,"packageId",pkg)))).build(),HttpResponse.BodyHandlers.ofString());assertEquals(403,noCsrf.statusCode());
+    }
     tools.jackson.databind.node.ObjectNode playable(){
         var n=json.createObjectNode();n.set("nodes",json.valueToTree(List.of(
             Map.of("id",module,"kind","SCENE","name","入口","text","故事起点","visibility","DM","nodeIds",List.of(),"assetIds",List.of(),"dependencyIds",List.of()),

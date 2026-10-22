@@ -18,6 +18,8 @@ public final class ModuleLifecycle {
     public record Save(UUID requestId,long expectedVersion,String moduleId,String moduleVersion,String name) {}
     public record Launch(UUID requestId,long expectedVersion,String name) {}
     public record Progress(UUID requestId,long expectedVersion,Map<String,String> progress) {}
+    public record UpdatePreviewRequest(long expectedVersion,UUID packageId) {}
+    public record UpdatePreview(long version,UUID packageId,String sha256,List<ModuleUpdate.Change> changes,List<ModuleArchive.Dependency> missingDependencies) {}
     public record Ack(UUID id,long version) {}
     public record Receipt(String fingerprint,String kind,Ack result) {}
     public interface Store {
@@ -37,6 +39,12 @@ public final class ModuleLifecycle {
     public Listing list(UUID c,String actor){return campaigns.locked(c,()->{dm(c,actor);return new Listing(campaigns.campaignVersion(c),store.list(c));});}
     public Detail detail(UUID c,UUID id,String actor){return campaigns.locked(c,()->{dm(c,actor);var v=target(c,id);return new Detail(v.id(),v.name(),v.version(),v.sourcePackageId(),v.sourceSha256(),v.baseline(),v.document(),missing(c,actor,source(c,v,actor).manifest()));});}
     public Instance readInstance(UUID c,String actor){return campaigns.locked(c,()->{dm(c,actor);return instance(c);});}
+    public UpdatePreview previewUpdate(UUID c,UUID id,String actor,UpdatePreviewRequest r){return campaigns.locked(c,()->{
+        dm(c,actor);var copy=target(c,id);if(r.expectedVersion()<0||r.packageId()==null)throw ModuleBlueprint.invalid();AccountPolicy.version(copy.version(),r.expectedVersion());
+        var original=source(c,copy,actor);var incoming=archive.verify(packages.download(c,r.packageId(),actor));
+        if(!original.manifest().moduleId().equals(incoming.manifest().moduleId())||!original.manifest().rules().equals(incoming.manifest().rules())||original.manifest().moduleVersion().equals(incoming.manifest().moduleVersion()))throw new DomainException("MODULE_VERSION_CONFLICT",409,"Choose a different version of the same module and rules family");
+        return new UpdatePreview(copy.version(),r.packageId(),incoming.sha256(),ModuleUpdate.compare(copy.baseline(),copy.document(),incoming.document()),missing(c,actor,incoming.manifest()));
+    });}
     private interface Mutation {Ack apply();}
     private Ack command(UUID c,UUID id,String actor,UUID request,long expected,String kind,Object body,Mutation change){
         if(request==null||expected<0)throw ModuleBlueprint.invalid();

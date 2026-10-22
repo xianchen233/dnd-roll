@@ -14,6 +14,7 @@ const [apiText, eventText, readme, accounts, scenes, assets, tokens, mapVisibili
   read('../contracts/characters.md'),
 ]);
 const api = JSON.parse(apiText);
+assert.equal(api.paths['/api/campaigns/{campaignId}/module-customizations/{id}/update-preview']?.post?.['x-read-only'],true,'A03 read-only update preview missing');
 for(const [suffix,method]of [['/module-customizations','get'],['/module-customizations','post'],['/module-customizations/{id}','get'],['/module-customizations/{id}','post'],['/module-customizations/{id}/templates','post'],['/module-customizations/{id}/campaigns','post'],['/module-instance','get'],['/module-instance','post']])assert.ok(api.paths['/api/campaigns/{campaignId}'+suffix]?.[method],`A02 lifecycle operation missing: ${method} ${suffix}`);
 for(const [suffix,method] of [['','get'],['','post'],['/preview','post'],['/{id}/content','get']])assert.ok(api.paths['/api/campaigns/{campaignId}/module-packages'+suffix]?.[method],`A01 operation missing: ${method} ${suffix}`);
 for(const [path,method] of [['/api/admin/backups','get'],['/api/admin/backups','post'],['/api/admin/backups/migration','post'],['/api/admin/backups/{id}/content','get']])assert.ok(api.paths[path]?.[method],`P09 operation missing: ${method} ${path}`);
@@ -129,6 +130,12 @@ assert.deepEqual(api.paths['/api/auth/csrf'].get.security, []);
 assert.deepEqual(api.paths['/api/auth/login'].post.security, []);
 assert.equal(api.paths['/api/auth/logout'].post.responses['204'].content, undefined);
 const schemas = api.components.schemas;
+const updatePreviewBody={expectedVersion:0,packageId:'10000000-0000-4000-8000-000000000001'};
+validate(schemas.ModuleUpdatePreviewRequest,updatePreviewBody);
+for(const field of Object.keys(updatePreviewBody)){const broken={...updatePreviewBody};delete broken[field];assert.throws(()=>validate(schemas.ModuleUpdatePreviewRequest,broken));}
+for(const value of [-1,0.5,'0',null])assert.throws(()=>validate(schemas.ModuleUpdatePreviewRequest,{...updatePreviewBody,expectedVersion:value}));
+assert.throws(()=>validate(schemas.ModuleUpdatePreviewRequest,{...updatePreviewBody,requestId:updatePreviewBody.packageId}));
+assert.equal(api.paths['/api/campaigns/{campaignId}/module-customizations/{id}/update-preview'].post['x-idempotency'],undefined);
 const move = api.paths['/api/campaigns/{campaignId}/tokens/{tokenId}/moves'].post;
 assert.deepEqual(schemas.MoveRequest.required, ['requestId', 'expectedVersion', 'x', 'y']);
 assert.equal(schemas.MoveRequest.additionalProperties, false);

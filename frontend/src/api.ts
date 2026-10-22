@@ -7,6 +7,7 @@ export class ApiError extends Error { constructor(public status: number, message
 export class Api {
   moduleCustomizations(c:string):Promise<import('./modules').CustomizationListing>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-customizations`);}
   moduleCustomization(c:string,id:string):Promise<import('./modules').Customization>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}`);}
+  previewModuleUpdate(c:string,id:string,body:{expectedVersion:number;packageId:string}):Promise<import('./modules').ModuleUpdatePreviewResult>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/update-preview`,body);}
   createModuleCustomization(c:string,body:import('./modules').LifecycleCommand&{packageId:string;name:string}):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations`,body);}
   editModuleCustomization(c:string,id:string,body:import('./modules').LifecycleCommand&{name:string;document:import('./modules').ModuleDefinition}):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}`,body);}
   saveModuleTemplate(c:string,id:string,body:import('./modules').LifecycleCommand&{moduleId:string;moduleVersion:string;name:string}):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/templates`,body);}

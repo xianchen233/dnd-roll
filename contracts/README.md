@@ -140,3 +140,8 @@ independent editable definitions, save-as v2 templates and new playable campaign
 `POST /api/campaigns/{campaignId}/module-customizations/{id}/campaigns`
 `GET /api/campaigns/{campaignId}/module-instance`
 `POST /api/campaigns/{campaignId}/module-instance`
+
+[A03 selective updates](module-updates.md) begins with current-DM read-only
+three-way comparison; selection/apply and manual execution are pending.
+
+`POST /api/campaigns/{campaignId}/module-customizations/{id}/update-preview`

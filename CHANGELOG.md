@@ -11,6 +11,11 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Added
 
+- Add a current-DM-only three-way template comparison against the immutable
+  baseline and saved customization. Stable identities survive list reordering;
+  field edits and delete/edit conflicts show all three values in Chinese UI.
+  Preview checks version, module identity and rules without writing live state.
+
 - Add independent module customizations with immutable source/editing baselines,
   versioned full-definition editing, v2 typed scenes/cards/placements and save-as
   template ZIPs. New campaigns receive fresh assets, units, notes and permissions;

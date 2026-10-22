@@ -9666,6 +9666,177 @@
           "version": "copy creation uses campaign version; edit/save/launch use copy version; progress uses independent instance version"
         }
       }
+    },
+    "/api/campaigns/{campaignId}/module-customizations/{id}/update-preview": {
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "summary": "A03 current-DM stable-identity three-way update preview",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current DM authorized result",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModuleUpdatePreview"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid package, current DM denial, version/request conflict, transport limit or unavailable validation",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid package, current DM denial, version/request conflict, transport limit or unavailable validation",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Invalid package, current DM denial, version/request conflict, transport limit or unavailable validation",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Invalid package, current DM denial, version/request conflict, transport limit or unavailable validation",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Invalid package, current DM denial, version/request conflict, transport limit or unavailable validation",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Invalid package, current DM denial, version/request conflict, transport limit or unavailable validation",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Invalid package, current DM denial, version/request conflict, transport limit or unavailable validation",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          }
+        },
+        "x-module-permission": "current campaign DM before preview/list/download/receipt replay",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModuleUpdatePreviewRequest"
+              }
+            }
+          }
+        },
+        "x-read-only": true
+      }
     }
   },
   "components": {
@@ -16087,6 +16258,83 @@
             "additionalProperties": {
               "type": "string",
               "maxLength": 2000
+            }
+          }
+        }
+      },
+      "ModuleUpdatePreviewRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expectedVersion",
+          "packageId"
+        ],
+        "properties": {
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "packageId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ModuleUpdateChange": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "baseline",
+          "current",
+          "incoming",
+          "conflict"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "baseline": {},
+          "current": {},
+          "incoming": {},
+          "conflict": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ModuleUpdatePreview": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "packageId",
+          "sha256",
+          "changes",
+          "missingDependencies"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "packageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModuleUpdateChange"
+            }
+          },
+          "missingDependencies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModuleDependency"
             }
           }
         }

@@ -21,6 +21,7 @@ public class ModuleLifecycleController {
     @PostMapping("/module-customizations/{id}") Ack edit(@PathVariable UUID campaignId,@PathVariable UUID id,@RequestBody JsonNode body,Principal p){return service.edit(campaignId,id,p.getName(),ModuleBlueprint.command(body,Edit.class));}
     @PostMapping("/module-customizations/{id}/templates") Ack save(@PathVariable UUID campaignId,@PathVariable UUID id,@RequestBody JsonNode body,Principal p){return service.save(campaignId,id,p.getName(),ModuleBlueprint.command(body,Save.class));}
     @PostMapping("/module-customizations/{id}/campaigns") Ack launch(@PathVariable UUID campaignId,@PathVariable UUID id,@RequestBody JsonNode body,Principal p){return service.launch(campaignId,id,p.getName(),ModuleBlueprint.command(body,Launch.class));}
+    @PostMapping("/module-customizations/{id}/update-preview") UpdatePreview previewUpdate(@PathVariable UUID campaignId,@PathVariable UUID id,@RequestBody JsonNode body,Principal p){return service.previewUpdate(campaignId,id,p.getName(),ModuleBlueprint.command(body,UpdatePreviewRequest.class));}
     @GetMapping("/module-instance") Instance instance(@PathVariable UUID campaignId,Principal p){return service.readInstance(campaignId,p.getName());}
     @PostMapping("/module-instance") Ack progress(@PathVariable UUID campaignId,@RequestBody JsonNode body,Principal p){return service.progress(campaignId,p.getName(),ModuleBlueprint.command(body,Progress.class));}
 }

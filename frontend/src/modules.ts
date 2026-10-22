@@ -11,3 +11,4 @@ export type CustomizationListing={campaignVersion:number;customizations:Customiz
 export type Customization=CustomizationSummary&{sourceSha256:string;baseline:ModuleDefinition;document:ModuleDefinition;missingDependencies:ModuleDependency[]};
 export type ModuleInstance={version:number;source:{campaignId:string;packageId:string;sha256:string;manifest:ModuleManifest;customizationId:string;customizationVersion:number};document:ModuleDefinition;mapping:Record<string,Record<string,string>>;progress:Record<string,string>};
 export type LifecycleCommand={requestId:string;expectedVersion:number};
+export type ModuleUpdatePreviewResult={version:number;packageId:string;sha256:string;changes:{path:string;baseline:unknown;current:unknown;incoming:unknown;conflict:boolean}[];missingDependencies:ModuleDependency[]};
