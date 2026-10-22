@@ -80,3 +80,12 @@ definition fields only; A03b still must compare manifest/images/dependencies and
 rights before impact/apply. This wording correction is not a behavior RED.
 A03b–e and A04–A06/M3 remain unfinished. Cloud/TLS/physical recovery
 and real phones stay deferred; no merge or release.
+
+2026-10-23: code 4f11cee exact-SHA push39808922365 and PR39808930410 both
+completed/success. Re-downloaded all six full logs and strictly checked each group:
+121 unit + 136 real IT; 248 frontend/build; 100 contracts; 52 browser; all original
+restart/restore/campaign/capacity assertions passed. Final evidence a03-code-ci-final.log
+and a03-ci-4f11ceeafa88cac270bc9827ca9276655116cc8f.json outside repo. A first check
+rejected in_progress; final success was asserted only after completion. HEAD-filtered
+run listing intermittently returned empty; direct known run IDs with SHA assertions
+were used. Final documentation HEAD must independently pass the same checks.

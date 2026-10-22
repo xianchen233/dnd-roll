@@ -19,7 +19,20 @@ A03 契约 [module-updates.md](../contracts/module-updates.md)，实际 RED/GREE
 完整52生产Chrome（保留原51、60秒/零retry、2.6m）通过。旧99路由/全部旧schema结构保持。
 真实浏览器先扣HP并发消息，再展开比较，原卡/消息/副本/实例逐字段保持；1440/390px
 截图与无溢出通过，窄屏浏览器不冒称真实手机。无迁移/新持久化写路径。
-新代码SHA的push/PR远端完整证据仍须取得；旧d40f03f结果不能替代。
+代码 **4f11ceeafa88cac270bc9827ca9276655116cc8f** 的
+[push39808922365](https://github.com/xianchen233/dnd-roll/actions/runs/39808922365) /
+[PR39808930410](https://github.com/xianchen233/dnd-roll/actions/runs/39808930410)六job均completed/success。
+2026-10-23独立重取六份完整日志，严格核对每组121unit+136真实IT零失败/错误/跳过、
+248前端/构建、100契约、52生产浏览器、原43PASS/4MODULE/4LIFECYCLE、十二组实际
+容器重启、真实迁移归档及独立Compose新卷离线恢复、完整团两次逐字段比较、
+待确认结果、恢复后3流程和9会话/100棋子/72消息容量errors=0，全部通过。
+证据外.tools/a03-code-ci-final.log、a03-ci-4f11ceeafa88cac270bc9827ca9276655116cc8f.json
+及a03-job-{jobId}.log。按HEAD的列表间歇空结果时，直接用已知run ID并断言SHA；
+首次严格检查拒绝in_progress，最终completed后才通过。原草稿PR已更新范围。
+文档最终HEAD仍须独立核对同等日志；最终索引为外.tools/a03-head-ci-final.log和
+a03-ci-{HEAD}.json。A03a仅定义字段差异，不比较manifest素材字节/依赖/权利声明，
+无差异不等于相同包或可以应用；这些列入A03b。停PG并清除数据库环境后121unit通过，
+本地验收Java/preview/PG已按身份停止，8080/8081/5173/55432无监听。
 
 **A03仍未完成**：下一可执行 A03b 为明确逐项KEEP/INCOMING与冲突决定、服务器重算
 版本/hash绑定的影响预览、素材/依赖闭包及原子应用/持久回执/可恢复前像。
