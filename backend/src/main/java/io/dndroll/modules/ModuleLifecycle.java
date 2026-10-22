@@ -29,6 +29,9 @@ public final class ModuleLifecycle {
     public record LiveApply(UUID requestId,long expectedVersion,long customizationVersion,String impactHash) {}
     public record LiveImpact(long version,long customizationVersion,String impactHash,List<ModuleUpdate.Change> changes,List<String> blockers) {}
     public record LiveEvidence(long version,String actor,UUID requestId,String impactHash,Instance before) {}
+    public record MigrationApply(UUID requestId,long expectedVersion,long customizationVersion,String impactHash,List<String> confirmations) {}
+    public record MigrationImpact(long version,long customizationVersion,String impactHash,List<String> confirmations,List<String> blockers,List<ModuleUpdate.Change> changes,Object runtime) {}
+    public record MigrationEvidence(long version,String actor,UUID requestId,String impactHash,Instance before,UUID recoveryCampaignId,Object runtime) {}
     public record Receipt(String fingerprint,String kind,Ack result) {}
     public interface Store {
         List<Summary> list(UUID c);Copy copy(UUID c,UUID id);void copy(UUID c,Copy value,boolean create);
@@ -38,8 +41,15 @@ public final class ModuleLifecycle {
         List<UpdateEvidence> updates(UUID c,UUID id);
         byte[] beforeArchive(UUID c,UUID id,long version);
         List<LiveEvidence> liveUpdates(UUID c);void liveUpdate(UUID c,LiveEvidence value);
+        List<MigrationEvidence> migrations(UUID c);void migration(UUID c,MigrationEvidence value);
     }
-    public interface Provisioner {Map<String,Map<String,UUID>> create(UUID source,UUID target,String actor,String name,ModuleArchive.Verified verified,ModuleBlueprint.Document document,Map<String,byte[]> images);}
+    public interface Provisioner {
+        Map<String,Map<String,UUID>> create(UUID source,UUID target,String actor,String name,ModuleArchive.Verified verified,ModuleBlueprint.Document document,Map<String,byte[]> images);
+        Object runtime(UUID c);
+        ModuleBlueprint.Document recovery(UUID c,Instance before);
+        List<String> migrationBlockers(UUID c,Instance before,ModuleBlueprint.Document next);
+        Map<String,Map<String,UUID>> migrate(UUID c,String actor,Instance before,ModuleBlueprint.Document next);
+    }
     private final Store store;private final CharacterService.Store campaigns;private final ModulePackages packages;private final ContentService content;private final Provisioner provisioner;private final SceneService.Events events;
     private final ModuleArchive archive=new ModuleArchive();private final JsonMapper json=JsonMapper.builder().build();
     public ModuleLifecycle(Store store,CharacterService.Store campaigns,ModulePackages packages,ContentService content,Provisioner provisioner,SceneService.Events events){this.store=store;this.campaigns=campaigns;this.packages=packages;this.content=content;this.provisioner=provisioner;this.events=events;}
@@ -162,4 +172,44 @@ public final class ModuleLifecycle {
         });
     }
     private static DomainException missing(){return new DomainException("NOT_FOUND",404,"Module preparation not found");}
+
+    private MigrationImpact migrationPlan(UUID c,String actor,LiveReview r){
+        var impact=livePlan(c,actor,r);var before=instance(c);var s=before.source();var next=target(s.campaignId(),s.customizationId()).document();
+        var blockers=new ArrayList<String>();
+        for(String b:impact.blockers())if(b.startsWith("/manifest")||b.equals("/dependencies")||b.contains("admissionMode")||b.contains("approvedDependencyIds"))blockers.add(b);
+        // Published materials are independent play records; changes require their own review.
+        var oldDocs=before.document().nodes().stream().filter(n->n.kind().equals("DOCUMENT")).toList();
+        var newDocs=next.nodes().stream().filter(n->n.kind().equals("DOCUMENT")).toList();if(!oldDocs.equals(newDocs))blockers.add("/published-materials");
+        blockers.addAll(provisioner.migrationBlockers(c,before,next));
+        var confirmations=new ArrayList<String>();
+        for(var change:impact.changes())confirmations.add("APPLY "+change.path());
+        for(var scene:before.document().play().scenes())if(next.play().scenes().stream().noneMatch(n->n.nodeId().equals(scene.nodeId())))confirmations.add("RETIRE_SCENE "+scene.nodeId()+"; retain rows and history; switch current scene if necessary");
+        for(var unit:before.document().play().units())if(next.play().units().stream().noneMatch(n->n.nodeId().equals(unit.nodeId())))confirmations.add("RETAIN_COMBAT_IDENTITY "+unit.nodeId()+"; old HP, resources, conditions and turns remain; replacement does not enter combat automatically");
+        confirmations.add("CREATE_DM_ONLY_RECOVERY; preserve live HP/resources/conditions; maps fully covered; original combat and records stay in original campaign");
+        if(confirmations.size()>500)blockers.add("/confirmation-limit");
+        Object runtime=provisioner.runtime(c);String hash=DiceService.fingerprint(json,List.of(impact.impactHash(),runtime,confirmations,blockers));
+        return new MigrationImpact(before.version(),r.customizationVersion(),hash,List.copyOf(confirmations),List.copyOf(blockers),impact.changes(),runtime);
+    }
+    public MigrationImpact migrationImpact(UUID c,String actor,LiveReview r){return liveLocked(c,actor,()->migrationPlan(c,actor,r));}
+    public List<MigrationEvidence> migrations(UUID c,String actor){return campaigns.locked(c,()->{dm(c,actor);instance(c);return store.migrations(c);});}
+    public Ack migrate(UUID c,String actor,MigrationApply r){
+        if(r.requestId()==null||r.expectedVersion()<0||r.customizationVersion()<0||r.confirmations()==null)throw ModuleBlueprint.invalid();
+        return liveLocked(c,actor,()->{
+            String fp=DiceService.fingerprint(json,List.of(c,"MIGRATE",r));var receipt=store.receipt(actor,r.requestId());
+            if(receipt!=null){if(!fp.equals(receipt.fingerprint()))throw new DomainException("IDEMPOTENCY_CONFLICT",409,"Request ID already used");var evidence=store.migrations(c).stream().filter(e->e.requestId().equals(r.requestId())&&e.actor().equals(actor)).findFirst().orElseThrow(ModuleLifecycle::missing);dm(evidence.recoveryCampaignId(),actor);return receipt.result();}
+            var impact=migrationPlan(c,actor,new LiveReview(r.expectedVersion(),r.customizationVersion()));
+            if(!Objects.equals(impact.impactHash(),r.impactHash()))throw new DomainException("MODULE_IMPACT_CONFLICT",409,"Review current runtime impact");
+            if(!impact.blockers().isEmpty())throw new DomainException("MODULE_LIVE_MIGRATION_REQUIRED",409,"Resolve structural migration blockers");
+            if(r.confirmations().size()!=impact.confirmations().size()||!new HashSet<>(r.confirmations()).equals(new HashSet<>(impact.confirmations())))throw new DomainException("MODULE_CONFIRMATION_REQUIRED",409,"Confirm every exact structural impact");
+            var before=instance(c);var s=before.source();var copy=target(s.campaignId(),s.customizationId());Object runtime=provisioner.runtime(c);
+            var oldDocument=provisioner.recovery(c,before);UUID recovery=UUID.randomUUID();
+            byte[] bytes=sourceBytes(s.campaignId(),copy,actor);var verified=archive.verify(bytes);
+            var recoveryMapping=provisioner.create(s.campaignId(),recovery,actor,"迁移前恢复副本",verified,oldDocument,archive.images(bytes));
+            store.instance(recovery,new Instance(0,s,oldDocument,recoveryMapping,before.progress()),true);
+            var mapping=provisioner.migrate(c,actor,before,copy.document());long version=before.version()+1;
+            store.migration(c,new MigrationEvidence(version,actor,r.requestId(),r.impactHash(),before,recovery,runtime));
+            store.instance(c,new Instance(version,new Source(s.campaignId(),s.packageId(),s.sha256(),s.manifest(),s.customizationId(),copy.version()),copy.document(),mapping,before.progress()),false);
+            var ack=new Ack(c,version);store.receipt(c,actor,r.requestId(),new Receipt(fp,"MIGRATE",ack));events.changed(c);return ack;
+        });
+    }
 }

@@ -18,13 +18,13 @@ public class JdbcTokenStore implements Store {
     public <T> T locked(UUID campaign, Supplier<T> work) { return scenes.locked(campaign, work); }
     public Role role(UUID campaign, String actor) { return scenes.role(campaign, actor); }
     public Scene scene(UUID campaign, UUID scene) {
-        var rows = jdbc.query("select width,height,version from scene where campaign_id=? and id=?", (rs,n) -> new Scene(scene,rs.getInt(1),rs.getInt(2),rs.getLong(3),List.of()),campaign,scene);
+        var rows = jdbc.query("select width,height,version from scene where campaign_id=? and id=? and not module_retired", (rs,n) -> new Scene(scene,rs.getInt(1),rs.getInt(2),rs.getLong(3),List.of()),campaign,scene);
         if (rows.isEmpty()) return null;
         Map<UUID,List<String>> controls = new HashMap<>();
         jdbc.query("select token_id,username from token_controller where campaign_id=? and token_id in (select id from token where scene_id=?) order by username", rs -> {
             controls.computeIfAbsent(rs.getObject(1,UUID.class),ignored -> new ArrayList<>()).add(rs.getString(2));
         }, campaign, scene);
-        var tokens = jdbc.query("select * from token where scene_id=? order by id", (rs,n) -> {
+        var tokens = jdbc.query("select * from token where scene_id=? and not module_retired order by id", (rs,n) -> {
             UUID id = rs.getObject("id",UUID.class);
             return new Token(id,rs.getString("name"),rs.getInt("x"),rs.getInt("y"),rs.getLong("version"),rs.getBoolean("hidden"),controls.getOrDefault(id,List.of()).stream().sorted().toList());
         },scene);

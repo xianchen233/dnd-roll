@@ -22,3 +22,6 @@ export type ModuleLiveReview={expectedVersion:number;customizationVersion:number
 export type ModuleLiveApply=ModuleLiveReview&{requestId:string;impactHash:string};
 export type ModuleLiveImpact={version:number;customizationVersion:number;impactHash:string;changes:ModuleUpdatePreviewResult['changes'];blockers:string[]};
 export type ModuleLiveEvidence={version:number;actor:string;requestId:string;impactHash:string;before:ModuleInstance};
+export type ModuleMigrationApply=ModuleLiveApply&{confirmations:string[]};
+export type ModuleMigrationImpact={version:number;customizationVersion:number;impactHash:string;confirmations:string[];blockers:string[];changes:ModuleUpdatePreviewResult['changes'];runtime:Record<string,unknown>};
+export type ModuleMigrationEvidence=ModuleLiveEvidence&{recoveryCampaignId:string;runtime:Record<string,unknown>};

@@ -6,6 +6,9 @@ import type {DiceCommand,DiceTextCommand,Roll,RollList,Initiative,InitiativeGene
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
 export class Api {
   liveModuleImpact(c:string,body:import('./modules').ModuleLiveReview):Promise<import('./modules').ModuleLiveImpact>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-instance/update-impact`,body);}
+  moduleMigrationImpact(c:string,body:import('./modules').ModuleLiveReview):Promise<import('./modules').ModuleMigrationImpact>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-instance/migration-impact`,body);}
+  migrateModule(c:string,body:import('./modules').ModuleMigrationApply):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-instance/migrations`,body);}
+  moduleMigrations(c:string):Promise<import('./modules').ModuleMigrationEvidence[]>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-instance/migrations`);}
   applyLiveModule(c:string,body:import('./modules').ModuleLiveApply):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-instance/updates`,body);}
   liveModuleUpdates(c:string):Promise<import('./modules').ModuleLiveEvidence[]>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-instance/updates`);}
 

@@ -143,7 +143,8 @@ independent editable definitions, save-as v2 templates and new playable campaign
 
 [A03 selective updates](module-updates.md) begins with current-DM read-only
 three-way comparison. A03b customization selection/apply is available below;
-live-instance updates and manual execution remain pending.
+live-instance text and structural gates are described below; manual execution
+remains pending.
 
 `POST /api/campaigns/{campaignId}/module-customizations/{id}/update-preview`
 
@@ -164,3 +165,9 @@ A03c preparation-text gate (partial; structural migration remains pending):
 
 See [live preparation text contract](module-updates.md) for both-domain DM checks,
 version/hash binding, structural blockers and immutable before-instance evidence.
+
+A03c structural review, explicit confirmation and independent playable recovery:
+
+`POST /api/campaigns/{campaignId}/module-instance/migration-impact`
+`POST /api/campaigns/{campaignId}/module-instance/migrations`
+`GET /api/campaigns/{campaignId}/module-instance/migrations`

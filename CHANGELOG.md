@@ -11,6 +11,13 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Added
 
+- Add a separate live structural migration gate with exact runtime impact
+  confirmations, current DM checks, atomic independent playable recovery campaigns
+  and durable receipts. Retire removed scenes/placements while preserving references,
+  combat identities, damaged resources, conditions, progress and historical results.
+  V22 retains all previous rows and migrations. Published materials, policy and
+  manifest changes and unmanaged live objects remain explicit blockers.
+
 - Add a separate, hash-bound live-instance preparation-text update gate with
   current DM checks in both source and target, atomic before-instance evidence
   and durable single-effect receipts. V21 preserves existing play and records;

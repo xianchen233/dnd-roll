@@ -105,9 +105,50 @@ returns ordered evidence `{version,actor,requestId,impactHash,before}`. Before
 instances are retained as independent recovery evidence, not a live-play undo.
 V21 adds the evidence table; all old migrations remain unchanged.
 
-This is a bounded A03c slice, not completion of A03c. Structural impact confirmation,
-recoverable live structural migration and UI remain pending. No scene deletion or
-combatant replacement is enabled by this gate.
+This text gate remains bounded. Structural impact confirmation and recoverable
+migration use the separate gate below; Chinese controls remain A03e work. No scene
+deletion or combatant replacement is enabled through the text-only endpoint.
+
+## Structural migration gate (A03c)
+
+Separate POST `/module-instance/migration-impact` accepts `LiveReview`.
+POST `/module-instance/migrations` accepts exactly
+`{requestId,expectedVersion,customizationVersion,impactHash,confirmations}`.
+GET `/module-instance/migrations` returns immutable migration evidence including
+`before`, runtime snapshot, actual actor and `recoveryCampaignId`.
+Both-domain current DM, source→target locks, CSRF and durable exact retry follow
+the text gate. The text gate remains restricted to its existing behavior.
+
+Impact binds current runtime scene/map/fog/token/card and combat snapshots as well
+as both definition versions. Every returned confirmation string must be echoed
+exactly once; missing, duplicate, unknown or stale confirmations reject before
+writes. Response includes complete `changes` with before/after definitions and
+the bound DM-only `runtime` snapshot for concrete review. Confirmation describes changed scenes/maps, retained resources and removed
+placements/units, including retained old combat identities. No combat participant
+or past result is automatically replaced/recalculated. New units require explicit
+existing initiative/combat operations to enter play.
+
+Before migration, the transaction creates an independent DM-only recovery campaign
+from the pre-migration live scene geometry, mapped cards (including damaged HP,
+resources and conditions) and placement positions. Its independent maps start fully
+covered. Original records and combat state remain in the original campaign; the
+recovery campaign is a playable structural copy, not a replay of historical events.
+Full runtime snapshot remains in evidence. Recovery campaign, evidence, structural
+writes, instance and receipt commit or roll back together. Exact retry requires
+current DM access to the recovery campaign too.
+
+Stable scene/unit/placement mappings are preserved for retained objects. Removed
+scenes and placements are retired from active navigation/rendering, retaining rows
+and historical references. Removed character identities remain usable by existing
+combat/history; replacement units receive independent IDs. Relinking a placement
+resets its controllers to the migrating DM; old player grants are not inherited.
+Retired unit identities remain explicit so later migration previews work.
+Existing card combat,
+resources, conditions, equipment, money and overrides are preserved. New definitions
+update descriptive/static fields only. Scene shrink rejects if any retained live
+token would be outside bounds. Map changes reset fog through the existing map store.
+Runtime notes, policies, manifest rights/assets/dependencies changes are blockers;
+they are not silently overwritten. Structural recovery does not undo later play.
 
 ## Ordered slices
 

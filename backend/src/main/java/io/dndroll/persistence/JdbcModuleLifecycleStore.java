@@ -11,6 +11,8 @@ import tools.jackson.databind.json.JsonMapper;
 
 @Repository
 public class JdbcModuleLifecycleStore implements Store {
+    public List<MigrationEvidence> migrations(UUID c){return jdbc.query("select evidence from module_instance_migration where campaign_id=? order by version",(r,n)->json.readValue(r.getString(1),MigrationEvidence.class),c);}
+    public void migration(UUID c,MigrationEvidence v){jdbc.update("insert into module_instance_migration(campaign_id,version,recovery_campaign_id,evidence) values (?,?,?,?::jsonb)",c,v.version(),v.recoveryCampaignId(),json.writeValueAsString(v));}
     public List<LiveEvidence> liveUpdates(UUID c){return jdbc.query("select evidence from module_instance_update where campaign_id=? order by version",(r,n)->json.readValue(r.getString(1),LiveEvidence.class),c);}
     public void liveUpdate(UUID c,LiveEvidence value){jdbc.update("insert into module_instance_update(campaign_id,version,evidence) values (?,?,?::jsonb)",c,value.version(),json.writeValueAsString(value));}
     public byte[] effectiveArchive(UUID c,UUID id){var rows=jdbc.query("select bytes from module_customization_archive where campaign_id=? and customization_id=?",(r,n)->r.getBytes(1),c,id);return rows.isEmpty()?null:rows.getFirst();}

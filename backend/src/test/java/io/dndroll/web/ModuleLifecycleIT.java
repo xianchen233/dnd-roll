@@ -75,6 +75,71 @@ class ModuleLifecycleIT {
         return tree(upload(dm,c,command(version,false,false),bytes),200).get("id").asString();
     }
     Map<String,Object> selection(String pkg,long version){return Map.of("expectedVersion",version,"packageId",pkg,"selections",List.of(Map.of("path","/nodes/"+module+"/text","choice","INCOMING")));}
+    @Test void structuralMigrationRequiresExactConfirmationAndCreatesPlayableRecovery()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=copy(dm,c);edit(dm,c,id,0,playable());
+        String live=tree(dm.post(copies(c)+"/"+id+"/campaigns",fresh(1,"Structural party")),200).get("id").asString();
+        String target=instance(live),root="/api/campaigns/"+live;var before=dm.read(target);
+        String unit="10000000-0000-4000-8000-000000000002",cardId=before.get("mapping").get("units").get(unit).asString();
+        tree(dm.post(root+"/characters/"+cardId+"/resources",Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"resourceId","hp","delta",-5,"reason","Damage before migration")),200);
+        var damaged=dm.read(root+"/characters/"+cardId);var d=playable();
+        ((tools.jackson.databind.node.ObjectNode)d.get("play").get("scenes").get(0)).put("width",30);
+        ((tools.jackson.databind.node.ObjectNode)d.get("play").get("units").get(0).get("sheet")).put("name","Updated guard");edit(dm,c,id,1,d);
+        var review=Map.of("expectedVersion",0,"customizationVersion",2);
+        var impact=tree(dm.post(target+"/migration-impact",review),200);assertFalse(impact.get("confirmations").isEmpty());assertEquals(before,dm.read(target));
+        var apply=new LinkedHashMap<String,Object>(review);apply.put("requestId",UUID.randomUUID());apply.put("impactHash",impact.get("impactHash").asString());apply.put("confirmations",List.of());
+        tree(dm.post(target+"/migrations",apply),409);assertEquals(before,dm.read(target));
+        apply.put("confirmations",impact.get("confirmations"));var ack=tree(dm.post(target+"/migrations",apply),200);assertEquals(ack,tree(dm.post(target+"/migrations",apply),200));
+        assertEquals(30,dm.read(root+"/scene").get("width").asInt());var updated=dm.read(root+"/characters/"+cardId);
+        assertEquals(damaged.get("sheet").get("combat"),updated.get("sheet").get("combat"));assertEquals(damaged.get("sheet").get("resources"),updated.get("sheet").get("resources"));assertEquals("Updated guard",updated.get("sheet").get("name").asString());
+        var evidence=dm.read(target+"/migrations").get(0);String recovery=evidence.get("recoveryCampaignId").asString();var restored=dm.read(instance(recovery));
+        String recoveredCard=restored.get("mapping").get("units").get(unit).asString();assertEquals(damaged.get("sheet"),dm.read("/api/campaigns/"+recovery+"/characters/"+recoveredCard).get("sheet"));
+        assertEquals(20,dm.read("/api/campaigns/"+recovery+"/scene").get("width").asInt());assertEquals(before,evidence.get("before"));
+        var player=member(UUID.fromString(live),"PLAYER");tree(player.get(target+"/migrations"),403);tree(player.post(target+"/migrations",apply),403);
+        jdbc.update("update campaign_member set role='PLAYER' where campaign_id=? and username=?",c,dm.username);tree(dm.post(target+"/migrations",apply),403);
+    }
+    @Test void migrationRetiresCurrentSceneAndReplacesPlacementWithoutChangingCombatIdentity()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=copy(dm,c);edit(dm,c,id,0,playable());String live=tree(dm.post(copies(c)+"/"+id+"/campaigns",fresh(1,"Replacement party")),200).get("id").asString();String target=instance(live),root="/api/campaigns/"+live;
+        var before=dm.read(target);String oldCard=before.get("mapping").get("units").get("10000000-0000-4000-8000-000000000002").asString();var oldScene=dm.read(root+"/scene");
+        var controller=member(UUID.fromString(live),"PLAYER");String tokenId=before.get("mapping").get("placements").get("10000000-0000-4000-8000-000000000004").asString();jdbc.update("insert into token_controller(token_id,campaign_id,username) values (?,?,?)",UUID.fromString(tokenId),UUID.fromString(live),controller.username);
+        var participant=Map.of("characterId",oldCard,"expectedVersion",0,"kind","PC","group","","surprised",false,"advantage",List.of(),"disadvantage",List.of());
+        tree(dm.post(root+"/initiative",Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"participants",List.of(participant),"reason","Migration combat")),200);
+        tree(dm.post(root+"/initiative/confirm",Map.of("requestId",UUID.randomUUID(),"expectedVersion",1,"order",List.of(oldCard),"reason","Confirm")),200);
+        tree(dm.post(root+"/combat",Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"kind","START","characterId","","order",List.of(),"reason","Start")),200);var combat=dm.read(root+"/combat");var initiative=dm.read(root+"/initiative");
+        var d=playable();String nextScene=UUID.randomUUID().toString(),nextUnit=UUID.randomUUID().toString();
+        ((tools.jackson.databind.node.ObjectNode)d.get("nodes").get(0)).put("id",nextScene);((tools.jackson.databind.node.ObjectNode)d.get("nodes").get(1)).put("id",nextUnit);
+        ((tools.jackson.databind.node.ObjectNode)d.get("play").get("scenes").get(0)).put("nodeId",nextScene);((tools.jackson.databind.node.ObjectNode)d.get("play").get("units").get(0)).put("nodeId",nextUnit);
+        var p=(tools.jackson.databind.node.ObjectNode)d.get("play").get("placements").get(0);p.put("sceneId",nextScene);p.put("unitId",nextUnit);edit(dm,c,id,1,d);
+        var impact=tree(dm.post(target+"/migration-impact",Map.of("expectedVersion",0,"customizationVersion",2)),200);assertTrue(impact.get("confirmations").toString().contains("RETAIN_COMBAT_IDENTITY"));assertTrue(impact.get("confirmations").toString().contains("RETIRE_SCENE"));
+        var apply=Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"customizationVersion",2,"impactHash",impact.get("impactHash").asString(),"confirmations",impact.get("confirmations"));tree(dm.post(target+"/migrations",apply),200);
+        assertEquals(combat,dm.read(root+"/combat"));assertEquals(initiative,dm.read(root+"/initiative"));assertEquals(oldCard,dm.read(root+"/combat").get("currentId").asString());
+        var migrated=dm.read(target);assertNotEquals(oldCard,migrated.get("mapping").get("units").get(nextUnit).asString());assertNotEquals(oldScene.get("id"),dm.read(root+"/scene").get("id"));
+        assertEquals(1,dm.read(root+"/scenes").get("scenes").size());assertEquals(1,jdbc.queryForObject("select count(*) from scene where campaign_id=? and module_retired",Integer.class,UUID.fromString(live)));
+        String recovery=dm.read(target+"/migrations").get(0).get("recoveryCampaignId").asString();assertEquals(1,dm.read("/api/campaigns/"+recovery+"/scene").get("tokens").size());
+        assertAll(()->assertTrue(tree(dm.post(target+"/migration-impact",Map.of("expectedVersion",1,"customizationVersion",2)),200).get("blockers").isEmpty()),
+            ()->assertEquals(0,jdbc.queryForObject("select count(*) from token_controller where token_id=? and username=?",Integer.class,UUID.fromString(tokenId),controller.username)));
+    }
+    @Test void migrationBindsRuntimeAndRollsBackRecoveryOnDeferredFailure()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=copy(dm,c);edit(dm,c,id,0,playable());String live=tree(dm.post(copies(c)+"/"+id+"/campaigns",fresh(1,"Atomic migration")),200).get("id").asString();String target=instance(live),root="/api/campaigns/"+live;var before=dm.read(target);var scene=dm.read(root+"/scene");
+        var d=playable();((tools.jackson.databind.node.ObjectNode)d.get("play").get("scenes").get(0)).put("width",25);edit(dm,c,id,1,d);var review=Map.of("expectedVersion",0,"customizationVersion",2);
+        var impact=tree(dm.post(target+"/migration-impact",review),200);var apply=new LinkedHashMap<String,Object>(review);apply.put("requestId",UUID.randomUUID());apply.put("impactHash",impact.get("impactHash").asString());apply.put("confirmations",impact.get("confirmations"));
+        String card=before.get("mapping").get("units").get("10000000-0000-4000-8000-000000000002").asString();tree(dm.post(root+"/characters/"+card+"/resources",Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"resourceId","hp","delta",-1,"reason","Concurrent damage")),200);tree(dm.post(target+"/migrations",apply),409);
+        impact=tree(dm.post(target+"/migration-impact",review),200);apply.put("impactHash",impact.get("impactHash").asString());apply.put("confirmations",impact.get("confirmations"));
+        int count=jdbc.queryForObject("select count(*) from campaign",Integer.class);String fn="migration_fail_"+c.toString().replace("-","");jdbc.execute("create function "+fn+"() returns trigger language plpgsql as $$ begin if new.result_kind='MIGRATE' then raise exception 'injected migration failure'; end if; return new; end $$");
+        try{for(boolean deferred:List.of(false,true)){jdbc.execute("create "+(deferred?"constraint ":"")+"trigger "+fn+" "+(deferred?"after":"before")+" insert on module_lifecycle_receipt "+(deferred?"deferrable initially deferred ":"")+"for each row execute function "+fn+"()");tree(dm.post(target+"/migrations",apply),500);assertEquals(before,dm.read(target));assertEquals(scene,dm.read(root+"/scene"));assertTrue(dm.read(target+"/migrations").isEmpty());assertEquals(count,jdbc.queryForObject("select count(*) from campaign",Integer.class));jdbc.execute("drop trigger "+fn+" on module_lifecycle_receipt");}}finally{jdbc.execute("drop trigger if exists "+fn+" on module_lifecycle_receipt");jdbc.execute("drop function "+fn+"()");}
+        var ready=Map.copyOf(apply);var pool=Executors.newFixedThreadPool(2);try{var a=pool.submit(()->dm.post(target+"/migrations",ready));var b=pool.submit(()->dm.post(target+"/migrations",ready));assertEquals(tree(a.get(),200),tree(b.get(),200));}finally{pool.shutdownNow();}assertEquals(count+1,jdbc.queryForObject("select count(*) from campaign",Integer.class));
+        String recovery=dm.read(target+"/migrations").get(0).get("recoveryCampaignId").asString();jdbc.update("update campaign_member set role='PLAYER' where campaign_id=? and username=?",UUID.fromString(recovery),dm.username);tree(dm.post(target+"/migrations",apply),403);
+    }
+    @Test void migrationHidesRetainedPlacementWhenItsUnitBecomesSecretWithoutResettingPosition()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=copy(dm,c);var original=playable();
+        ((tools.jackson.databind.node.ObjectNode)original.get("play").get("units").get(0)).put("hidden",false);((tools.jackson.databind.node.ObjectNode)original.get("play").get("placements").get(0)).put("hidden",false);edit(dm,c,id,0,original);
+        String live=tree(dm.post(copies(c)+"/"+id+"/campaigns",fresh(1,"Visibility migration")),200).get("id").asString();String target=instance(live),root="/api/campaigns/"+live;var before=dm.read(target);String token=before.get("mapping").get("placements").get("10000000-0000-4000-8000-000000000004").asString();
+        tree(dm.post(root+"/tokens/"+token+"/moves",Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"x",7,"y",8)),200);
+        var next=original.deepCopy();((tools.jackson.databind.node.ObjectNode)next.get("play").get("units").get(0)).put("hidden",true);edit(dm,c,id,1,next);
+        var review=Map.of("expectedVersion",0,"customizationVersion",2);var impact=tree(dm.post(target+"/migration-impact",review),200);
+        tree(dm.post(target+"/migrations",Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"customizationVersion",2,"impactHash",impact.get("impactHash").asString(),"confirmations",impact.get("confirmations"))),200);
+        var player=member(UUID.fromString(live),"PLAYER");assertTrue(player.read(root+"/scene").get("tokens").isEmpty());
+        var moved=dm.read(root+"/scene").get("tokens").get(0);assertEquals(7,moved.get("x").asInt());assertEquals(8,moved.get("y").asInt());
+    }
     @Test void liveDefinitionUpdatePreservesPlayAndRequiresFreshImpact()throws Exception{
         var dm=dm();UUID c=campaign(dm);String id=copy(dm,c),path=copies(c)+"/"+id;
         edit(dm,c,id,0,playable());String live=tree(dm.post(path+"/campaigns",fresh(1,"A03c party")),200).get("id").asString();

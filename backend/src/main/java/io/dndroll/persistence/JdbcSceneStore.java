@@ -32,7 +32,7 @@ public class JdbcSceneStore implements Store, SceneManagementService.Store {
         jdbc.query("select tc.token_id,tc.username from token_controller tc join token t on t.id=tc.token_id where t.scene_id=?", rs -> {
             controllers.computeIfAbsent(rs.getObject(1, UUID.class), ignored -> new HashSet<>()).add(rs.getString(2));
         }, scene.id());
-        var tokens = jdbc.query("select * from token where scene_id=? order by id", (rs, n) -> {
+        var tokens = jdbc.query("select * from token where scene_id=? and not module_retired order by id", (rs, n) -> {
             UUID id = rs.getObject("id", UUID.class);
             return new Token(id, rs.getString("name"), rs.getInt("x"), rs.getInt("y"), rs.getLong("version"), rs.getBoolean("hidden"), Set.copyOf(controllers.getOrDefault(id, Set.of())));
         }, scene.id());
@@ -67,13 +67,13 @@ public class JdbcSceneStore implements Store, SceneManagementService.Store {
         });
     }
     public SceneManagementService.Listing listing(UUID campaignId) {
-        var scenes = jdbc.query("select id,name from scene where campaign_id=? order by name,id",
+        var scenes = jdbc.query("select id,name from scene where campaign_id=? and not module_retired order by name,id",
             (rs, n) -> new SceneManagementService.Entry(rs.getObject(1, UUID.class), rs.getString(2)), campaignId);
         return jdbc.queryForObject("select version,current_scene_id from campaign where id=?", (rs, n) ->
             new SceneManagementService.Listing(rs.getLong(1), rs.getObject(2, UUID.class), scenes), campaignId);
     }
     public SceneManagementService.Entry entry(UUID campaignId, UUID sceneId) {
-        var rows = jdbc.query("select id,name from scene where campaign_id=? and id=?",
+        var rows = jdbc.query("select id,name from scene where campaign_id=? and id=? and not module_retired",
             (rs, n) -> new SceneManagementService.Entry(rs.getObject(1, UUID.class), rs.getString(2)), campaignId, sceneId);
         return rows.isEmpty() ? null : rows.getFirst();
     }
