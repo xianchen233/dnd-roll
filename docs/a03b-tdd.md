@@ -41,7 +41,7 @@ Evidence: external `.tools/a03b-entry-ci.log`; no older SHA substituted.
 
 ## Local evidence
 
-- Full offline Maven integration verify: **126 unit + 140 real IT**, zero
+- Full Maven integration verify: **126 unit + 140 real IT**, zero
   failures/errors/skips (`a03b-backend-full.log`). Subsequent final focused run
   contains the two new lifecycle cases and migration check: **18 IT passed**,
   so 143 distinct IT are exercised across the runs; the first full command did
