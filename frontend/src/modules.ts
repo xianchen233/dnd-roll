@@ -17,3 +17,8 @@ export type ModuleUpdateImpactRequest={expectedVersion:number;packageId:string;s
 export type ModuleUpdateApply=ModuleUpdateImpactRequest&{requestId:string;sha256:string;impactHash:string};
 export type ModuleUpdateImpact=ModuleUpdatePreviewResult&{impactHash:string;document:ModuleDefinition;manifest:ModuleManifest};
 export type ModuleUpdateEvidence={version:number;actor:string;requestId:string;packageId:string;sha256:string;impactHash:string;selections:ModuleUpdateSelection[];before:Omit<Customization,'missingDependencies'>};
+
+export type ModuleLiveReview={expectedVersion:number;customizationVersion:number};
+export type ModuleLiveApply=ModuleLiveReview&{requestId:string;impactHash:string};
+export type ModuleLiveImpact={version:number;customizationVersion:number;impactHash:string;changes:ModuleUpdatePreviewResult['changes'];blockers:string[]};
+export type ModuleLiveEvidence={version:number;actor:string;requestId:string;impactHash:string;before:ModuleInstance};

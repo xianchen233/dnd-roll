@@ -76,6 +76,39 @@ No-store/private, nosniff and CSRF follow the existing module boundary.
 The TypeScript client exposes these routes; Chinese selection/uncertain-retry UI
 remains A03e work. Actual checks and limitations: `docs/a03b-tdd.md`.
 
+## Live preparation text gate (A03c, partial)
+
+POST `/api/campaigns/{campaignId}/module-instance/update-impact` accepts exactly
+`{expectedVersion,customizationVersion}`. It compares the instance's accepted
+definition to its original source customization, under source-then-target locks.
+Current DM membership in both campaigns is required. The response contains
+`{version,customizationVersion,impactHash,changes,blockers}`. It is read-only,
+CSRF protected and private/no-store. Both versions must match. The hash binds
+the complete instance, customization, effective manifest and dependency readiness.
+
+POST `/module-instance/updates` adds `{requestId,impactHash}`. The server
+recomputes impact under the same locks. Only node name/text changes are currently
+supported, and update the instance's preparation definition only. Existing live
+scene names, published notes and character names remain independent runtime data.
+Any scene/unit/placement/policy/visibility/reference change, asset/dependency/rights
+change or missing dependency appears as a blocker and rejects application with
+409 `MODULE_LIVE_MIGRATION_REQUIRED`, even with an otherwise valid hash.
+There is no destructive-operation confirmation bypass in this slice.
+
+Instance version, accepted definition/customization version, immutable full
+before-instance evidence and receipt commit atomically. Mapping, progress and
+original package provenance remain intact. No character, resource, condition,
+turn, scene, note or historical record is written or recalculated. Current DM
+in both domains precedes receipt replay; identical retry returns the old ack,
+changed payload conflicts. GET `/module-instance/updates` is target-DM-only and
+returns ordered evidence `{version,actor,requestId,impactHash,before}`. Before
+instances are retained as independent recovery evidence, not a live-play undo.
+V21 adds the evidence table; all old migrations remain unchanged.
+
+This is a bounded A03c slice, not completion of A03c. Structural impact confirmation,
+recoverable live structural migration and UI remain pending. No scene deletion or
+combatant replacement is enabled by this gate.
+
 ## Ordered slices
 
 1. A03b: explicit per-item KEEP/INCOMING/conflict decisions, server-recomputed

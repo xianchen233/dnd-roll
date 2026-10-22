@@ -5,6 +5,10 @@ import type { Catalog,ContentData,ContentFilters,ContentChoice,ContentPreview,Co
 import type {DiceCommand,DiceTextCommand,Roll,RollList,Initiative,InitiativeGenerate,InitiativeConfirm,InitiativeHistory} from './dice';
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
 export class Api {
+  liveModuleImpact(c:string,body:import('./modules').ModuleLiveReview):Promise<import('./modules').ModuleLiveImpact>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-instance/update-impact`,body);}
+  applyLiveModule(c:string,body:import('./modules').ModuleLiveApply):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-instance/updates`,body);}
+  liveModuleUpdates(c:string):Promise<import('./modules').ModuleLiveEvidence[]>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-instance/updates`);}
+
   moduleUpdateOptions(c:string,id:string,body:{expectedVersion:number;packageId:string}):Promise<import('./modules').ModuleUpdatePreviewResult>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/update-options`,body);}
   moduleUpdateImpact(c:string,id:string,body:import('./modules').ModuleUpdateImpactRequest):Promise<import('./modules').ModuleUpdateImpact>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/update-impact`,body);}
   applyModuleUpdate(c:string,id:string,body:import('./modules').ModuleUpdateApply):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/updates`,body);}

@@ -75,6 +75,46 @@ class ModuleLifecycleIT {
         return tree(upload(dm,c,command(version,false,false),bytes),200).get("id").asString();
     }
     Map<String,Object> selection(String pkg,long version){return Map.of("expectedVersion",version,"packageId",pkg,"selections",List.of(Map.of("path","/nodes/"+module+"/text","choice","INCOMING")));}
+    @Test void liveDefinitionUpdatePreservesPlayAndRequiresFreshImpact()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=copy(dm,c),path=copies(c)+"/"+id;
+        edit(dm,c,id,0,playable());String live=tree(dm.post(path+"/campaigns",fresh(1,"A03c party")),200).get("id").asString();
+        var before=dm.read(instance(live));String root="/api/campaigns/"+live;
+        String card=root+"/characters/"+before.get("mapping").get("units").get("10000000-0000-4000-8000-000000000002").asString();
+        tree(dm.post(card+"/resources",Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"resourceId","hp","delta",-5,"reason","Live damage")),200);var damaged=dm.read(card);
+        var scene=dm.read(root+"/scene");var d=(tools.jackson.databind.node.ObjectNode)before.get("document").deepCopy();
+        ((tools.jackson.databind.node.ObjectNode)d.get("nodes").get(0)).put("text","Reviewed live preparation");edit(dm,c,id,1,d);
+        var body=Map.of("expectedVersion",0,"customizationVersion",2);
+        var impact=tree(dm.post(instance(live)+"/update-impact",body),200);
+        assertEquals(before,dm.read(instance(live)));assertEquals(0,dm.read(instance(live)+"/updates").size());
+        var apply=new LinkedHashMap<String,Object>(body);apply.put("requestId",UUID.randomUUID());apply.put("impactHash",impact.get("impactHash").asString());
+        var wrong=new LinkedHashMap<>(apply);wrong.put("impactHash","0".repeat(64));tree(dm.post(instance(live)+"/updates",wrong),409);
+        var ack=tree(dm.post(instance(live)+"/updates",apply),200);assertEquals(ack,tree(dm.post(instance(live)+"/updates",apply),200));
+        var after=dm.read(instance(live));assertEquals(d,after.get("document"));assertEquals(before.get("mapping"),after.get("mapping"));assertEquals(before.get("progress"),after.get("progress"));assertEquals(damaged,dm.read(card));assertEquals(scene,dm.read(root+"/scene"));
+        assertEquals(before,dm.read(instance(live)+"/updates").get(0).get("before"));
+        tree(dm.post(instance(live)+"/update-impact",body),409);
+        var player=member(UUID.fromString(live),"PLAYER");tree(player.post(instance(live)+"/updates",apply),403);tree(player.get(instance(live)+"/updates"),403);
+        jdbc.update("delete from campaign_member where campaign_id=? and username=?",c,dm.username);tree(dm.post(instance(live)+"/updates",apply),403);
+    }
+    @Test void liveDefinitionRejectsStructuralChangesAndRollsBackDeferredFailures()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=copy(dm,c),path=copies(c)+"/"+id;
+        edit(dm,c,id,0,playable());String live=tree(dm.post(path+"/campaigns",fresh(1,"A03c atomic")),200).get("id").asString();String target=instance(live);
+        var before=dm.read(target);var d=(tools.jackson.databind.node.ObjectNode)before.get("document").deepCopy();
+        ((tools.jackson.databind.node.ObjectNode)d.get("play").get("scenes").get(0)).put("width",100);edit(dm,c,id,1,d);
+        var review=Map.of("expectedVersion",0,"customizationVersion",2);var impact=tree(dm.post(target+"/update-impact",review),200);assertFalse(impact.get("blockers").isEmpty());
+        var apply=new LinkedHashMap<String,Object>(review);apply.put("requestId",UUID.randomUUID());apply.put("impactHash",impact.get("impactHash").asString());tree(dm.post(target+"/updates",apply),409);assertEquals(before,dm.read(target));
+        d=(tools.jackson.databind.node.ObjectNode)before.get("document").deepCopy();((tools.jackson.databind.node.ObjectNode)d.get("nodes").get(0)).put("text","atomic preparation");edit(dm,c,id,2,d);
+        apply.put("customizationVersion",3);impact=tree(dm.post(target+"/update-impact",Map.of("expectedVersion",0,"customizationVersion",3)),200);apply.put("impactHash",impact.get("impactHash").asString());
+        String fn="a03c_fail_"+c.toString().replace("-","");jdbc.execute("create function "+fn+"() returns trigger language plpgsql as $$ begin if new.result_kind='LIVE' then raise exception 'injected live failure'; end if; return new; end $$");
+        try{for(boolean deferred:List.of(false,true)){
+            jdbc.execute("create "+(deferred?"constraint ":"")+"trigger "+fn+" "+(deferred?"after":"before")+" insert on module_lifecycle_receipt "+(deferred?"deferrable initially deferred ":"")+"for each row execute function "+fn+"()");
+            tree(dm.post(target+"/updates",apply),500);assertEquals(before,dm.read(target));assertTrue(dm.read(target+"/updates").isEmpty());jdbc.execute("drop trigger "+fn+" on module_lifecycle_receipt");
+        }}finally{jdbc.execute("drop trigger if exists "+fn+" on module_lifecycle_receipt");jdbc.execute("drop function "+fn+"()");}
+        var ready=Map.copyOf(apply);var pool=Executors.newFixedThreadPool(2);
+        try{var a=pool.submit(()->dm.post(target+"/updates",ready));var b=pool.submit(()->dm.post(target+"/updates",ready));assertEquals(tree(a.get(),200),tree(b.get(),200));}finally{pool.shutdownNow();}
+        assertEquals(1,dm.read(target+"/updates").size());
+        var changed=new LinkedHashMap<>(apply);changed.put("impactHash","1".repeat(64));tree(dm.post(target+"/updates",changed),409);
+        jdbc.update("update campaign_member set role='PLAYER' where campaign_id=? and username=?",UUID.fromString(live),dm.username);tree(dm.post(target+"/updates",apply),403);tree(dm.get(target+"/updates"),403);
+    }
     @Test void selectiveUpdateBindsImpactAndPersistsBeforeImageWithSingleEffectRetry()throws Exception{
         var dm=dm();UUID c=campaign(dm);String id=copy(dm,c),pkg=candidate(dm,c,id),path=copies(c)+"/"+id;var before=dm.read(path);
         var body=selection(pkg,0);int receipts=jdbc.queryForObject("select count(*) from module_lifecycle_receipt",Integer.class);

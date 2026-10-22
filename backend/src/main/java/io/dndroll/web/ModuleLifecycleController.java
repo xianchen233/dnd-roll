@@ -28,5 +28,8 @@ public class ModuleLifecycleController {
     @GetMapping("/module-customizations/{id}/updates") java.util.List<UpdateEvidence> updates(@PathVariable UUID campaignId,@PathVariable UUID id,Principal p){return service.updates(campaignId,id,p.getName());}
     @GetMapping("/module-customizations/{id}/updates/{version}/content") org.springframework.http.ResponseEntity<byte[]> recoverUpdate(@PathVariable UUID campaignId,@PathVariable UUID id,@PathVariable long version,Principal p){return org.springframework.http.ResponseEntity.ok().header("Content-Type","application/zip").header("Content-Disposition","attachment; filename=module-before-update.zip").body(service.recoverUpdate(campaignId,id,version,p.getName()));}
     @GetMapping("/module-instance") Instance instance(@PathVariable UUID campaignId,Principal p){return service.readInstance(campaignId,p.getName());}
+    @PostMapping("/module-instance/update-impact") LiveImpact liveImpact(@PathVariable UUID campaignId,@RequestBody JsonNode body,Principal p){return service.liveImpact(campaignId,p.getName(),ModuleBlueprint.command(body,LiveReview.class));}
+    @PostMapping("/module-instance/updates") Ack applyLive(@PathVariable UUID campaignId,@RequestBody JsonNode body,Principal p){return service.applyLive(campaignId,p.getName(),ModuleBlueprint.command(body,LiveApply.class));}
+    @GetMapping("/module-instance/updates") java.util.List<LiveEvidence> liveUpdates(@PathVariable UUID campaignId,Principal p){return service.liveUpdates(campaignId,p.getName());}
     @PostMapping("/module-instance") Ack progress(@PathVariable UUID campaignId,@RequestBody JsonNode body,Principal p){return service.progress(campaignId,p.getName(),ModuleBlueprint.command(body,Progress.class));}
 }

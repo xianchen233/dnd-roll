@@ -11,11 +11,16 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Added
 
+- Add a separate, hash-bound live-instance preparation-text update gate with
+  current DM checks in both source and target, atomic before-instance evidence
+  and durable single-effect receipts. V21 preserves existing play and records;
+  structural changes are reported and blocked pending explicit migration support.
+
 - Add current-DM selective customization updates with explicit KEEP/INCOMING
   decisions, server-recomputed hash-bound impact, validated image/dependency
   closure, atomic durable receipts and downloadable before-image recovery ZIPs.
   V20 retains effective archives and immutable update provenance. Existing live
-  campaigns remain independent; selection UI and live-instance updates are pending.
+  campaigns remain independent; selection UI and structural live-instance updates are pending.
 
 - Add a current-DM-only three-way template comparison against the immutable
   baseline and saved customization. Stable identities survive list reordering;

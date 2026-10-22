@@ -156,3 +156,11 @@ remain scheduled for A03e.
 `POST /api/campaigns/{campaignId}/module-customizations/{id}/updates`
 `GET /api/campaigns/{campaignId}/module-customizations/{id}/updates`
 `GET /api/campaigns/{campaignId}/module-customizations/{id}/updates/{version}/content`
+
+A03c preparation-text gate (partial; structural migration remains pending):
+- `POST /api/campaigns/{campaignId}/module-instance/update-impact`
+- `POST /api/campaigns/{campaignId}/module-instance/updates`
+- `GET /api/campaigns/{campaignId}/module-instance/updates`
+
+See [live preparation text contract](module-updates.md) for both-domain DM checks,
+version/hash binding, structural blockers and immutable before-instance evidence.

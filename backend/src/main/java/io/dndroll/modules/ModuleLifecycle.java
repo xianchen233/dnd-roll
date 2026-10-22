@@ -25,6 +25,10 @@ public final class ModuleLifecycle {
     public record Impact(long version,UUID packageId,String sha256,String impactHash,ModuleBlueprint.Document document,ModuleArchive.Manifest manifest,List<ModuleUpdate.Change> changes,List<ModuleArchive.Dependency> missingDependencies) {}
     public record UpdateEvidence(long version,String actor,UUID requestId,UUID packageId,String sha256,String impactHash,List<ModuleUpdate.Selection> selections,Copy before) {}
     public record Ack(UUID id,long version) {}
+    public record LiveReview(long expectedVersion,long customizationVersion) {}
+    public record LiveApply(UUID requestId,long expectedVersion,long customizationVersion,String impactHash) {}
+    public record LiveImpact(long version,long customizationVersion,String impactHash,List<ModuleUpdate.Change> changes,List<String> blockers) {}
+    public record LiveEvidence(long version,String actor,UUID requestId,String impactHash,Instance before) {}
     public record Receipt(String fingerprint,String kind,Ack result) {}
     public interface Store {
         List<Summary> list(UUID c);Copy copy(UUID c,UUID id);void copy(UUID c,Copy value,boolean create);
@@ -33,6 +37,7 @@ public final class ModuleLifecycle {
         byte[] effectiveArchive(UUID c,UUID id);void updateArchive(UUID c,UUID id,byte[] bytes,byte[] before,UpdateEvidence evidence);
         List<UpdateEvidence> updates(UUID c,UUID id);
         byte[] beforeArchive(UUID c,UUID id,long version);
+        List<LiveEvidence> liveUpdates(UUID c);void liveUpdate(UUID c,LiveEvidence value);
     }
     public interface Provisioner {Map<String,Map<String,UUID>> create(UUID source,UUID target,String actor,String name,ModuleArchive.Verified verified,ModuleBlueprint.Document document,Map<String,byte[]> images);}
     private final Store store;private final CharacterService.Store campaigns;private final ModulePackages packages;private final ContentService content;private final Provisioner provisioner;private final SceneService.Events events;
@@ -120,5 +125,41 @@ public final class ModuleLifecycle {
         for(var e:r.progress().entrySet()){if(!keys.contains(e.getKey()))throw ModuleBlueprint.invalid();CharacterSheet.text(e.getValue(),2000,false);}
         var next=new Instance(v.version()+1,v.source(),v.document(),v.mapping(),Map.copyOf(r.progress()));store.instance(c,next,false);return new Ack(c,next.version());
     });}
+    // The source is immutable provenance. Lock in launch order (source, then target),
+    // rechecking both memberships under the same transaction before reading a receipt.
+    private <T>T liveLocked(UUID c,String actor,java.util.function.Supplier<T> work){
+        UUID source=readInstance(c,actor).source().campaignId();
+        return campaigns.actorLocked(actor,()->campaigns.locked(source,()->campaigns.locked(c,()->{dm(c,actor);dm(source,actor);return work.get();})));
+    }
+    private LiveImpact livePlan(UUID c,String actor,LiveReview r){
+        var live=instance(c);var s=live.source();var copy=target(s.campaignId(),s.customizationId());
+        AccountPolicy.version(live.version(),r.expectedVersion());AccountPolicy.version(copy.version(),r.customizationVersion());
+        var manifest=source(s.campaignId(),copy,actor).manifest();ModuleBlueprint.validate(copy.document(),manifest);
+        var changes=ModuleUpdate.compare(live.document(),live.document(),copy.document());var blockers=new ArrayList<String>();
+        // Only literal preparation text changes are supported here. Structural,
+        // visibility and executable definitions must pass a later migration gate.
+        for(var change:changes)if(!change.path().matches("/nodes/[0-9a-f-]+/(name|text)"))blockers.add(change.path());
+        var old=s.manifest();
+        if(!old.assets().equals(manifest.assets())||!old.dependencies().equals(manifest.dependencies())||!old.rights().equals(manifest.rights())||!old.rules().equals(manifest.rules()))blockers.add("/manifest");
+        if(!missing(s.campaignId(),actor,manifest).isEmpty())blockers.add("/dependencies");
+        String hash=DiceService.fingerprint(json,List.of(c,live,copy,manifest,changes,blockers));
+        return new LiveImpact(live.version(),copy.version(),hash,changes,List.copyOf(blockers));
+    }
+    public LiveImpact liveImpact(UUID c,String actor,LiveReview r){return liveLocked(c,actor,()->livePlan(c,actor,r));}
+    public List<LiveEvidence> liveUpdates(UUID c,String actor){return campaigns.locked(c,()->{dm(c,actor);instance(c);return store.liveUpdates(c);});}
+    public Ack applyLive(UUID c,String actor,LiveApply r){
+        if(r.requestId()==null||r.expectedVersion()<0||r.customizationVersion()<0)throw ModuleBlueprint.invalid();
+        return liveLocked(c,actor,()->{
+            String fp=DiceService.fingerprint(json,List.of(c,"LIVE",r));var receipt=store.receipt(actor,r.requestId());
+            if(receipt!=null){if(!fp.equals(receipt.fingerprint()))throw new DomainException("IDEMPOTENCY_CONFLICT",409,"Request ID already used");return receipt.result();}
+            var impact=livePlan(c,actor,new LiveReview(r.expectedVersion(),r.customizationVersion()));
+            if(!Objects.equals(impact.impactHash(),r.impactHash()))throw new DomainException("MODULE_IMPACT_CONFLICT",409,"Review current instance impact");
+            if(!impact.blockers().isEmpty())throw new DomainException("MODULE_LIVE_MIGRATION_REQUIRED",409,"Structural changes require explicit migration; live play was preserved");
+            var before=instance(c);var s=before.source();var copy=target(s.campaignId(),s.customizationId());long version=before.version()+1;
+            var next=new Instance(version,new Source(s.campaignId(),s.packageId(),s.sha256(),s.manifest(),s.customizationId(),copy.version()),copy.document(),before.mapping(),before.progress());
+            store.liveUpdate(c,new LiveEvidence(version,actor,r.requestId(),r.impactHash(),before));store.instance(c,next,false);
+            var ack=new Ack(c,version);store.receipt(c,actor,r.requestId(),new Receipt(fp,"LIVE",ack));events.changed(c);return ack;
+        });
+    }
     private static DomainException missing(){return new DomainException("NOT_FOUND",404,"Module preparation not found");}
 }
