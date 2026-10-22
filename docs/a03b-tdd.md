@@ -66,3 +66,22 @@ The existing lifecycle restart/isolated restore script now also asserts update
 choices, provenance/effective archive, recovery ZIP hash, unchanged live snapshots
 and exact replay. Final push/PR logs and remaining checks are recorded in
 verification/continuation. Local evidence/runtime remain outside the repository.
+
+Final local production browser: first full 51 passed/1 failed while the old P02e
+map module load reported net::ERR_NO_BUFFER_SPACE; failure trace preserved outside
+repo. Original four P02e tests then passed (17.3s), followed by full **52 passed
+(2.5m)**, original assertions/60s/zero retry unchanged. Evidence a03b-browser-full.log,
+a03b-browser-failure-trace.zip, a03b-browser-p02e-recheck.log and
+a03b-browser-full-recheck.log. No claim that the first full run passed.
+
+Actual packaged Java/PG restart fresh-session verification passed
+(a03b-restart-verify.log). Stopped Java/preview after matching command lines, then
+pg_ctl stopped the matching cluster; no listeners 8080/8081/5173/55432.
+Offline **126 unit passed with PG stopped and database environment removed**
+(a03b-unit-pg-stopped.log). Restored target/assets and original fence retained.
+
+Code 61305b3 push39818867630 passed with full 126+143/248/build/105/52 logs and
+all original + new UPDATE VERIFIED restart/isolated restore assertions. PR run
+39818876262 was still running at documentation update; strict checker rejected it.
+Final documentation HEAD has its own push/PR checks: external a03b-head-ci-final.log,
+a03b-ci-{HEAD}.json and six a03b-job-{jobId}.log. Never substitute code SHA for HEAD.

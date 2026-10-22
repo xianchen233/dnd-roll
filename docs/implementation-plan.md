@@ -1,6 +1,6 @@
 # 实施路线与分工
 
-## A03b 已实现；新 HEAD 完整 CI 待核验（2026-10-23）
+## A03b 服务实现与验收索引（2026-10-23）
 
 沿用 feat/accounts-and-invitations / [草稿 PR #1](https://github.com/xianchen233/dnd-roll/pull/1)，不合并、不发布。
 开工 fetch 后本地/origin/PR 为48b086aa8a72266303d1f1f347c42d67dc5728f2；独立重新下载
@@ -19,6 +19,21 @@ DM可下载独立身份的前像ZIP恢复为另一个副本。V20保留全部旧
 结构保持。恢复目标上新包seed→实际Java/PG重启→新会话verify通过，含有效包/前像ZIP hash/
 选择来源/原回执与旧团逐字段保持；未把准备时ECONNREFUSED当行为RED。证据外.tools/a03b-*。
 新增检查已接入原lifecycle容器重启/独立新卷恢复，精确提交的双CI结果须重新取得，不能沿用开工SHA。
+
+本地最终完整生产Chrome **52 passed（2.5m）**，原断言/60秒/零retry保持。
+首次完整51pass/1fail：旧P02e准备地图初始化模块报net::ERR_NO_BUFFER_SPACE（trace留存），
+独立原P02e四流程17.3s全过后再跑完整52通过；不是改断言或掩盖首次失败。
+已按实际命令行停止Java/preview/PG，8080/8081/5173/55432无监听；清除数据库环境后离线
+126unit全过（a03b-unit-pg-stopped.log）。source fence与恢复目标/素材保留。
+
+代码61305b3f8ca46a382b89bbbb98a58b1a853fd48f的push39818867630 completed/success；
+已重取三个完整日志严格核对126unit+143真实IT、248前端/构建、105契约、52生产浏览器、
+原43PASS/4MODULE/4LIFECYCLE及新增4UPDATE VERIFIED、十二组实际容器重启与独立新卷
+恢复/完整团/待确认行动/恢复后3流程/9会话100棋子72消息errors=0。PR39818876262在本文
+更新时尚in_progress，不冒称其已通过；严格检查已拒绝未完成状态。最终文档提交会触发
+新的push/PR，均必须按精确HEAD重新下载六份完整日志；验收索引为外.tools/
+**a03b-head-ci-final.log、a03b-ci-{HEAD}.json及a03b-job-{jobId}.log**。恢复工作时重新fetch
+并独立核验最新HEAD，不沿用61305b3或历史SHA的结果。原草稿PR范围已更新。
 
 A03尚未完成：下一包A03c单独预览/应用到进行中实例，保护生命/资源/状态/回合/剧情/记录；
 删场景/替换参战者须明确影响确认和可恢复副本。随后A03d可编辑手动操作组合和原服务原子执行；

@@ -41,6 +41,7 @@ Current-DM-only routes under `/api/campaigns/{campaignId}/module-customizations/
   source/baseline remain immutable; current metadata comes from the last applied
   effective archive. Package display name/version are provenance, not selections.
 - POST `/update-impact` accepts exactly `{expectedVersion,packageId,selections}`.
+  Up to 500 changed paths are supported per application (strict command limit).
   Each selection is `{path,choice:KEEP|INCOMING}`. Every change, including conflicts
   and local-only edits, needs exactly one decision. Duplicate/unknown/missing
   paths and other choices reject. No default adoption or implicit conflict fix.
