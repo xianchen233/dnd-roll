@@ -11,6 +11,10 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Fixed
 
+- Preserve unchanged live placement coordinates and token hiding during structural
+  migrations. Evaluate scene bounds using the confirmed resulting positions and
+  retirements, allowing safe shrink-and-move updates while blocking stranded tokens.
+
 - Preserve retired combat identities and additional live character cards in
   structural migration recovery copies, with explicit confirmations, independent
   IDs and DM-only control. Validate recovery capacity before applying migration.

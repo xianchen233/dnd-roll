@@ -76,11 +76,27 @@ public class ModuleCampaignProvisioner implements ModuleLifecycle.Provisioner {
         return snapshot;
     }
     private Map<String,Map<String,UUID>> mapping(ModuleLifecycle.Instance before){var result=new LinkedHashMap<String,Map<String,UUID>>();before.mapping().forEach((k,v)->result.put(k,new LinkedHashMap<>(v)));return result;}
+    private record PlacementState(int x,int y,boolean hidden) {}
+    /** Preview and apply use the same field-wise merge against the locked live token. */
+    private PlacementState placementState(UUID c,ModuleLifecycle.Instance before,ModuleBlueprint.Placement next,boolean unitHidden){
+        var old=before.document().play().placements().stream().filter(p->p.id().equals(next.id())).findFirst().orElse(null);
+        if(old==null)return new PlacementState(next.x(),next.y(),next.hidden()||unitHidden);
+        var rows=jdbc.queryForList("select x,y,hidden from token where campaign_id=? and id=?",c,before.mapping().get("placements").get(next.id()));
+        if(rows.isEmpty())return new PlacementState(next.x(),next.y(),next.hidden()||unitHidden); // Missing link is an explicit blocker.
+        var live=rows.getFirst();boolean newScene=!next.sceneId().equals(old.sceneId());
+        int x=newScene||next.x()!=old.x()?next.x():((Number)live.get("x")).intValue();
+        int y=newScene||next.y()!=old.y()?next.y():((Number)live.get("y")).intValue();
+        return new PlacementState(x,y,(Boolean)live.get("hidden")||next.hidden()||unitHidden);
+    }
     public List<String> migrationBlockers(UUID c,ModuleLifecycle.Instance before,ModuleBlueprint.Document next){
         var blockers=new ArrayList<String>();var mapped=before.mapping();
         for(var scene:next.play().scenes()){
-            UUID id=mapped.get("scenes").get(scene.nodeId());if(id==null)continue;
-            if(Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from token where campaign_id=? and scene_id=? and not module_retired and (x>=? or y>=?))",Boolean.class,c,id,scene.width(),scene.height())))blockers.add("/scene-bounds/"+scene.nodeId());
+            for(var p:next.play().placements())if(p.sceneId().equals(scene.nodeId())){
+                var state=placementState(c,before,p,false);
+                if(state.x()<0||state.y()<0||state.x()>=scene.width()||state.y()>=scene.height()){
+                    blockers.add("/scene-bounds/"+scene.nodeId());break;
+                }
+            }
         }
         // Recovery must cover all active play objects; do not silently omit ad-hoc additions.
         var sceneIds=mapped.get("scenes").values();for(UUID id:jdbc.queryForList("select id from scene where campaign_id=? and not module_retired",UUID.class,c))if(!sceneIds.contains(id))blockers.add("/unmapped-scene/"+id);
@@ -157,7 +173,8 @@ public class ModuleCampaignProvisioner implements ModuleLifecycle.Provisioner {
             var unit=next.play().units().stream().filter(u->u.nodeId().equals(p.unitId())).findFirst().orElseThrow();boolean hidden=p.hidden()||unit.hidden();
             if(id==null){id=UUID.randomUUID();m.get("placements").put(p.id(),id);jdbc.update("insert into token(id,scene_id,campaign_id,name,x,y,hidden,character_id) values (?,?,?,?,?,?,?,?)",id,m.get("scenes").get(p.sceneId()),c,unit.sheet().name(),p.x(),p.y(),hidden,m.get("units").get(p.unitId()));jdbc.update("insert into token_controller(token_id,campaign_id,username) values (?,?,?)",id,c,actor);}
             else {
-                jdbc.update("update token set scene_id=?,character_id=?,x=?,y=?,hidden=?,version=version+1 where campaign_id=? and id=?",m.get("scenes").get(p.sceneId()),m.get("units").get(p.unitId()),p.x(),p.y(),hidden,c,id);
+                var state=placementState(c,before,p,unit.hidden());
+                jdbc.update("update token set scene_id=?,character_id=?,x=?,y=?,hidden=?,version=version+1 where campaign_id=? and id=?",m.get("scenes").get(p.sceneId()),m.get("units").get(p.unitId()),state.x(),state.y(),state.hidden(),c,id);
                 if(!p.unitId().equals(old.unitId())){jdbc.update("delete from token_controller where campaign_id=? and token_id=?",c,id);jdbc.update("insert into token_controller(token_id,campaign_id,username) values (?,?,?)",id,c,actor);}
             }
         }

@@ -1,5 +1,36 @@
 # 继续工作的入口
 
+## A03c 棋子迁移与缩图边界（2026-10-24）
+
+沿用 feat/accounts-and-invitations / 草稿 PR #1，不合并、不发布。
+开工fetch确认本地/origin/PR为d14871f，重新下载push39985141565/PR39985151305
+六份完整日志，均completed/success：126unit+153真实IT、248前端/构建、111契约、
+52生产浏览器及全部重启/隔离恢复/容量断言通过（外.tools/a03c-next-entry-ci.log）。
+
+本轮不重做A03a/b及文字切片。实际两组RED：只改棋子隐藏重置实况(7,8)为(2,3)；
+缩图并明确移回界内仍按旧位置阻断。预览/应用现在共用逐轴合并：未改轴保留实况，
+明确修改轴采用新定义，跨场景使用目标坐标；已隐藏棋子不因公开定义自动揭露。
+缩图按迁移后位置与退役判断，仍阻断实际滞留界外的棋子；恢复副本保留原位置。
+旧回执在第二次迁移后精确重试不重放、不回退位置；玩家不可应用。契约module-updates.md，
+真实TDD/脚本准备错误见a03c-placement-tdd.md。
+
+聚焦126unit+27生命周期IT，最终完整126unit+155真实IT零失败/错误/跳过；111契约通过。
+实际Java/PG重启后新会话逐字段verify通过：迁移(9,8)/仍隐藏，恢复(7,8)、受损资源、
+前像/原回执及全部旧生命周期保持。脚本新增隐藏断言先误读快照缺省字段，已用DM运行时
+证据和玩家真实不可见检查修正，重新seed/verify通过；非产品RED。未声称本地重跑
+前端/生产浏览器或独立卷恢复；新HEAD双CI须实际核验这些门槛。
+证据外.tools/a03c-placement-{red,green,full,restart-seed-final,restart-verify-final}.log。
+精确HEAD六日志索引：a03c-placement-ci-{HEAD}.json、a03c-placement-job-*.log及
+ a03c-placement-head-ci-final.log；检查器要求155IT和全部旧断言，pending不等于通过。
+
+A03c仍有明确边界：未映射场景/棋子/地图、缺失链接、资料/策略/manifest变化仍阻断；
+删除全部映射场景后的后续迁移及未映射实况对象恢复仍需继续检验，不能宣称A03c全部关闭。
+A03d手动组合/A03e中文控件和最终联验、A04–A06/M3保持；云端/TLS/物理异机/真实手机后置。
+原source fence、恢复目标/素材保持；本机验收服务已按身份停止。
+本地8080/8081/5173/55432无监听；停PG并清除数据库环境后离线126unit通过
+（a03c-placement-unit-pg-stopped.log）。
+
+
 ## A03c 连续迁移恢复补齐（2026-10-24）
 
 沿用 feat/accounts-and-invitations / 草稿 PR #1，不合并、不发布。

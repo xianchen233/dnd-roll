@@ -175,6 +175,29 @@ class ModuleLifecycleIT {
         var player=member(UUID.fromString(live),"PLAYER");assertTrue(player.read(root+"/scene").get("tokens").isEmpty());
         var moved=dm.read(root+"/scene").get("tokens").get(0);assertEquals(7,moved.get("x").asInt());assertEquals(8,moved.get("y").asInt());
     }
+    @Test void placementMigrationPreservesUnchangedLiveCoordinatesAndNeverRevealsHiddenTokens()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=copy(dm,c);var d=playable();
+        ((tools.jackson.databind.node.ObjectNode)d.get("play").get("units").get(0)).put("hidden",false);var p=(tools.jackson.databind.node.ObjectNode)d.get("play").get("placements").get(0);p.put("hidden",false);edit(dm,c,id,0,d);
+        String live=tree(dm.post(copies(c)+"/"+id+"/campaigns",fresh(1,"Placement preservation")),200).get("id").asString(),root="/api/campaigns/"+live,target=instance(live);String token=dm.read(root+"/scene").get("tokens").get(0).get("id").asString();
+        tree(dm.post(root+"/tokens/"+token+"/moves",Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"x",7,"y",8)),200);
+        p.put("hidden",true);edit(dm,c,id,1,d);var impact=tree(dm.post(target+"/migration-impact",Map.of("expectedVersion",0,"customizationVersion",2)),200);
+        var firstBody=Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"customizationVersion",2,"impactHash",impact.get("impactHash").asString(),"confirmations",impact.get("confirmations"));var firstAck=tree(dm.post(target+"/migrations",firstBody),200);
+        var hidden=dm.read(root+"/scene").get("tokens").get(0);assertAll(()->assertEquals(7,hidden.get("x").asInt()),()->assertEquals(8,hidden.get("y").asInt()));
+        p.put("hidden",false);p.put("x",9);edit(dm,c,id,2,d);impact=tree(dm.post(target+"/migration-impact",Map.of("expectedVersion",1,"customizationVersion",3)),200);
+        tree(dm.post(target+"/migrations",Map.of("requestId",UUID.randomUUID(),"expectedVersion",1,"customizationVersion",3,"impactHash",impact.get("impactHash").asString(),"confirmations",impact.get("confirmations"))),200);
+        var moved=dm.read(root+"/scene").get("tokens").get(0);var player=member(UUID.fromString(live),"PLAYER");assertAll(()->assertEquals(9,moved.get("x").asInt()),()->assertEquals(8,moved.get("y").asInt()),()->assertTrue(player.read(root+"/scene").get("tokens").isEmpty()));
+        var after=dm.read(root+"/scene");assertEquals(firstAck,tree(dm.post(target+"/migrations",firstBody),200));assertEquals(after,dm.read(root+"/scene"));tree(player.post(target+"/migrations",firstBody),403);
+    }
+    @Test void sceneShrinkReviewsFinalPlacementPositionsAndAllowsExplicitRetirement()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=copy(dm,c);var d=playable();edit(dm,c,id,0,d);String live=tree(dm.post(copies(c)+"/"+id+"/campaigns",fresh(1,"Shrink placement")),200).get("id").asString(),root="/api/campaigns/"+live,target=instance(live);String token=dm.read(root+"/scene").get("tokens").get(0).get("id").asString();
+        tree(dm.post(root+"/tokens/"+token+"/moves",Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"x",7,"y",8)),200);
+        var scene=(tools.jackson.databind.node.ObjectNode)d.get("play").get("scenes").get(0);scene.put("width",5);scene.put("height",5);edit(dm,c,id,1,d);var impact=tree(dm.post(target+"/migration-impact",Map.of("expectedVersion",0,"customizationVersion",2)),200);assertTrue(impact.get("blockers").toString().contains("/scene-bounds/"));
+        var p=(tools.jackson.databind.node.ObjectNode)d.get("play").get("placements").get(0);p.put("x",3);p.put("y",4);edit(dm,c,id,2,d);impact=tree(dm.post(target+"/migration-impact",Map.of("expectedVersion",0,"customizationVersion",3)),200);assertTrue(impact.get("blockers").isEmpty(),impact.get("blockers").toString());
+        tree(dm.post(target+"/migrations",Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"customizationVersion",3,"impactHash",impact.get("impactHash").asString(),"confirmations",impact.get("confirmations"))),200);var moved=dm.read(root+"/scene").get("tokens").get(0);assertEquals(3,moved.get("x").asInt());assertEquals(4,moved.get("y").asInt());
+        String recovery=dm.read(target+"/migrations").get(0).get("recoveryCampaignId").asString();assertEquals(7,dm.read("/api/campaigns/"+recovery+"/scene").get("tokens").get(0).get("x").asInt());
+        scene.put("width",2);scene.put("height",2);((tools.jackson.databind.node.ArrayNode)d.get("play").get("placements")).removeAll();edit(dm,c,id,3,d);impact=tree(dm.post(target+"/migration-impact",Map.of("expectedVersion",1,"customizationVersion",4)),200);assertTrue(impact.get("blockers").isEmpty());
+        tree(dm.post(target+"/migrations",Map.of("requestId",UUID.randomUUID(),"expectedVersion",1,"customizationVersion",4,"impactHash",impact.get("impactHash").asString(),"confirmations",impact.get("confirmations"))),200);assertTrue(dm.read(root+"/scene").get("tokens").isEmpty());assertEquals(1,jdbc.queryForObject("select count(*) from token where campaign_id=? and module_retired",Integer.class,UUID.fromString(live)));
+    }
     @Test void liveDefinitionUpdatePreservesPlayAndRequiresFreshImpact()throws Exception{
         var dm=dm();UUID c=campaign(dm);String id=copy(dm,c),path=copies(c)+"/"+id;
         edit(dm,c,id,0,playable());String live=tree(dm.post(path+"/campaigns",fresh(1,"A03c party")),200).get("id").asString();

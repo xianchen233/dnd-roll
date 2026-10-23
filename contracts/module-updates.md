@@ -156,7 +156,15 @@ Retired unit identities remain explicit so later migration previews work.
 Existing card combat,
 resources, conditions, equipment, money and overrides are preserved. New definitions
 update descriptive/static fields only. Scene shrink rejects if any retained live
-token would be outside bounds. Map changes reset fog through the existing map store.
+token would be outside bounds after the confirmed migration. Bounds use the same
+field-wise placement merge as application: unchanged coordinate axes retain their
+live values, explicitly changed axes adopt the reviewed definition, and moving to
+a different scene uses both destination coordinates. Removed placements do not
+block a shrink. A change to visibility or unit identity alone never resets live
+coordinates. Existing hidden tokens stay hidden, even when a placement definition
+becomes public; revealing them requires the existing explicit live authoring API.
+The independent recovery copy retains the actual pre-migration positions.
+Map changes reset fog through the existing map store.
 Runtime notes, policies, manifest rights/assets/dependencies changes are blockers;
 they are not silently overwritten. Structural recovery does not undo later play.
 
