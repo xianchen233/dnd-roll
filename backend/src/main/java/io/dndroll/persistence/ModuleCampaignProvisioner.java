@@ -85,7 +85,8 @@ public class ModuleCampaignProvisioner implements ModuleLifecycle.Provisioner {
         // Recovery must cover all active play objects; do not silently omit ad-hoc additions.
         var sceneIds=mapped.get("scenes").values();for(UUID id:jdbc.queryForList("select id from scene where campaign_id=? and not module_retired",UUID.class,c))if(!sceneIds.contains(id))blockers.add("/unmapped-scene/"+id);
         for(UUID id:jdbc.queryForList("select id from token where campaign_id=? and not module_retired",UUID.class,c))if(!mapped.get("placements").containsValue(id))blockers.add("/unmapped-placement/"+id);
-        for(var card:cards.cards(c))if(!mapped.get("units").containsValue(card.id())&&!mapped.getOrDefault("retiredUnits",Map.of()).containsValue(card.id()))blockers.add("/unmapped-unit/"+card.id());
+        // Cards outside the current template (including retained combat identities)
+        // are copied into recovery, without adopting them into the live mapping.
         for(var entry:mapped.get("scenes").entrySet()){
             var map=assets.map(c,entry.getValue());if(map==null)blockers.add("/missing-scene/"+entry.getKey());
             else if(map.map()!=null&&!mapped.get("assets").containsValue(map.map().assetId()))blockers.add("/unmapped-map/"+entry.getKey());
@@ -108,7 +109,14 @@ public class ModuleCampaignProvisioner implements ModuleLifecycle.Provisioner {
             if(map!=null){String asset=m.get("assets").entrySet().stream().filter(e->e.getValue().equals(map.assetId())).findFirst().orElseThrow().getKey();image=new ModuleBlueprint.MapImage(asset,map.gridSize(),map.offsetX(),map.offsetY(),map.distancePerCell());}
             scenes.add(new ModuleBlueprint.Scene(old.nodeId(),((Number)row.get("width")).intValue(),((Number)row.get("height")).intValue(),((Number)row.get("grid_size")).intValue(),image));
         }
-        var units=before.document().play().units().stream().map(u->{var card=cards.card(c,m.get("units").get(u.nodeId()));return new ModuleBlueprint.Unit(u.nodeId(),card.sheet(),card.hidden(),card.shareFull());}).toList();
+        var units=new ArrayList<>(before.document().play().units().stream().map(u->{var card=cards.card(c,m.get("units").get(u.nodeId()));return new ModuleBlueprint.Unit(u.nodeId(),card.sheet(),card.hidden(),card.shareFull());}).toList());
+        var used=new HashSet<String>();nodes.forEach(n->used.add(n.id()));before.document().play().placements().forEach(p->used.add(p.id()));
+        for(var card:cards.cards(c))if(!m.get("units").containsValue(card.id())){
+            String id=card.id().toString();int suffix=0;
+            while(!used.add(id))id=UUID.nameUUIDFromBytes(("recovery:"+card.id()+":"+(++suffix)).getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString();
+            nodes.add(new ModuleArchive.Node(id,"UNIT",card.sheet().name(),"","DM",List.of(),List.of(),List.of()));
+            units.add(new ModuleBlueprint.Unit(id,card.sheet(),card.hidden(),card.shareFull()));
+        }
         var placements=before.document().play().placements().stream().map(p->{var row=jdbc.queryForMap("select x,y,hidden from token where campaign_id=? and id=?",c,m.get("placements").get(p.id()));return new ModuleBlueprint.Placement(p.id(),p.sceneId(),p.unitId(),((Number)row.get("x")).intValue(),((Number)row.get("y")).intValue(),(Boolean)row.get("hidden"));}).toList();
         var play=before.document().play();return new ModuleBlueprint.Document(nodes,new ModuleBlueprint.Play(scenes,units,placements,play.admissionMode(),play.approvedDependencyIds()));
     }

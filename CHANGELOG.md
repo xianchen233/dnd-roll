@@ -9,6 +9,12 @@ and successful CI runs do not by themselves constitute a release.
 
 ## [Unreleased]
 
+### Fixed
+
+- Preserve retired combat identities and additional live character cards in
+  structural migration recovery copies, with explicit confirmations, independent
+  IDs and DM-only control. Validate recovery capacity before applying migration.
+
 ### Added
 
 - Add a separate live structural migration gate with exact runtime impact

@@ -1,5 +1,36 @@
 # 阶段验收记录
 
+## A03c 连续迁移恢复补齐（2026-10-24）
+
+沿用 feat/accounts-and-invitations / 草稿 PR #1，不合并、不发布。
+开工 fetch 后本地/origin/PR 精确 HEAD e6d9651；独立重取 push39836569868 /
+PR39836575609 六份完整日志，均 completed/success：126unit+151真实IT、
+248前端/构建、111契约、52浏览器及全部重启/隔离恢复/容量断言通过。
+证据外 .tools/a03c-resume-entry-ci.log；不复用为新HEAD结果。
+
+A03a/b及文字切片保持。实际RED证明第二次迁移恢复副本遗漏旧参战角色，另一次
+RED证明额外实况角色被阻断；恢复现在复制全部实况卡（含退役参战者/额外角色），
+逐项RECOVER_EXTRA_UNIT确认、独立身份及DM-only控制，原团映射/控制/回合/历史保持。
+恢复身份避让节点/棋子冲突；预览校验完整恢复定义，容量超限明确阻断且无部分写入。
+契约 contracts/module-updates.md；真实命令、准备错误、RED/GREEN见 a03c-recovery-tdd.md。
+
+最终全量126unit+153真实IT零失败/错误/跳过，248前端/构建、111契约通过。
+首轮全量因同时启动验收服务耗尽PG连接失败，保留日志；停验收服务独占重跑通过。
+实际Java/PG重启后新会话verify通过：额外受损卡、独立恢复、原映射/前像/原回执及旧
+生命周期逐字段保持。未声称本地跑新生产浏览器或新独立卷恢复；这些由新HEAD CI验证。
+外 .tools/a03c-recovery-{full-final,frontend,build,restart-verify-final}.log。
+最终HEAD必须重新核验push/PR六日志：a03c-recovery-check-ci.mjs严格检查153IT及全部旧
+断言，索引a03c-recovery-ci-{HEAD}.json、a03c-recovery-job-*.log、a03c-recovery-head-ci-final.log。
+新CI未完成不得报通过。
+
+A03c仍有明确边界：未映射场景/棋子/地图、越界缩图、缺失链接、已发布资料/策略/
+manifest变化仍阻断；A03d手动组合/A03e中文控件及最终联验、A04–A06/M3保持待办。
+云端/TLS/物理异机/真实手机后置；原source fence、恢复目标和素材保持。
+本地验收Java/PG已按身份停止，8080/8081/5173/55432无监听；清除数据库环境后
+离线126unit通过（a03c-recovery-unit-pg-stopped.log），原数据/素材保留。
+
+
+
 ## A03c 结构迁移服务切片（2026-10-23，本地验收通过，精确 HEAD CI 待核验）
 
 沿用 feat/accounts-and-invitations / 草稿 PR #1，不合并、不发布；A03a/A03b 和

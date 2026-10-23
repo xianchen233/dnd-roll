@@ -129,13 +129,23 @@ or past result is automatically replaced/recalculated. New units require explici
 existing initiative/combat operations to enter play.
 
 Before migration, the transaction creates an independent DM-only recovery campaign
-from the pre-migration live scene geometry, mapped cards (including damaged HP,
+from the pre-migration live scene geometry, all live cards (including damaged HP,
 resources and conditions) and placement positions. Its independent maps start fully
 covered. Original records and combat state remain in the original campaign; the
 recovery campaign is a playable structural copy, not a replay of historical events.
 Full runtime snapshot remains in evidence. Recovery campaign, evidence, structural
 writes, instance and receipt commit or roll back together. Exact retry requires
 current DM access to the recovery campaign too.
+
+Recovery also includes retired combat identities and additional live cards outside
+the current template. Each additional card has an explicit `RECOVER_EXTRA_UNIT`
+confirmation, independent runtime identity and only the migrating DM as controller.
+They are not adopted into the original instance's template mapping. Recovery node
+identities avoid collisions with existing nodes/placements. The complete recovery
+definition is validated at preview time; limits (100 cards, 500 nodes and bounded
+JSON) produce `/recovery-definition` blockers before writes. Ad-hoc scenes,
+placements and maps remain blocked. Original combat and historical events are
+never replayed into recovery.
 
 Stable scene/unit/placement mappings are preserved for retained objects. Removed
 scenes and placements are retired from active navigation/rendering, retaining rows

@@ -181,7 +181,11 @@ public final class ModuleLifecycle {
         var oldDocs=before.document().nodes().stream().filter(n->n.kind().equals("DOCUMENT")).toList();
         var newDocs=next.nodes().stream().filter(n->n.kind().equals("DOCUMENT")).toList();if(!oldDocs.equals(newDocs))blockers.add("/published-materials");
         blockers.addAll(provisioner.migrationBlockers(c,before,next));
+        ModuleBlueprint.Document recovery=null;
+        if(blockers.isEmpty())try{recovery=provisioner.recovery(c,before);ModuleBlueprint.validate(recovery,s.manifest());}
+        catch(DomainException invalidRecovery){blockers.add("/recovery-definition");}
         var confirmations=new ArrayList<String>();
+        if(recovery!=null)for(var unit:recovery.play().units())if(!before.mapping().get("units").containsKey(unit.nodeId()))confirmations.add("RECOVER_EXTRA_UNIT "+unit.nodeId()+"; independent card with DM-only control; no combat or history replay");
         for(var change:impact.changes())confirmations.add("APPLY "+change.path());
         for(var scene:before.document().play().scenes())if(next.play().scenes().stream().noneMatch(n->n.nodeId().equals(scene.nodeId())))confirmations.add("RETIRE_SCENE "+scene.nodeId()+"; retain rows and history; switch current scene if necessary");
         for(var unit:before.document().play().units())if(next.play().units().stream().noneMatch(n->n.nodeId().equals(unit.nodeId())))confirmations.add("RETAIN_COMBAT_IDENTITY "+unit.nodeId()+"; old HP, resources, conditions and turns remain; replacement does not enter combat automatically");

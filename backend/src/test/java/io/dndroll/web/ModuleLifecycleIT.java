@@ -117,6 +117,41 @@ class ModuleLifecycleIT {
         String recovery=dm.read(target+"/migrations").get(0).get("recoveryCampaignId").asString();assertEquals(1,dm.read("/api/campaigns/"+recovery+"/scene").get("tokens").size());
         assertAll(()->assertTrue(tree(dm.post(target+"/migration-impact",Map.of("expectedVersion",1,"customizationVersion",2)),200).get("blockers").isEmpty()),
             ()->assertEquals(0,jdbc.queryForObject("select count(*) from token_controller where token_id=? and username=?",Integer.class,UUID.fromString(tokenId),controller.username)));
+        var oldSheet=dm.read(root+"/characters/"+oldCard).get("sheet");
+        var again=tree(dm.post(target+"/migration-impact",Map.of("expectedVersion",1,"customizationVersion",2)),200);
+        tree(dm.post(target+"/migrations",Map.of("requestId",UUID.randomUUID(),"expectedVersion",1,"customizationVersion",2,"impactHash",again.get("impactHash").asString(),"confirmations",again.get("confirmations"))),200);
+        String secondRecovery=dm.read(target+"/migrations").get(1).get("recoveryCampaignId").asString();
+        var recovered=dm.read(instance(secondRecovery)).get("document").get("play").get("units");
+        assertEquals(2,recovered.size(),"Recovery must include the retained old combat identity on later migrations");
+        assertTrue(java.util.stream.StreamSupport.stream(recovered.spliterator(),false).anyMatch(u->u.get("sheet").equals(oldSheet)));
+        assertEquals(combat,dm.read(root+"/combat"));assertEquals(initiative,dm.read(root+"/initiative"));
+    }
+    @Test void migrationRecoversAdditionalLiveCardsWithoutInheritingPlayerAccess()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=copy(dm,c);edit(dm,c,id,0,playable());
+        String live=tree(dm.post(copies(c)+"/"+id+"/campaigns",fresh(1,"Additional character")),200).get("id").asString(),root="/api/campaigns/"+live,target=instance(live);
+        var player=member(UUID.fromString(live),"PLAYER");long v=jdbc.queryForObject("select version from campaign where id=?",Long.class,UUID.fromString(live));
+        var extra=tree(dm.post(root+"/characters",Map.of("requestId",UUID.randomUUID(),"expectedVersion",v,"sheet",io.dndroll.domain.CharacterSheet.empty("Live companion"))),200);
+        String card=extra.get("id").asString();
+        tree(dm.post(root+"/characters/"+card+"/access",Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"controllers",List.of(player.username),"hidden",false,"shareFull",true,"approveImport",true,"reason","Shared companion")),200);
+        var before=dm.read(root+"/characters/"+card);
+        var impact=tree(dm.post(target+"/migration-impact",Map.of("expectedVersion",0,"customizationVersion",1)),200);assertTrue(impact.get("blockers").isEmpty(),impact.toString());
+        var apply=Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"customizationVersion",1,"impactHash",impact.get("impactHash").asString(),"confirmations",impact.get("confirmations"));
+        var ack=tree(dm.post(target+"/migrations",apply),200);assertEquals(ack,tree(dm.post(target+"/migrations",apply),200));assertEquals(before,dm.read(root+"/characters/"+card));
+        String recovery=dm.read(target+"/migrations").get(0).get("recoveryCampaignId").asString();var restored=dm.read(instance(recovery));assertEquals(2,restored.get("document").get("play").get("units").size());
+        String recoveredCard=restored.get("mapping").get("units").get(card).asString();assertNotEquals(card,recoveredCard);assertEquals(before.get("sheet"),dm.read("/api/campaigns/"+recovery+"/characters/"+recoveredCard).get("sheet"));
+        tree(player.get("/api/campaigns/"+recovery+"/characters/"+recoveredCard),403);
+    }
+    @Test void migrationReportsRecoveryCapacityAndAvoidsExtraCardNodeCollisions()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=copy(dm,c);edit(dm,c,id,0,playable());String live=tree(dm.post(copies(c)+"/"+id+"/campaigns",fresh(1,"Recovery capacity")),200).get("id").asString(),target=instance(live);
+        UUID campaign=UUID.fromString(live),card=UUID.fromString(dm.read(target).get("mapping").get("units").get("10000000-0000-4000-8000-000000000002").asString());
+        var extras=new ArrayList<UUID>();for(int n=0;n<100;n++){UUID extra=n==0?UUID.fromString(module):UUID.randomUUID();extras.add(extra);jdbc.update("insert into character_card(id,campaign_id,sheet) select ?,campaign_id,sheet from character_card where id=?",extra,card);}
+        var review=Map.of("expectedVersion",0,"customizationVersion",1);var impact=tree(dm.post(target+"/migration-impact",review),200);assertTrue(impact.get("blockers").toString().contains("/recovery-definition"));
+        int count=jdbc.queryForObject("select count(*) from campaign",Integer.class);tree(dm.post(target+"/migrations",Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"customizationVersion",1,"impactHash",impact.get("impactHash").asString(),"confirmations",impact.get("confirmations"))),409);assertEquals(count,jdbc.queryForObject("select count(*) from campaign",Integer.class));
+        for(UUID extra:extras.subList(1,extras.size()))jdbc.update("delete from character_card where id=?",extra);
+        impact=tree(dm.post(target+"/migration-impact",review),200);assertTrue(impact.get("blockers").isEmpty());
+        tree(dm.post(target+"/migrations",Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"customizationVersion",1,"impactHash",impact.get("impactHash").asString(),"confirmations",impact.get("confirmations"))),200);
+        String recovery=dm.read(target+"/migrations").get(0).get("recoveryCampaignId").asString();var document=dm.read(instance(recovery)).get("document");assertEquals(2,document.get("play").get("units").size());assertNotEquals(module,document.get("play").get("units").get(1).get("nodeId").asString());
+        assertEquals(2,jdbc.queryForObject("select count(*) from character_card where campaign_id=?",Integer.class,campaign));
     }
     @Test void migrationBindsRuntimeAndRollsBackRecoveryOnDeferredFailure()throws Exception{
         var dm=dm();UUID c=campaign(dm);String id=copy(dm,c);edit(dm,c,id,0,playable());String live=tree(dm.post(copies(c)+"/"+id+"/campaigns",fresh(1,"Atomic migration")),200).get("id").asString();String target=instance(live),root="/api/campaigns/"+live;var before=dm.read(target);var scene=dm.read(root+"/scene");

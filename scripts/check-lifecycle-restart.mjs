@@ -46,12 +46,15 @@ if(mode==='seed'){
  const migrationCopy=await dm.post(root+'/module-customizations',{...fresh((await dm.get(root+'/module-customizations')).campaignVersion,'Structural restart source'),packageId:importAck.id});
  const migrationParty=await dm.post(root+'/module-customizations/'+migrationCopy.id+'/campaigns',fresh(0,'Structural restart party')),mr='/campaigns/'+migrationParty.id;await join(mr);
  const mi=await dm.get(mr+'/module-instance'),mc=mr+'/characters/'+mi.mapping.units[pack.unit];await dm.post(mc+'/resources',{requestId:randomUUID(),expectedVersion:0,resourceId:'hp',delta:-4,reason:'Preserve migration damage'});
+ const companionSheet=structuredClone((await dm.get(mc)).sheet);companionSheet.name='Live recovery companion';
+ await dm.post(mr+'/characters',{requestId:randomUUID(),expectedVersion:(await dm.get(mr+'/scenes')).campaignVersion,sheet:companionSheet});
  const migrationBefore=await snapshot(mr),md=structuredClone(mi.document);md.play.scenes[0].width+=1;md.play.scenes[0].map.offsetX+=1;
  await dm.post(root+'/module-customizations/'+migrationCopy.id,{...fresh(0,'Structural migration source'),document:md});
  const migrationReview={expectedVersion:0,customizationVersion:1},migrationImpact=await dm.post(mr+'/module-instance/migration-impact',migrationReview);assert.deepEqual(migrationImpact.blockers,[]);
  const migrationBody={requestId:randomUUID(),...migrationReview,impactHash:migrationImpact.impactHash,confirmations:migrationImpact.confirmations},migrationAck=await dm.post(mr+'/module-instance/migrations',migrationBody);assert.deepEqual(await dm.post(mr+'/module-instance/migrations',migrationBody),migrationAck);
  const migrationEvidence=await dm.get(mr+'/module-instance/migrations'),recoveryRoot='/campaigns/'+migrationEvidence[0].recoveryCampaignId,recoverySnapshot=await snapshot(recoveryRoot),migrationAfter=await snapshot(mr);
  assert.equal(migrationAfter.cards[0].detail.sheet.combat.hp,16);assert.equal(recoverySnapshot.cards[0].detail.sheet.combat.hp,16);assert.equal(recoverySnapshot.scene.width,migrationBefore.scene.width);assert.equal(migrationAfter.scene.width,migrationBefore.scene.width+1);
+ assert.equal(recoverySnapshot.cards.length,2);assert.ok(recoverySnapshot.cards.some(c=>c.detail.sheet.name==='Live recovery companion'));assert.deepEqual(migrationAfter.cards,migrationBefore.cards);
  await writeFile(file+'.migration',JSON.stringify({mr,migrationBody,migrationAck,migrationEvidence,recoveryRoot,recoverySnapshot,migrationAfter}),{flag:'wx'});
  console.log('MIGRATION VERIFIED: exact structural confirmation, map reset and independent damaged-resource recovery copy created atomically');
  await writeFile(file,JSON.stringify({root,ra,rb,card,sourceBytes:pack.bytes.toString('base64'),sourceHash:hash(pack.bytes),savedHash,importBody,importAck,createA,copyA,createB,copyB,edit,editAck,launchA,a,launchB,b,hp,hpAck,resource,resourceAck,progress,progressAck,save,saveAck,clone,cloned,listing:await dm.get(root+'/module-packages'),customizations:await dm.get(root+'/module-customizations'),copyDetail:await dm.get(root+'/module-customizations/'+copyA.id),baselineB,saved,beforeA,beforeB},null,2),{flag:'wx'});
