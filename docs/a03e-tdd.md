@@ -105,6 +105,15 @@ assertions and **two CONTROLS VERIFIED** lines per browser job. The resulting
 `a03e-ci-{SHA}.json`, six `a03e-job-*.log` and `a03e-head-ci-final.log` are the
 final remote evidence. Pending or entry-HEAD success is never substituted.
 
+The first pushed implementation HEAD `1db4702` failed before creating any job
+(push40119506867). Its new job-level `env` incorrectly referenced `runner.temp`,
+which is unavailable at that workflow key, as confirmed against the
+[GitHub context availability table](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts).
+The browser run now receives the capture file via shell `$RUNNER_TEMP`; restart
+and restore steps use the same path directly. No test/assertion/retry/timeout was
+changed. The configuration repair requires new-HEAD push/PR checks; the failed
+run and successful local tests are not described as remote success.
+
 The `dnd-roll-local` project, its containers/data and earlier source fence/restore
 targets were not operated. Acceptance services are stopped by verified identity
 after use, with all data retained. Cloud/TLS, physical cross-host recovery and

@@ -32,6 +32,7 @@ CI新增两份浏览器真实产物capture，在原容器重启及独立项目/�
 a03e-check-ci.mjs要求130/175、283/构建、116、54浏览器、全部旧断言及每browser
 两条CONTROLS VERIFIED；结果索引a03e-ci-{SHA}.json、六a03e-job-*.log及
 a03e-head-ci-final.log。pending不算通过，文档也不把开工SHA绿灯冒称最终HEAD通过。
+首次提交1db4702的push40119506867在零job阶段失败：job级env误用runner.temp。已改为浏览器run步骤使用$RUNNER_TEMP并保留所有恢复断言；修复后的新HEAD必须另取完整双CI证据。
 
 体验项目dnd-roll-local及数据、旧source fence/恢复目标未操作。验收进程按身份停止，
 所有测试数据保留。下一可执行：独立核验最终HEAD完整日志；通过后进入A04支持矩阵
