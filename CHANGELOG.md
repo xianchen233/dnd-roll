@@ -34,6 +34,17 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Added
 
+- Add DM-editable live module operation combinations with strict typed steps and
+  limits, server-bound impact review, atomic execution through existing token,
+  character, note, initiative and turn services, and immutable actor evidence.
+  Current authorization precedes durable receipt replay; retries preserve later
+  play. Text publication explicitly blocks attached notes; candidate generation
+  leaves ordering/confirmation to the existing initiative workflow.
+
+- Preserve all V22 rows, columns and migration checksums while adding V23 manual
+  definition, receipt and execution tables. Extend restart and isolated backup
+  restoration acceptance with saved manual combinations and historical retries.
+
 - Add a separate live structural migration gate with exact runtime impact
   confirmations, current DM checks, atomic independent playable recovery campaigns
   and durable receipts. Retire removed scenes/placements while preserving references,

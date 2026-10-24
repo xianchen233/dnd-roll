@@ -35,28 +35,45 @@ public final class InitiativeService {
     });}
     public List<History> history(UUID c,String actor){return cards.locked(c,()->{DiceService.require(member(c,actor)==Role.DM);return store.history(c);});}
     public Ack generate(UUID c,String actor,Generate g){
-        CharacterSheet.text(g.reason(),1000,true);if(g.participants()==null||g.participants().isEmpty()||g.participants().size()>100||g.participants().stream().anyMatch(Objects::isNull))throw CharacterSheet.invalid();
-        if(new HashSet<>(g.participants().stream().map(Participant::characterId).toList()).size()!=g.participants().size())throw CharacterSheet.invalid();
-        for(var p:g.participants()){if(p.characterId()==null||p.expectedVersion()<0||!Set.of("PC","MONSTER").contains(p.kind()))throw CharacterSheet.invalid();CharacterSheet.text(p.group(),100,false);Dice.sources(p.advantage());Dice.sources(p.disadvantage());if(p.kind().equals("PC")&&!p.group().isEmpty())throw CharacterSheet.invalid();}
+        validateGenerate(g);
         return execute(c,actor,g.requestId(),g.expectedVersion(),List.of("GENERATE",g.participants(),g.reason()),()->{for(var p:g.participants())if(cards.card(c,p.characterId())==null)throw DiceService.missing();},old->{
-            var candidates=new ArrayList<Entry>();var groups=new HashMap<String,Entry>();
-            // Validate the complete roster/group/source versions before consuming entropy.
-            for(var p:g.participants()){
-                var card=cards.card(c,p.characterId());AccountPolicy.version(card.version(),p.expectedVersion());var calculation=card.sheet().calculate().get("initiative");
-                var dis=new ArrayList<>(p.disadvantage());if(p.surprised())dis.add("5R 突袭：先攻劣势（SRD 5.2.1 p13）");
-                if(dis.size()>10)throw CharacterSheet.invalid();Dice.validate("d20"+signed(calculation.value()),p.advantage(),dis);
-                var entry=new Entry(card.id(),card.sheet().name(),card.version(),p.kind(),p.group(),p.surprised(),calculation,List.copyOf(p.advantage()),List.copyOf(dis),null);
-                if(!p.group().isEmpty()){
-                    var previous=groups.putIfAbsent(p.group(),entry);
-                    if(previous!=null&&(!previous.calculation().equals(calculation)||previous.surprised()!=p.surprised()||!previous.advantage().equals(entry.advantage())||!previous.disadvantage().equals(entry.disadvantage())))throw CharacterSheet.invalid();
-                }
-                candidates.add(entry);
-            }
+            var candidates=candidates(c,g);
             var results=new HashMap<String,Dice.Result>();var rolled=new ArrayList<Entry>();
             for(var e:candidates){var result=e.group().isEmpty()?draw(e):results.computeIfAbsent(e.group(),ignored->draw(e));rolled.add(new Entry(e.characterId(),e.name(),e.sourceVersion(),e.kind(),e.group(),e.surprised(),e.calculation(),e.advantage(),e.disadvantage(),result));}
             rolled.sort(Comparator.comparingInt((Entry e)->e.result().total()).reversed());
             return new State(old.version()+1,"DRAFT",List.copyOf(rolled),g.reason());
         },"GENERATE",g.reason());
+    }
+    public static void validateGenerate(Generate g){
+        CharacterSheet.text(g.reason(),1000,true);if(g.participants()==null||g.participants().isEmpty()||g.participants().size()>100||g.participants().stream().anyMatch(Objects::isNull))throw CharacterSheet.invalid();
+        if(new HashSet<>(g.participants().stream().map(Participant::characterId).toList()).size()!=g.participants().size())throw CharacterSheet.invalid();
+        for(var p:g.participants()){if(p.characterId()==null||p.expectedVersion()<0||!Set.of("PC","MONSTER").contains(p.kind()))throw CharacterSheet.invalid();CharacterSheet.text(p.group(),100,false);Dice.sources(p.advantage());Dice.sources(p.disadvantage());if(p.kind().equals("PC")&&!p.group().isEmpty())throw CharacterSheet.invalid();}
+    }
+    private List<Entry> candidates(UUID c,Generate g){
+        var candidates=new ArrayList<Entry>();var groups=new HashMap<String,Entry>();
+        // Validate the complete roster/group/source versions before consuming entropy.
+        for(var p:g.participants()){
+            var card=cards.card(c,p.characterId());AccountPolicy.version(card.version(),p.expectedVersion());var calculation=card.sheet().calculate().get("initiative");
+            var dis=new ArrayList<>(p.disadvantage());if(p.surprised())dis.add("5R 突袭：先攻劣势（SRD 5.2.1 p13）");
+            if(dis.size()>10)throw CharacterSheet.invalid();Dice.validate("d20"+signed(calculation.value()),p.advantage(),dis);
+            var entry=new Entry(card.id(),card.sheet().name(),card.version(),p.kind(),p.group(),p.surprised(),calculation,List.copyOf(p.advantage()),List.copyOf(dis),null);
+            if(!p.group().isEmpty()){
+                var previous=groups.putIfAbsent(p.group(),entry);
+                if(previous!=null&&(!previous.calculation().equals(calculation)||previous.surprised()!=p.surprised()||!previous.advantage().equals(entry.advantage())||!previous.disadvantage().equals(entry.disadvantage())))throw CharacterSheet.invalid();
+            }
+            candidates.add(entry);
+        }
+        return List.copyOf(candidates);
+    }
+    /** Same validation as generation, without entropy or writes. */
+    public List<Entry> reviewGenerate(UUID c,String actor,Generate g){
+        return cards.locked(c,()->{
+            DiceService.require(member(c,actor)==Role.DM);validateGenerate(g);
+            if(g.requestId()==null||g.expectedVersion()<0)throw CharacterSheet.invalid();
+            AccountPolicy.version(store.state(c).version(),g.expectedVersion());
+            for(var p:g.participants())if(cards.card(c,p.characterId())==null)throw DiceService.missing();
+            return candidates(c,g);
+        });
     }
     private static String signed(int value){return value<0?Integer.toString(value):"+"+value;}
     private Dice.Result draw(Entry entry){return Dice.roll("d20"+signed(entry.calculation().value()),entry.advantage(),entry.disadvantage(),entropy);}

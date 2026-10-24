@@ -14,6 +14,7 @@ const [apiText, eventText, readme, accounts, scenes, assets, tokens, mapVisibili
   read('../contracts/characters.md'),
 ]);
 const api = JSON.parse(apiText);
+for(const [suffix,method] of [['','get'],['/{id}','post'],['/{id}/impact','post'],['/{id}/executions','post'],['/{id}/executions','get']])assert.ok(api.paths['/api/campaigns/{campaignId}/module-operations'+suffix]?.[method],`A03d missing ${method} ${suffix}`);
 for(const [suffix,method]of [['update-options','post'],['update-impact','post'],['updates','post'],['updates','get'],['updates/{version}/content','get']])assert.ok(api.paths['/api/campaigns/{campaignId}/module-customizations/{id}/'+suffix]?.[method],`A03b missing ${method} ${suffix}`);
 assert.equal(api.paths['/api/campaigns/{campaignId}/module-customizations/{id}/update-preview']?.post?.['x-read-only'],true,'A03 read-only update preview missing');
 for(const [suffix,method]of [['/module-customizations','get'],['/module-customizations','post'],['/module-customizations/{id}','get'],['/module-customizations/{id}','post'],['/module-customizations/{id}/templates','post'],['/module-customizations/{id}/campaigns','post'],['/module-instance','get'],['/module-instance','post']])assert.ok(api.paths['/api/campaigns/{campaignId}'+suffix]?.[method],`A02 lifecycle operation missing: ${method} ${suffix}`);
@@ -131,6 +132,17 @@ assert.deepEqual(api.paths['/api/auth/csrf'].get.security, []);
 assert.deepEqual(api.paths['/api/auth/login'].post.security, []);
 assert.equal(api.paths['/api/auth/logout'].post.responses['204'].content, undefined);
 const schemas = api.components.schemas;
+const opId='00000000-0000-4000-8000-000000000001';
+const opStep={kind:'REVEAL_TOKEN',sceneId:opId,tokenId:opId,expectedVersion:0};
+const opSave={requestId:opId,expectedVersion:0,name:'中文组合',steps:[opStep]};
+validate(schemas.ModuleOperationSave,opSave);
+for(const invalid of [{...opSave,steps:[]},{...opSave,steps:Array(21).fill(opStep)},{...opSave,actor:'forged'},{...opSave,steps:[{...opStep,expectedVersion:0.5}]},{...opSave,steps:[{...opStep,hidden:false}]},{...opSave,steps:[{kind:'SCRIPT',code:'anything'}]}])assert.throws(()=>validate(schemas.ModuleOperationSave,invalid));
+for(const field of Object.keys(opSave)){const missing={...opSave};delete missing[field];assert.throws(()=>validate(schemas.ModuleOperationSave,missing));assert.throws(()=>validate(schemas.ModuleOperationSave,{...opSave,[field]:null}));}
+for(const step of [{kind:'REVEAL_CHARACTER',characterId:opId,expectedVersion:0},{kind:'PUBLISH_TEXT',noteId:opId,expectedVersion:0},{kind:'START_ENCOUNTER',expectedVersion:0,initiativeVersion:2,reason:'DM starts'}])validate(schemas.ModuleOperationStep,step);
+validate(schemas.ModuleOperationExecute,{requestId:opId,expectedVersion:1,campaignVersion:0,impactHash:'a'.repeat(64)});
+assert.throws(()=>validate(schemas.ModuleOperationExecute,{requestId:opId,expectedVersion:1,campaignVersion:0,impactHash:'forged'}));
+for(const suffix of ['/{id}','/{id}/executions'])assert.match(api.paths['/api/campaigns/{campaignId}/module-operations'+suffix].post['x-idempotency'].authorization,/target campaign DM.*before receipt replay/);
+assert.equal(api.paths['/api/campaigns/{campaignId}/module-operations/{id}/impact'].post['x-read-only'],true);
 const liveReview={expectedVersion:0,customizationVersion:2};
 validate(schemas.ModuleLiveReview,liveReview);
 for(const invalid of [{expectedVersion:0},{...liveReview,customizationVersion:-1},{...liveReview,expectedVersion:0.5},{...liveReview,confirmStructural:true}])assert.throws(()=>validate(schemas.ModuleLiveReview,invalid));

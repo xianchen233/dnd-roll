@@ -1,5 +1,38 @@
 # 阶段验收记录
 
+## A03d 实况手动组合服务切片（2026-10-24）
+
+沿用 feat/accounts-and-invitations / 草稿 PR #1，不合并、不发布。
+开工fetch确认clean，本地/origin/PR为ee9039a；独立重取push40085533515 /
+PR40085536284六完整日志，126unit+166IT、248前端/构建、111契约、52浏览器及全部
+旧重启/隔离恢复/容量断言通过（外.tools/a03d-entry-ci.log），不重复A03a/b/c实现。
+
+战役内可编辑组合：1..20严格typed步骤、完整save最多64KiB、每实例100定义；
+分别揭露棋子/角色，DM无图文字复制为TEAM笔记，原P05生成DRAFT先攻，或原P06
+启动明确CONFIRMED的精确先攻版本。每组合最多一个遭遇步骤，无隐式平手确认/效果。
+先重算全部目标/版本/本地精确依赖和hash，再原服务同事务执行并保存实际actor/证据/
+回执；当前目标DM先于历史回执，独立团不依赖原模板库DM身份。
+实际RED修复组合内揭露后角色版本、START预览未绑定当前参战者、私密缓存头。
+即时/延迟commit故障逐字段验证五类操作状态/历史/所有child回执/外层证据原子回滚。
+并发单效/双DM单胜、后续编辑/隐藏/扣血/停止后旧回执不重放；附图资料明确409，
+不静默丢图或公开。契约 contracts/module-operations.md；TDD/准备错误见 a03d-tdd.md。
+
+最终a03d-full-final.log：130unit+175真实IT（8新操作HTTP+1迁移，旧38生命周期保持），
+249前端/生产构建、116契约通过，零失败/错误/跳过。旧path/操作/schema保持，仅错误码
+兼容增补；V23保留所有旧行/列/22checksum。独立18082/dnd_a03d_ops/独立素材和备份
+上的真实Java/PG重启、新会话逐字段verify通过（a03d-restart-{seed,verify}.log）；
+本地未新跑生产浏览器或独立卷恢复。停库/清除环境后130离线unit通过。验收服务按
+身份停止、数据保留；dnd-roll-local体验项目/数据、旧source fence/恢复目标未操作。
+
+check-operations-restart.mjs已接入CI原重启/独立项目恢复。最终新HEAD须独立重取双CI
+六日志：外.tools/a03d-check-ci.mjs严格要求130/175、249/构建、116、52浏览器、全部
+旧断言和4条OPERATIONS VERIFIED；索引a03d-head-ci-final.log、a03d-ci-{HEAD}.json
+和六份a03d-job-*.log，pending不是通过，开工SHA不能替代新HEAD。
+下一可执行：先独立核验最新HEAD，再推进A03e中文选择/影响/组合编辑/触发、原请求
+精确重试/切团撤权隔离及最终浏览器/重启恢复联验。便携模板操作定义/附图公开、
+自动条件/效果不计本轮已实现范围；A03/A04–A06/M3未关闭。云端和真实手机继续后置。
+
+
 ## A03c 容量与确认上限审计（2026-10-24）
 
 开工5bac33f已fetch，独立新取push40080009608 / PR40080012457六完整日志均通过，

@@ -44,9 +44,8 @@ public final class TurnService implements SceneService.MovementPermission {
             if(receipt!=null){if(!receipt.fingerprint().equals(fp))throw new DomainException("IDEMPOTENCY_CONFLICT",409,"Request ID already used");return receipt.result();}
             var old=store.state(c);if(d.kind().equals("END_TURN"))require(old.currentId().equals(source.id().toString()));AccountPolicy.version(r==Role.DM?old.version():old.endVersion(),d.expectedVersion());var order=old.order();String current=old.currentId();int round=old.round();String status=old.status();List<UUID> grants=List.of();
             if(d.kind().equals("START")){
-                if(status.equals("ACTIVE"))throw new DomainException("VERSION_CONFLICT",409,"Combat already active");
-                var prepared=initiative.state(c);if(!prepared.status().equals("CONFIRMED")||prepared.entries().isEmpty())throw CharacterSheet.invalid();
-                order=prepared.entries().stream().map(InitiativeService.Entry::characterId).toList();for(UUID id:order)card(c,id.toString(),r);current=order.getFirst().toString();round=1;status="ACTIVE";
+                var prepared=startState(c,old,r);
+                order=prepared.entries().stream().map(InitiativeService.Entry::characterId).toList();current=order.getFirst().toString();round=1;status="ACTIVE";
             }else{
                 if(!status.equals("ACTIVE"))throw new DomainException("VERSION_CONFLICT",409,"Combat is not active");
                 switch(d.kind()){
@@ -67,6 +66,16 @@ public final class TurnService implements SceneService.MovementPermission {
             boolean publicGrant=d.kind().equals("GRANT")&&visible(c,UUID.fromString(d.characterId()))&&cards.card(c,UUID.fromString(d.characterId())).controllers().stream().anyMatch(user->cards.role(c,user)==Role.PLAYER);
             events.changed(c,!visibleChange&&!publicGrant);return ack;
         }));
+    }
+    private InitiativeService.State startState(UUID c,State old,Role role){
+        if(old.status().equals("ACTIVE"))throw new DomainException("VERSION_CONFLICT",409,"Combat already active");
+        var prepared=initiative.state(c);if(!prepared.status().equals("CONFIRMED")||prepared.entries().isEmpty())throw CharacterSheet.invalid();
+        for(var entry:prepared.entries())card(c,entry.characterId().toString(),role);
+        return prepared;
+    }
+    /** Reuses START's preconditions without changing combat or histories. */
+    public State reviewStart(UUID c,String actor,long expectedVersion){
+        return cards.locked(c,()->{var role=member(c,actor);require(role==Role.DM);var old=store.state(c);AccountPolicy.version(old.version(),expectedVersion);startState(c,old,role);return old;});
     }
     /** Called under SceneService's campaign lock, before returning any old move receipt. */
     public boolean canMove(UUID c,UUID token,String actor,Role role){

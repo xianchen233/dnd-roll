@@ -58,7 +58,7 @@ public final class ModuleBlueprint {
     public static void id(String id){if(id==null||!UUID.fromString(id).toString().equals(id))throw invalid();}
     private static void range(int v,int min,int max){if(v<min||v>max)throw invalid();}
     public static <T>T command(JsonNode n,Class<T> type){try{shape(n,type);if(JSON.writeValueAsBytes(n).length>2*ModuleArchive.JSON_LIMIT)throw invalid();return JSON.treeToValue(n,type);}catch(RuntimeException e){throw invalid();}}
-    private static void shape(JsonNode n,Type type){
+    public static void shape(JsonNode n,Type type){
         if(n==null||n.isNull())throw invalid();
         if(type instanceof ParameterizedType p){var args=p.getActualTypeArguments();if(p.getRawType()==List.class){if(!n.isArray()||n.size()>500)throw invalid();n.forEach(v->shape(v,args[0]));}else if(p.getRawType()==Map.class){if(!n.isObject()||n.size()>500)throw invalid();n.properties().forEach(e->shape(e.getValue(),args[1]));}return;}
         Class<?> c=(Class<?>)type;

@@ -143,8 +143,8 @@ independent editable definitions, save-as v2 templates and new playable campaign
 
 [A03 selective updates](module-updates.md) begins with current-DM read-only
 three-way comparison. A03b customization selection/apply is available below;
-live-instance text and structural gates are described below; manual execution
-remains pending.
+live-instance text and structural gates are described below. A03d live manual
+execution is documented below; Chinese review/trigger controls remain A03e.
 
 `POST /api/campaigns/{campaignId}/module-customizations/{id}/update-preview`
 
@@ -171,3 +171,12 @@ A03c structural review, explicit confirmation and independent playable recovery:
 `POST /api/campaigns/{campaignId}/module-instance/migration-impact`
 `POST /api/campaigns/{campaignId}/module-instance/migrations`
 `GET /api/campaigns/{campaignId}/module-instance/migrations`
+
+[A03d manual operations](module-operations.md): bounded editable definitions and
+original-service atomic execution, current DM before historical receipt replay.
+
+`GET /api/campaigns/{campaignId}/module-operations`
+`POST /api/campaigns/{campaignId}/module-operations/{id}`
+`POST /api/campaigns/{campaignId}/module-operations/{id}/impact`
+`POST /api/campaigns/{campaignId}/module-operations/{id}/executions`
+`GET /api/campaigns/{campaignId}/module-operations/{id}/executions`

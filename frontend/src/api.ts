@@ -5,6 +5,11 @@ import type { Catalog,ContentData,ContentFilters,ContentChoice,ContentPreview,Co
 import type {DiceCommand,DiceTextCommand,Roll,RollList,Initiative,InitiativeGenerate,InitiativeConfirm,InitiativeHistory} from './dice';
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
 export class Api {
+  moduleOperations(c:string):Promise<import('./modules').ModuleOperation[]>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-operations`);}
+  saveModuleOperation(c:string,id:string,body:import('./modules').ModuleOperationSave):Promise<import('./modules').ModuleOperation>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-operations/${encodeURIComponent(id)}`,body);}
+  moduleOperationImpact(c:string,id:string,body:import('./modules').ModuleOperationReview):Promise<import('./modules').ModuleOperationImpact>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-operations/${encodeURIComponent(id)}/impact`,body);}
+  executeModuleOperation(c:string,id:string,body:import('./modules').ModuleOperationExecute):Promise<import('./modules').ModuleOperationExecution>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-operations/${encodeURIComponent(id)}/executions`,body);}
+  moduleOperationExecutions(c:string,id:string):Promise<import('./modules').ModuleOperationExecution[]>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-operations/${encodeURIComponent(id)}/executions`);}
   liveModuleImpact(c:string,body:import('./modules').ModuleLiveReview):Promise<import('./modules').ModuleLiveImpact>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-instance/update-impact`,body);}
   moduleMigrationImpact(c:string,body:import('./modules').ModuleLiveReview):Promise<import('./modules').ModuleMigrationImpact>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-instance/migration-impact`,body);}
   migrateModule(c:string,body:import('./modules').ModuleMigrationApply):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-instance/migrations`,body);}

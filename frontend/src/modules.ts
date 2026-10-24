@@ -25,3 +25,16 @@ export type ModuleLiveEvidence={version:number;actor:string;requestId:string;imp
 export type ModuleMigrationApply=ModuleLiveApply&{confirmations:string[]};
 export type ModuleMigrationImpact={version:number;customizationVersion:number;impactHash:string;confirmations:string[];blockers:string[];changes:ModuleUpdatePreviewResult['changes'];runtime:Record<string,unknown>};
 export type ModuleMigrationEvidence=ModuleLiveEvidence&{recoveryCampaignId:string;runtime:Record<string,unknown>};
+
+export type ModuleOperationStep =
+  | {kind:'REVEAL_TOKEN';sceneId:string;tokenId:string;expectedVersion:number}
+  | {kind:'REVEAL_CHARACTER';characterId:string;expectedVersion:number}
+  | {kind:'PUBLISH_TEXT';noteId:string;expectedVersion:number}
+  | {kind:'PREPARE_ENCOUNTER';expectedVersion:number;participants:import('./dice').InitiativeGenerate['participants'];reason:string}
+  | {kind:'START_ENCOUNTER';expectedVersion:number;initiativeVersion:number;reason:string};
+export type ModuleOperation={id:string;version:number;name:string;steps:ModuleOperationStep[]};
+export type ModuleOperationSave=Omit<ModuleOperation,'id'|'version'>&{requestId:string;expectedVersion:number};
+export type ModuleOperationReview={expectedVersion:number;campaignVersion:number};
+export type ModuleOperationExecute=ModuleOperationReview&{requestId:string;impactHash:string};
+export type ModuleOperationImpact={id:string;version:number;campaignVersion:number;impactHash:string;definition:ModuleOperation;targets:unknown[]};
+export type ModuleOperationExecution={id:string;requestId:string;actor:string;at:string;impact:ModuleOperationImpact;results:unknown[]};
