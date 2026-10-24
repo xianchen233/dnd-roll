@@ -69,7 +69,7 @@ public class ModuleCampaignProvisioner implements ModuleLifecycle.Provisioner {
     /** Ordered JSON rows bind even edits which do not advance the instance version. */
     public Object runtime(UUID c){
         var snapshot=new LinkedHashMap<String,Object>();
-        for(String table:List.of("campaign","scene","scene_map","scene_revealed_cell","token","token_controller","character_card","character_controller","campaign_combat","campaign_initiative")){
+        for(String table:List.of("campaign","scene","scene_map","scene_revealed_cell","campaign_asset","token","token_controller","character_card","character_controller","campaign_combat","campaign_initiative")){
             String where=table.equals("campaign")?"id":"campaign_id";
             snapshot.put(table,jdbc.queryForList("select row_to_json(r)::text from (select * from "+table+" where "+where+"=? order by to_jsonb("+table+")::text) r",String.class,c));
         }
@@ -97,44 +97,78 @@ public class ModuleCampaignProvisioner implements ModuleLifecycle.Provisioner {
                     blockers.add("/scene-bounds/"+scene.nodeId());break;
                 }
             }
+            UUID runtime=mapped.get("scenes").get(scene.nodeId());
+            if(runtime!=null)for(var row:jdbc.queryForList("select id,x,y from token where campaign_id=? and scene_id=? and not module_retired",c,runtime)){
+                if(before.document().play().placements().stream().anyMatch(p->Objects.equals(mapped.get("placements").get(p.id()),row.get("id"))))continue;
+                if(((Number)row.get("x")).intValue()>=scene.width()||((Number)row.get("y")).intValue()>=scene.height()){blockers.add("/scene-bounds/"+scene.nodeId());break;}
+            }
         }
-        // Recovery must cover all active play objects; do not silently omit ad-hoc additions.
-        var sceneIds=mapped.get("scenes").values();for(UUID id:jdbc.queryForList("select id from scene where campaign_id=? and not module_retired",UUID.class,c))if(!sceneIds.contains(id))blockers.add("/unmapped-scene/"+id);
-        for(UUID id:jdbc.queryForList("select id from token where campaign_id=? and not module_retired",UUID.class,c))if(!mapped.get("placements").containsValue(id))blockers.add("/unmapped-placement/"+id);
-        // Cards outside the current template (including retained combat identities)
-        // are copied into recovery, without adopting them into the live mapping.
+        // Ad-hoc objects are recovered independently, never adopted into this mapping.
         for(var entry:mapped.get("scenes").entrySet()){
-            var map=assets.map(c,entry.getValue());if(map==null)blockers.add("/missing-scene/"+entry.getKey());
-            else if(map.map()!=null&&!mapped.get("assets").containsValue(map.map().assetId()))blockers.add("/unmapped-map/"+entry.getKey());
+            if(!Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from scene where campaign_id=? and id=? and not module_retired)",Boolean.class,c,entry.getValue())))blockers.add("/missing-scene/"+entry.getKey());
         }
+        for(var entry:mapped.get("units").entrySet())if(cards.card(c,entry.getValue())==null)blockers.add("/missing-unit/"+entry.getKey());
         for(var p:before.document().play().placements()){
-            UUID token=mapped.get("placements").get(p.id());var rows=jdbc.queryForList("select character_id,scene_id from token where campaign_id=? and id=?",c,token);
+            UUID token=mapped.get("placements").get(p.id());var rows=jdbc.queryForList("select character_id,scene_id from token where campaign_id=? and id=? and not module_retired",c,token);
             if(rows.isEmpty()||!Objects.equals(rows.getFirst().get("character_id"),mapped.get("units").get(p.unitId()))||!Objects.equals(rows.getFirst().get("scene_id"),mapped.get("scenes").get(p.sceneId())))blockers.add("/changed-placement-link/"+p.id());
         }
         return blockers;
     }
-    public ModuleBlueprint.Document recovery(UUID c,ModuleLifecycle.Instance before){
-        var m=before.mapping();var nodes=new ArrayList<ModuleArchive.Node>();
-        for(var node:before.document().nodes()){
-            String name=node.name();if(m.get("scenes").containsKey(node.id()))name=jdbc.queryForObject("select name from scene where campaign_id=? and id=?",String.class,c,m.get("scenes").get(node.id()));
-            nodes.add(new ModuleArchive.Node(node.id(),node.kind(),name,node.text(),node.visibility(),node.nodeIds(),node.assetIds(),node.dependencyIds()));
+    private static String recoveryId(UUID runtime,Set<String> used){
+        String id=runtime.toString();int suffix=0;
+        while(!used.add(id))id=UUID.nameUUIDFromBytes(("recovery:"+runtime+":"+(++suffix)).getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString();return id;
+    }
+    private static Map<UUID,String> reverse(Map<String,UUID> mapping){var result=new LinkedHashMap<UUID,String>();mapping.forEach((k,v)->result.put(v,k));return result;}
+    public ModuleLifecycle.Recovery recovery(UUID c,ModuleLifecycle.Instance before,ModuleArchive.Verified source,Map<String,byte[]> sourceImages){
+        var m=before.mapping();var nodes=new LinkedHashMap<String,ModuleArchive.Node>();before.document().nodes().forEach(n->nodes.put(n.id(),n));
+        var used=new HashSet<>(nodes.keySet());used.addAll(m.get("placements").keySet());
+        var sceneIds=reverse(m.get("scenes"));var unitIds=reverse(m.get("units"));var placementIds=reverse(m.get("placements"));var assetIds=reverse(m.get("assets"));
+        var confirmations=new ArrayList<String>();var scenes=new ArrayList<ModuleBlueprint.Scene>();var units=new ArrayList<ModuleBlueprint.Unit>();var placements=new ArrayList<ModuleBlueprint.Placement>();var tokens=new ArrayList<ModuleLifecycle.RecoveryToken>();
+        var recoveredImages=new LinkedHashMap<>(sourceImages);var recoveredAssets=new LinkedHashMap<String,ModuleArchive.Asset>();source.manifest().assets().forEach(a->recoveredAssets.put(a.id(),a));var usedAssets=new HashSet<>(recoveredAssets.keySet());
+        // Include active ad-hoc scenes, including the scene created when the last mapped scene retires.
+        for(var row:jdbc.queryForList("select * from scene s where campaign_id=? and (not module_retired or exists(select 1 from token t where t.scene_id=s.id and not t.module_retired)) order by id",c)){
+            UUID runtime=(UUID)row.get("id");String id=sceneIds.get(runtime);boolean extra=id==null;if(extra){id=recoveryId(runtime,used);sceneIds.put(runtime,id);confirmations.add("RECOVER_EXTRA_SCENE "+id+"; independent scene; original remains unmanaged");}
+            var old=nodes.get(id);nodes.put(id,new ModuleArchive.Node(id,"SCENE",(String)row.get("name"),old==null?"":old.text(),old==null?"DM":old.visibility(),old==null?List.of():old.nodeIds(),old==null?List.of():old.assetIds(),old==null?List.of():old.dependencyIds()));
+            var map=assets.map(c,runtime).map();ModuleBlueprint.MapImage image=null;
+            if(map!=null){
+                String asset=assetIds.get(map.assetId());if(asset==null){asset=recoveryId(map.assetId(),usedAssets);assetIds.put(map.assetId(),asset);confirmations.add("RECOVER_EXTRA_MAP "+asset+"; independent validated bytes; recovery fully covered");}
+                var stored=assets.asset(c,map.assetId());if(stored==null)throw ModuleBlueprint.invalid();
+                if(recoveredAssets.size()+(recoveredAssets.containsKey(asset)?0:1)>128||recoveredAssets.values().stream().filter(a->!a.id().equals(assetIds.get(map.assetId()))).mapToLong(ModuleArchive.Asset::size).sum()+stored.asset().byteSize()>ModuleArchive.EXPANDED_LIMIT)throw ModuleBlueprint.invalid();
+                byte[] bytes=files.read(stored.storageKey());var valid=AssetImage.validate(bytes,stored.asset().mediaType());
+                if(!valid.sha256().equals(stored.sha256())||bytes.length!=stored.asset().byteSize()||valid.width()!=stored.asset().width()||valid.height()!=stored.asset().height())throw ModuleBlueprint.invalid();
+                recoveredImages.put(asset,bytes);recoveredAssets.put(asset,new ModuleArchive.Asset(asset,valid.mediaType(),bytes.length,valid.sha256()));image=new ModuleBlueprint.MapImage(asset,map.gridSize(),map.offsetX(),map.offsetY(),map.distancePerCell());
+            }
+            scenes.add(new ModuleBlueprint.Scene(id,((Number)row.get("width")).intValue(),((Number)row.get("height")).intValue(),((Number)row.get("grid_size")).intValue(),image));
         }
-        var scenes=new ArrayList<ModuleBlueprint.Scene>();
-        for(var old:before.document().play().scenes()){
-            UUID id=m.get("scenes").get(old.nodeId());var row=jdbc.queryForMap("select width,height,grid_size from scene where campaign_id=? and id=?",c,id);var map=assets.map(c,id).map();ModuleBlueprint.MapImage image=null;
-            if(map!=null){String asset=m.get("assets").entrySet().stream().filter(e->e.getValue().equals(map.assetId())).findFirst().orElseThrow().getKey();image=new ModuleBlueprint.MapImage(asset,map.gridSize(),map.offsetX(),map.offsetY(),map.distancePerCell());}
-            scenes.add(new ModuleBlueprint.Scene(old.nodeId(),((Number)row.get("width")).intValue(),((Number)row.get("height")).intValue(),((Number)row.get("grid_size")).intValue(),image));
-        }
-        var units=new ArrayList<>(before.document().play().units().stream().map(u->{var card=cards.card(c,m.get("units").get(u.nodeId()));return new ModuleBlueprint.Unit(u.nodeId(),card.sheet(),card.hidden(),card.shareFull());}).toList());
-        var used=new HashSet<String>();nodes.forEach(n->used.add(n.id()));before.document().play().placements().forEach(p->used.add(p.id()));
-        for(var card:cards.cards(c))if(!m.get("units").containsValue(card.id())){
-            String id=card.id().toString();int suffix=0;
-            while(!used.add(id))id=UUID.nameUUIDFromBytes(("recovery:"+card.id()+":"+(++suffix)).getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString();
-            nodes.add(new ModuleArchive.Node(id,"UNIT",card.sheet().name(),"","DM",List.of(),List.of(),List.of()));
+        var liveCards=new ArrayList<CharacterService.Card>();for(var u:before.document().play().units())liveCards.add(cards.card(c,m.get("units").get(u.nodeId())));
+        for(var card:cards.cards(c))if(!m.get("units").containsValue(card.id()))liveCards.add(card);
+        for(var card:liveCards){
+            String id=unitIds.get(card.id());if(id==null){id=recoveryId(card.id(),used);unitIds.put(card.id(),id);nodes.put(id,new ModuleArchive.Node(id,"UNIT",card.sheet().name(),"","DM",List.of(),List.of(),List.of()));confirmations.add("RECOVER_EXTRA_UNIT "+id+"; independent card with DM-only control; no combat or history replay");}
             units.add(new ModuleBlueprint.Unit(id,card.sheet(),card.hidden(),card.shareFull()));
         }
-        var placements=before.document().play().placements().stream().map(p->{var row=jdbc.queryForMap("select x,y,hidden from token where campaign_id=? and id=?",c,m.get("placements").get(p.id()));return new ModuleBlueprint.Placement(p.id(),p.sceneId(),p.unitId(),((Number)row.get("x")).intValue(),((Number)row.get("y")).intValue(),(Boolean)row.get("hidden"));}).toList();
-        var play=before.document().play();return new ModuleBlueprint.Document(nodes,new ModuleBlueprint.Play(scenes,units,placements,play.admissionMode(),play.approvedDependencyIds()));
+        for(var row:jdbc.queryForList("select * from token where campaign_id=? and not module_retired order by id",c)){
+            UUID runtime=(UUID)row.get("id");String id=placementIds.get(runtime);if(id==null){id=recoveryId(runtime,used);confirmations.add("RECOVER_EXTRA_PLACEMENT "+id+"; independent token with DM-only control; original remains unmanaged");}
+            String scene=sceneIds.get((UUID)row.get("scene_id")),unit=unitIds.get((UUID)row.get("character_id"));if(scene==null||row.get("character_id")!=null&&unit==null)throw ModuleBlueprint.invalid();
+            int x=((Number)row.get("x")).intValue(),y=((Number)row.get("y")).intValue();boolean hidden=(Boolean)row.get("hidden");var geometry=scenes.stream().filter(s->s.nodeId().equals(scene)).findFirst().orElseThrow();
+            if(x<0||y<0||x>=geometry.width()||y>=geometry.height())throw ModuleBlueprint.invalid();
+            if(unit!=null)placements.add(new ModuleBlueprint.Placement(id,scene,unit,x,y,hidden));
+            tokens.add(new ModuleLifecycle.RecoveryToken(id,scene,(String)row.get("name"),x,y,hidden,unit==null));
+        }
+        if(tokens.size()>500)throw ModuleBlueprint.invalid();
+        var play=before.document().play();var document=new ModuleBlueprint.Document(new ArrayList<>(nodes.values()),new ModuleBlueprint.Play(scenes,units,placements,play.admissionMode(),play.approvedDependencyIds()));var s=source.manifest();
+        var manifest=new ModuleArchive.Manifest(s.format(),2,s.moduleId(),s.moduleVersion(),s.name(),s.rules(),s.rights(),s.dependencies(),s.content(),new ArrayList<>(recoveredAssets.values()));
+        var archive=new ModuleArchive();var verified=archive.verify(archive.export(manifest,document,recoveredImages,s.moduleId(),s.moduleVersion(),s.name()));
+        UUID current=jdbc.queryForObject("select current_scene_id from campaign where id=?",UUID.class,c);String currentScene=sceneIds.get(current);if(currentScene==null)throw ModuleBlueprint.invalid();
+        return new ModuleLifecycle.Recovery(document,verified,recoveredImages,currentScene,tokens,confirmations);
+    }
+    public Map<String,Map<String,UUID>> createRecovery(UUID source,UUID target,String actor,ModuleLifecycle.Recovery recovery){
+        var mapping=create(source,target,actor,"迁移前恢复副本",recovery.verified(),recovery.document(),recovery.images());
+        for(var token:recovery.tokens()){
+            UUID id=mapping.get("placements").get(token.id());
+            if(token.bare()){id=UUID.randomUUID();mapping.get("placements").put(token.id(),id);jdbc.update("insert into token(id,scene_id,campaign_id,name,x,y,hidden) values (?,?,?,?,?,?,?)",id,mapping.get("scenes").get(token.sceneId()),target,token.name(),token.x(),token.y(),token.hidden());jdbc.update("insert into token_controller(token_id,campaign_id,username) values (?,?,?)",id,target,actor);}
+            else jdbc.update("update token set name=?,hidden=? where campaign_id=? and id=?",token.name(),token.hidden(),target,id);
+        }
+        jdbc.update("update campaign set current_scene_id=? where id=?",mapping.get("scenes").get(recovery.currentScene()),target);return mapping;
     }
     private CharacterSheet preservePlay(CharacterSheet incoming,CharacterSheet live){
         return new CharacterSheet(incoming.name(),incoming.avatar(),incoming.species(),incoming.background(),incoming.classes(),incoming.abilities(),incoming.skills(),incoming.saves(),live.combat(),incoming.attacks(),incoming.casting(),incoming.spells(),incoming.features(),live.resources(),live.equipment(),live.money(),live.conditions(),incoming.modifiers(),live.overrides(),incoming.notes());

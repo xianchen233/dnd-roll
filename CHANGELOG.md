@@ -11,6 +11,11 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Fixed
 
+- Allow consecutive structural migrations after all mapped scenes retire. Recover
+  fallback/ad-hoc scenes, linked and characterless tokens and independent live map
+  images with explicit confirmations, preserving names, current scene and DM-only
+  control. Reject unsafe ad-hoc token bounds or incomplete recovery before writes.
+
 - Preserve unchanged live placement coordinates and token hiding during structural
   migrations. Evaluate scene bounds using the confirmed resulting positions and
   retirements, allowing safe shrink-and-move updates while blocking stranded tokens.
@@ -26,7 +31,7 @@ and successful CI runs do not by themselves constitute a release.
   and durable receipts. Retire removed scenes/placements while preserving references,
   combat identities, damaged resources, conditions, progress and historical results.
   V22 retains all previous rows and migrations. Published materials, policy and
-  manifest changes and unmanaged live objects remain explicit blockers.
+  manifest changes and invalid live links remain explicit blockers.
 
 - Add a separate, hash-bound live-instance preparation-text update gate with
   current DM checks in both source and target, atomic before-instance evidence

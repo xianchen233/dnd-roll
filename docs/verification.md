@@ -1,5 +1,37 @@
 # 阶段验收记录
 
+## A03c 全部场景退役后的连续迁移与未映射对象恢复（2026-10-24）
+
+沿用 feat/accounts-and-invitations / 草稿 PR #1，不合并、不发布。
+开工 fetch 后本地/origin/PR 精确 HEAD 8578e76，独立重取 push39988746436 /
+PR39988753462 六份完整日志，均 completed/success：126unit+155真实IT、248前端/
+构建、111契约、52浏览器及全部旧重启/隔离恢复/容量断言通过。
+外 .tools/a03c-empty-entry-ci.log；不得复用为新 HEAD 的结果。
+
+实际两组 RED：删光映射场景后的兜底场景阻断后续迁移；额外实况场景/棋子被阻断。
+第三组 RED：缩图遗漏未映射棋子边界。现在逐项确认后恢复所有相关实况场景、地图、
+关联角色/无角色棋子及独立图片，保留名称/位置/隐藏/当前场景，控制仅归迁移 DM。
+原团未映射对象不纳入模板映射；活动棋子仍在退役场景中时也保留可玩恢复场景，
+已退役模板棋子不复活。缺图/损坏/超限/失效链接在写入前阻断；即时/延迟回滚删除
+新恢复文件，原数据/图片保持。契约 module-updates.md，真实 TDD a03c-unmapped-tdd.md。
+
+最终代码完整126unit+158真实IT零失败/错误/跳过（a03c-unmapped-full-final.log）；
+248前端、生产构建、111契约通过。实际Java/PG停止、同库/素材根重启后，新会话逐字段
+核验三次迁移、兜底/额外场景、关联角色/无角色棋子、全部恢复副本/图片/受损资源/
+前像和原回执通过（a03c-unmapped-restart-{seed,verify}-final.log）。不冒称本地跑过
+新生产浏览器或新独立卷恢复；这些由精确新HEAD双CI完整日志核验，pending不等于通过。
+检查器a03c-unmapped-check-ci.mjs要求158IT及全部旧断言、新4条UNMAPPED VERIFIED；
+结果索引为外.tools/a03c-unmapped-head-ci-final.log、a03c-unmapped-ci-{HEAD}.json及
+六份a03c-unmapped-job-*.log；不得复用开工SHA的结果。
+
+原source fence、恢复目标/素材保持。验收Java/PG已按实际身份停止，8080/8081/5173/
+55432无监听；清除数据库环境后离线126unit通过（a03c-unmapped-unit-pg-stopped.log）。
+A03c仍保留缺失/变化链接、危险缩图、恢复容量/图片完整性、资料/策略/manifest阻断边界。
+A03d手动组合/A03e中文控件与最终联验、A04–A06/M3继续待办；云端/TLS/物理异机/
+真实手机后置。本轮不冒称整个A03c/A03完成。下一可执行：恢复时先独立核验最新HEAD；
+按契约继续A03c尚未覆盖的边界审计，再推进A03d，保留A03e最终联验。
+
+
 ## A03c 棋子迁移与缩图边界（2026-10-24）
 
 沿用 feat/accounts-and-invitations / 草稿 PR #1，不合并、不发布。

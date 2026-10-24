@@ -20,7 +20,7 @@ public final class ModuleArchive {
     public record Node(String id,String kind,String name,String text,String visibility,List<String> nodeIds,List<String> assetIds,List<String> dependencyIds) {}
     public record Verified(Manifest manifest,List<Node> nodes,String sha256,ModuleBlueprint.Document document) {}
     public static final int MAX_BYTES=10*1024*1024, JSON_LIMIT=1024*1024;
-    private static final long EXPANDED_LIMIT=32L*1024*1024;
+    public static final long EXPANDED_LIMIT=32L*1024*1024;
     private final JsonMapper json=JsonMapper.builder().enable(tools.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION).build();
     public Verified verify(Path archive) {
         try {

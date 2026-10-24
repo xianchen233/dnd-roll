@@ -43,10 +43,13 @@ public final class ModuleLifecycle {
         List<LiveEvidence> liveUpdates(UUID c);void liveUpdate(UUID c,LiveEvidence value);
         List<MigrationEvidence> migrations(UUID c);void migration(UUID c,MigrationEvidence value);
     }
+    public record RecoveryToken(String id,String sceneId,String name,int x,int y,boolean hidden,boolean bare) {}
+    public record Recovery(ModuleBlueprint.Document document,ModuleArchive.Verified verified,Map<String,byte[]> images,String currentScene,List<RecoveryToken> tokens,List<String> confirmations) {}
     public interface Provisioner {
         Map<String,Map<String,UUID>> create(UUID source,UUID target,String actor,String name,ModuleArchive.Verified verified,ModuleBlueprint.Document document,Map<String,byte[]> images);
         Object runtime(UUID c);
-        ModuleBlueprint.Document recovery(UUID c,Instance before);
+        Recovery recovery(UUID c,Instance before,ModuleArchive.Verified source,Map<String,byte[]> images);
+        Map<String,Map<String,UUID>> createRecovery(UUID source,UUID target,String actor,Recovery recovery);
         List<String> migrationBlockers(UUID c,Instance before,ModuleBlueprint.Document next);
         Map<String,Map<String,UUID>> migrate(UUID c,String actor,Instance before,ModuleBlueprint.Document next);
     }
@@ -181,17 +184,17 @@ public final class ModuleLifecycle {
         var oldDocs=before.document().nodes().stream().filter(n->n.kind().equals("DOCUMENT")).toList();
         var newDocs=next.nodes().stream().filter(n->n.kind().equals("DOCUMENT")).toList();if(!oldDocs.equals(newDocs))blockers.add("/published-materials");
         blockers.addAll(provisioner.migrationBlockers(c,before,next));
-        ModuleBlueprint.Document recovery=null;
-        if(blockers.isEmpty())try{recovery=provisioner.recovery(c,before);ModuleBlueprint.validate(recovery,s.manifest());}
+        Recovery recovery=null;
+        if(blockers.isEmpty())try{byte[] bytes=sourceBytes(s.campaignId(),target(s.campaignId(),s.customizationId()),actor);recovery=provisioner.recovery(c,before,archive.verify(bytes),archive.images(bytes));}
         catch(DomainException invalidRecovery){blockers.add("/recovery-definition");}
         var confirmations=new ArrayList<String>();
-        if(recovery!=null)for(var unit:recovery.play().units())if(!before.mapping().get("units").containsKey(unit.nodeId()))confirmations.add("RECOVER_EXTRA_UNIT "+unit.nodeId()+"; independent card with DM-only control; no combat or history replay");
+        if(recovery!=null)confirmations.addAll(recovery.confirmations());
         for(var change:impact.changes())confirmations.add("APPLY "+change.path());
         for(var scene:before.document().play().scenes())if(next.play().scenes().stream().noneMatch(n->n.nodeId().equals(scene.nodeId())))confirmations.add("RETIRE_SCENE "+scene.nodeId()+"; retain rows and history; switch current scene if necessary");
         for(var unit:before.document().play().units())if(next.play().units().stream().noneMatch(n->n.nodeId().equals(unit.nodeId())))confirmations.add("RETAIN_COMBAT_IDENTITY "+unit.nodeId()+"; old HP, resources, conditions and turns remain; replacement does not enter combat automatically");
         confirmations.add("CREATE_DM_ONLY_RECOVERY; preserve live HP/resources/conditions; maps fully covered; original combat and records stay in original campaign");
         if(confirmations.size()>500)blockers.add("/confirmation-limit");
-        Object runtime=provisioner.runtime(c);String hash=DiceService.fingerprint(json,List.of(impact.impactHash(),runtime,confirmations,blockers));
+        Object runtime=provisioner.runtime(c);String hash=DiceService.fingerprint(json,List.of(impact.impactHash(),runtime,confirmations,blockers,recovery==null?"":recovery.verified().sha256()));
         return new MigrationImpact(before.version(),r.customizationVersion(),hash,List.copyOf(confirmations),List.copyOf(blockers),impact.changes(),runtime);
     }
     public MigrationImpact migrationImpact(UUID c,String actor,LiveReview r){return liveLocked(c,actor,()->migrationPlan(c,actor,r));}
@@ -206,10 +209,11 @@ public final class ModuleLifecycle {
             if(!impact.blockers().isEmpty())throw new DomainException("MODULE_LIVE_MIGRATION_REQUIRED",409,"Resolve structural migration blockers");
             if(r.confirmations().size()!=impact.confirmations().size()||!new HashSet<>(r.confirmations()).equals(new HashSet<>(impact.confirmations())))throw new DomainException("MODULE_CONFIRMATION_REQUIRED",409,"Confirm every exact structural impact");
             var before=instance(c);var s=before.source();var copy=target(s.campaignId(),s.customizationId());Object runtime=provisioner.runtime(c);
-            var oldDocument=provisioner.recovery(c,before);UUID recovery=UUID.randomUUID();
             byte[] bytes=sourceBytes(s.campaignId(),copy,actor);var verified=archive.verify(bytes);
-            var recoveryMapping=provisioner.create(s.campaignId(),recovery,actor,"迁移前恢复副本",verified,oldDocument,archive.images(bytes));
-            store.instance(recovery,new Instance(0,s,oldDocument,recoveryMapping,before.progress()),true);
+            var saved=provisioner.recovery(c,before,verified,archive.images(bytes));UUID recovery=UUID.randomUUID();
+            var recoveryMapping=provisioner.createRecovery(s.campaignId(),recovery,actor,saved);
+            var recoverySource=new Source(s.campaignId(),s.packageId(),s.sha256(),saved.verified().manifest(),s.customizationId(),s.customizationVersion());
+            store.instance(recovery,new Instance(0,recoverySource,saved.document(),recoveryMapping,before.progress()),true);
             var mapping=provisioner.migrate(c,actor,before,copy.document());long version=before.version()+1;
             store.migration(c,new MigrationEvidence(version,actor,r.requestId(),r.impactHash(),before,recovery,runtime));
             store.instance(c,new Instance(version,new Source(s.campaignId(),s.packageId(),s.sha256(),s.manifest(),s.customizationId(),copy.version()),copy.document(),mapping,before.progress()),false);

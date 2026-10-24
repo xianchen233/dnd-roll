@@ -143,9 +143,26 @@ confirmation, independent runtime identity and only the migrating DM as controll
 They are not adopted into the original instance's template mapping. Recovery node
 identities avoid collisions with existing nodes/placements. The complete recovery
 definition is validated at preview time; limits (100 cards, 500 nodes and bounded
-JSON) produce `/recovery-definition` blockers before writes. Ad-hoc scenes,
-placements and maps remain blocked. Original combat and historical events are
-never replayed into recovery.
+JSON) produce `/recovery-definition` blockers before writes. Recovery includes
+ad-hoc scenes, linked and characterless tokens, live map calibration and validated
+independent image bytes. Each extra scene/placement/map has an explicit
+`RECOVER_EXTRA_SCENE`, `RECOVER_EXTRA_PLACEMENT` or `RECOVER_EXTRA_MAP`
+confirmation. Original ad-hoc objects stay outside the template mapping and are
+not modified. Token names, positions, hiding, nullable character links and the
+current scene are preserved in recovery; all controllers belong only to the
+migrating DM. Characterless tokens stay characterless and do not create cards.
+The runtime snapshot also binds asset metadata; the hash binds the validated
+recovery archive. Missing/corrupt bytes, invalid links, out-of-bounds tokens or
+recovery limits reject before creating any copy or files. The existing bounded
+archive limits apply to the combined recovery images, not only the template ZIP.
+Original combat and historical events are never replayed into recovery.
+
+Deleting all mapped scenes creates a usable current fallback scene. That scene
+is recovered as an independent ad-hoc scene on subsequent migrations, without
+being adopted into the original mapping. Active ad-hoc tokens retained in a
+retired scene cause that scene to be included in recovery too. Historical retired
+template tokens are not resurrected. Recovery of these objects remains in the
+same transaction and file rollback boundary as the mapped structure and receipt.
 
 Stable scene/unit/placement mappings are preserved for retained objects. Removed
 scenes and placements are retired from active navigation/rendering, retaining rows
@@ -160,7 +177,9 @@ token would be outside bounds after the confirmed migration. Bounds use the same
 field-wise placement merge as application: unchanged coordinate axes retain their
 live values, explicitly changed axes adopt the reviewed definition, and moving to
 a different scene uses both destination coordinates. Removed placements do not
-block a shrink. A change to visibility or unit identity alone never resets live
+block a shrink. Unmapped tokens retained in a shrinking scene must also fit;
+template placement changes cannot move these independently authored objects.
+A change to visibility or unit identity alone never resets live
 coordinates. Existing hidden tokens stay hidden, even when a placement definition
 becomes public; revealing them requires the existing explicit live authoring API.
 The independent recovery copy retains the actual pre-migration positions.
