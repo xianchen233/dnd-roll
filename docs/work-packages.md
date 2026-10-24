@@ -34,6 +34,13 @@ a03e-check-ci.mjs要求130/175、283/构建、116、54浏览器、全部旧断�
 a03e-head-ci-final.log。pending不算通过，文档也不把开工SHA绿灯冒称最终HEAD通过。
 首次提交1db4702的push40119506867在零job阶段失败：job级env误用runner.temp。已改为浏览器run步骤使用$RUNNER_TEMP并保留所有恢复断言；修复后的新HEAD必须另取完整双CI证据。
 
+代码e680c36已独立重取push40119684682 / PR40119689443六完整日志并严格通过：
+两run均completed/success，各130unit+175真实IT、283前端/构建、116契约、54浏览器、
+全部旧重启/独立恢复/容量断言及每browser两条CONTROLS VERIFIED。实际浏览器创建的
+更新、恢复ZIP/地图/角色和五类组合在真实容器重启及独立项目/卷恢复后完整保持。
+证据a03e-ci-e680c36f98c447d74fbac0185845e4cc52a5f79d.json、六a03e-job-*.log和
+ a03e-code-ci-final.log；本交接新增HEAD仍须用a03e-check-ci.mjs独立验证，不复用代码SHA。
+
 体验项目dnd-roll-local及数据、旧source fence/恢复目标未操作。验收进程按身份停止，
 所有测试数据保留。下一可执行：独立核验最终HEAD完整日志；通过后进入A04支持矩阵
 与明确5R依据/契约/失败测试。便携模板组合定义、附图公开、自动条件/效果仍后续，

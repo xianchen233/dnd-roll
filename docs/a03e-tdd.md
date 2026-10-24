@@ -114,6 +114,18 @@ and restore steps use the same path directly. No test/assertion/retry/timeout wa
 changed. The configuration repair requires new-HEAD push/PR checks; the failed
 run and successful local tests are not described as remote success.
 
+The repaired code HEAD **e680c36f98c447d74fbac0185845e4cc52a5f79d** subsequently
+passed [push40119684682](https://github.com/xianchen233/dnd-roll/actions/runs/40119684682)
+and [PR40119689443](https://github.com/xianchen233/dnd-roll/actions/runs/40119689443),
+both completed/success. The independent checker re-downloaded all six complete
+logs and passed every required assertion: 130 unit/175 real IT, 283 frontend and
+build, 116 contracts, 54 production browsers, all previous restart/isolated-restore/
+capacity gates and two CONTROLS VERIFIED lines in each browser job. Exact UI-created
+domains and original receipts survived real containers and a separate restore
+project/volume. Evidence: `a03e-ci-e680c36f98c447d74fbac0185845e4cc52a5f79d.json`,
+six `a03e-job-*.log`, `a03e-code-ci-final.log`. This handoff-only commit's new HEAD
+still requires independent checks; code-HEAD evidence is not substituted for it.
+
 The `dnd-roll-local` project, its containers/data and earlier source fence/restore
 targets were not operated. Acceptance services are stopped by verified identity
 after use, with all data retained. Cloud/TLS, physical cross-host recovery and
