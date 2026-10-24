@@ -1,5 +1,44 @@
 # 继续工作的入口
 
+## A03e 中文选择、实况影响与手动组合（2026-10-25）
+
+沿用 feat/accounts-and-invitations / 草稿 PR #1，不合并、不发布。
+开工 fetch 后工作区干净，本地/origin/PR 精确 9c17675。连接器传输失败后，
+独立重取 push40095551240 / PR40095555043 六完整日志，均 completed/success：
+130unit+175真实IT、249前端/构建、116契约、52浏览器及全部旧重启/隔离恢复/
+容量断言通过；外 .tools/a03e-entry-ci.log，不复用为新 HEAD 的证据。
+
+独立选择性更新面板逐项 KEEP/INCOMING，无默认采用；服务器重算完整影响后才应用，
+并可下载更新前恢复包。实况文字和结构迁移分别预览，读取当前来源副本版本，
+结构变化逐项明确确认、显示中文解释/精确标识/实况前像及独立恢复战役入口。
+本团手动组合支持五类 typed 步骤、目标选择/排序/显式采用当前版本、保存后预览
+再触发；先攻生成仍为 DRAFT，START 只绑定已 CONFIRMED 的精确版本。
+不确定结果锁住该操作编辑，保留原路由/UUID/完整body/版本/hash；刷新不重基，
+确认后的读取失败不提供重复写重试。切团/副本/API域或撤权清私密状态/回执/
+确认/Blob URL，独立观察并发晚到401/403，旧域成功或拒绝不污染新团。
+实际TDD及准备错误见 a03e-tdd.md；补充真实RED修复候选缺依赖时KEEP被过度阻断。
+
+本地完整130unit+175真实IT（独立55433/dnd_a03e_test，零失败/错误/跳过），
+283前端/生产构建、116契约通过；全部旧52+新2条真实生产Chrome流程通过。
+未改backend/OpenAPI请求或V1–V23迁移，旧数据/列/checksum门槛保持。
+独立18083/18084、dnd_a03e及独立素材/备份上实际停Java/web/PG再重启，新会话
+逐字段核验浏览器创建的选择更新/实况迁移/恢复ZIP/地图/角色/五类操作/原请求，
+旧回执不覆盖后续扣血、隐藏、位置、停止战斗、进度或RP；证据外.tools/
+a03e-{backend-full,frontend-final,build-final,browser,restart-verify,controls-restart-verify-final}.log。
+停独立PG并清除数据库环境后，130离线unit再次通过（a03e-unit-pg-stopped.log）。
+已人工查看桌面/390px截图；这不是真实手机验证。本机未新做独立卷恢复。
+CI新增两份浏览器真实产物capture，在原容器重启及独立项目/卷恢复后逐字段verify；
+原所有旧断言/容量检查保留。最终新HEAD必须独立重取push/PR六日志，外.tools/
+a03e-check-ci.mjs要求130/175、283/构建、116、54浏览器、全部旧断言及每browser
+两条CONTROLS VERIFIED；结果索引a03e-ci-{SHA}.json、六a03e-job-*.log及
+a03e-head-ci-final.log。pending不算通过，文档也不把开工SHA绿灯冒称最终HEAD通过。
+
+体验项目dnd-roll-local及数据、旧source fence/恢复目标未操作。验收进程按身份停止，
+所有测试数据保留。下一可执行：独立核验最终HEAD完整日志；通过后进入A04支持矩阵
+与明确5R依据/契约/失败测试。便携模板组合定义、附图公开、自动条件/效果仍后续，
+A03有界切片不能冒称全部产品完成；A04–A06/M3、云端/TLS/物理异机/真实手机后置。
+
+
 ## A03d 实况手动组合服务切片（2026-10-24）
 
 沿用 feat/accounts-and-invitations / 草稿 PR #1，不合并、不发布。

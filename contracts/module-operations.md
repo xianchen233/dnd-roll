@@ -74,6 +74,7 @@ payloads. Published TEAM text is the explicit visibility change. Original cards,
 RP/history/progress/template/instance versions otherwise remain intact. Evidence
 and receipts are included in ordinary P09 database backup/restore.
 
-A03e owns Chinese editing/review/trigger controls and final integrated browser,
-restart/restore acceptance. A03/A04–A06/M3 remain open. Cloud and real phones are
+A03e Chinese editing/review/trigger controls and exact-retry isolation follow
+[the workspace contract](module-workspace.md); actual browser/restart evidence
+and the exact-HEAD restore gate are recorded in `docs/a03e-tdd.md`. A04–A06/M3 remain open. Cloud and real phones are
 deferred; same branch/draft PR #1, no merge/release.

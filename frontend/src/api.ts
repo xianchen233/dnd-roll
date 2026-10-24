@@ -22,6 +22,7 @@ export class Api {
   applyModuleUpdate(c:string,id:string,body:import('./modules').ModuleUpdateApply):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/updates`,body);}
   moduleUpdates(c:string,id:string):Promise<import('./modules').ModuleUpdateEvidence[]>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/updates`);}
   moduleUpdateRecoveryUrl(c:string,id:string,version:number):string{return `/api/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/updates/${encodeURIComponent(version)}/content`;}
+  async moduleUpdateRecovery(c:string,id:string,version:number):Promise<Blob>{const response=await this.request(this.moduleUpdateRecoveryUrl(c,id,version),{credentials:'include',cache:'no-store'});await this.check(response);return response.blob();}
   moduleCustomizations(c:string):Promise<import('./modules').CustomizationListing>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-customizations`);}
   moduleCustomization(c:string,id:string):Promise<import('./modules').Customization>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}`);}
   previewModuleUpdate(c:string,id:string,body:{expectedVersion:number;packageId:string}):Promise<import('./modules').ModuleUpdatePreviewResult>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/update-preview`,body);}

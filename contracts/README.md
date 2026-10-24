@@ -144,13 +144,14 @@ independent editable definitions, save-as v2 templates and new playable campaign
 [A03 selective updates](module-updates.md) begins with current-DM read-only
 three-way comparison. A03b customization selection/apply is available below;
 live-instance text and structural gates are described below. A03d live manual
-execution is documented below; Chinese review/trigger controls remain A03e.
+execution is documented below; [A03e Chinese controls](module-workspace.md) add
+explicit selection, impact, editing, triggers and scope-safe exact retries.
 
 `POST /api/campaigns/{campaignId}/module-customizations/{id}/update-preview`
 
 A03b adds explicit selections, recomputed impact, atomic customization updates,
 durable evidence and downloadable recovery archives. Chinese selection controls
-remain scheduled for A03e.
+use the same routes and require a server impact before application.
 
 `POST /api/campaigns/{campaignId}/module-customizations/{id}/update-options`
 `POST /api/campaigns/{campaignId}/module-customizations/{id}/update-impact`
@@ -158,7 +159,7 @@ remain scheduled for A03e.
 `GET /api/campaigns/{campaignId}/module-customizations/{id}/updates`
 `GET /api/campaigns/{campaignId}/module-customizations/{id}/updates/{version}/content`
 
-A03c preparation-text gate (partial; structural migration remains pending):
+A03c preparation-text gate (text-only; separate structural gate below):
 - `POST /api/campaigns/{campaignId}/module-instance/update-impact`
 - `POST /api/campaigns/{campaignId}/module-instance/updates`
 - `GET /api/campaigns/{campaignId}/module-instance/updates`

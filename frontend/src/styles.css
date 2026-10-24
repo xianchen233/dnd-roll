@@ -143,3 +143,10 @@
 .module-update-changes{max-height:36rem;overflow:auto;min-width:0}
 .module-update-changes details{padding:.75rem 0;border-bottom:1px solid var(--panel-line);overflow-wrap:anywhere}
 .module-update-changes dd{margin:.25rem 0 1rem;min-width:0}
+.module-lifecycle section{min-width:0;max-width:100%;overflow-wrap:anywhere}
+.module-lifecycle dd{margin-inline-start:0;min-width:0}
+.module-lifecycle article{border-bottom:1px solid var(--panel-line,#5c625f);padding:.75rem 0;min-width:0}
+.module-lifecycle select{width:100%;min-width:0;text-overflow:ellipsis}
+.module-operation-steps{padding-inline-start:1.5rem;min-width:0}
+.module-operation-steps li{min-width:0}
+.module-lifecycle label:has(input[type=checkbox]){display:flex;align-items:start;flex-direction:row;gap:.5rem}

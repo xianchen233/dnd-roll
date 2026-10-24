@@ -34,6 +34,16 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Added
 
+- Add Chinese per-path template selection, authoritative impact review, live text
+  updates and individually confirmed structural migration with recovery access.
+  Add typed live combination editing, ordering, target selection, explicit version
+  adoption, save/review/trigger and immutable execution evidence. Uncertain requests
+  retain their exact identities/bodies through refresh; campaign changes and
+  authorization failures dispose private state and pending commands.
+- Verify browser-created module updates, recovery ZIPs/maps/cards and operation
+  receipts after actual restart and isolated restoration, retaining all prior
+  browser, persistence and capacity checks.
+
 - Add DM-editable live module operation combinations with strict typed steps and
   limits, server-bound impact review, atomic execution through existing token,
   character, note, initiative and turn services, and immutable actor evidence.
