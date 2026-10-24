@@ -181,8 +181,9 @@ public final class ModuleLifecycle {
         var blockers=new ArrayList<String>();
         for(String b:impact.blockers())if(b.startsWith("/manifest")||b.equals("/dependencies")||b.contains("admissionMode")||b.contains("approvedDependencyIds"))blockers.add(b);
         // Published materials are independent play records; changes require their own review.
-        var oldDocs=before.document().nodes().stream().filter(n->n.kind().equals("DOCUMENT")).toList();
-        var newDocs=next.nodes().stream().filter(n->n.kind().equals("DOCUMENT")).toList();if(!oldDocs.equals(newDocs))blockers.add("/published-materials");
+        var byId=Comparator.comparing(ModuleArchive.Node::id);
+        var oldDocs=before.document().nodes().stream().filter(n->n.kind().equals("DOCUMENT")).sorted(byId).toList();
+        var newDocs=next.nodes().stream().filter(n->n.kind().equals("DOCUMENT")).sorted(byId).toList();if(!oldDocs.equals(newDocs))blockers.add("/published-materials");
         blockers.addAll(provisioner.migrationBlockers(c,before,next));
         Recovery recovery=null;
         if(blockers.isEmpty())try{byte[] bytes=sourceBytes(s.campaignId(),target(s.campaignId(),s.customizationId()),actor);recovery=provisioner.recovery(c,before,archive.verify(bytes),archive.images(bytes));}

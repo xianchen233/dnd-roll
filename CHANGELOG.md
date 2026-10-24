@@ -11,6 +11,10 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Fixed
 
+- Validate newly attached or changed migration map assets before writes, including
+  currently detached files and broken links. Ignore document-node list order when
+  checking published-material changes while continuing to block actual edits.
+
 - Allow consecutive structural migrations after all mapped scenes retire. Recover
   fallback/ad-hoc scenes, linked and characterless tokens and independent live map
   images with explicit confirmations, preserving names, current scene and DM-only

@@ -1,5 +1,46 @@
 # 阶段验收记录
 
+## A03c 目标地图与阻断边界审计（2026-10-24）
+
+开工独立重取8ddbb0d的push40074564212 / PR40074567963六完整日志：两run均
+completed/success，126unit+158IT、248前端/构建、111契约、52浏览器及全部旧重启/
+隔离恢复/容量断言通过（外.tools/a03c-boundary-entry-ci.log）。
+两项真实RED修复目标地图缺图漏检和资料节点重排误阻断。新增缺失/变化链接、
+图片损坏/哈希/尺寸/映射、预览后失图/修复原字节/精确重试、实际资料/策略/manifest
+阻断及无部分写入断言；实际命令、中间测试准备错误见[a03c-boundary-tdd.md](a03c-boundary-tdd.md)。
+最终完整126unit+163真实IT零失败/错误/跳过（35生命周期IT），248前端/生产构建、
+111契约通过。独立18081、新库dnd_a03c_boundary、独立素材/备份上的实际Java/PG
+停止重启，新会话逐字段verify三次迁移、所有恢复副本/独立图片/受损资源/前像/
+原回执均通过；本地未新跑生产浏览器或独立卷恢复。外.tools/a03c-boundary-*
+保留日志/新旧进程身份；数据保留，验收服务按身份停止。
+最终HEAD的双CI必须重新严格下载六日志核验163IT及全部旧断言，索引外.tools/
+a03c-boundary-head-ci-final.log、a03c-boundary-ci-{HEAD}.json，pending不算通过。
+
+只读Docker实况：dnd-roll-local web/backend/db本轮开工前已于16:29退出，8080无监听；
+本轮未启停/重建该项目或动其数据，下方运行段落为此前历史。继续原分支/草稿PR #1，
+不合并、不发布；A03c/A03不提前关闭，A03d/e、A04–A06/M3和云端/真实手机后置保持。
+
+## 本机体验实例正在运行（2026-10-24）
+
+用户已要求部署以查看当前状态，现保留本机 Docker Compose 实例运行，地址
+http://localhost:8080，项目 dnd-roll-local，代码/镜像版本8ddbb0d。web绑定
+127.0.0.1:8080；backend/db仅Compose内部端口。原生验收Java/PG仍停止。
+后续测试请使用其他端口/独立项目，不要擅自停止或重置这个用户体验实例。
+
+本地配置/已验收JAR/生产前端/启动停止脚本/账号说明都在仓库外
+D:/workspace/dnd/local-preview；密码仅在本地.env/accounts.txt，不进入Git。
+Start.cmd启动，Stop.cmd保留数据停止。持久卷dnd-roll-local_postgres_data、
+dnd-roll-local_asset_data、dnd-roll-local_backup_data均独立于旧验收库/source fence。
+首次Docker Hub认证域名连接失败，日志deploy.log保留；使用Public ECR官方镜像
+副本及已验收产物打包，覆盖文件compose.local.yaml，不改标准Compose和源码。
+
+实际本地Chrome双会话登录、Pixi画布、实时连接、DM两棋子/玩家一棋子、无脚本
+错误通过（local-preview/browser-check.json、screenshots/{dm,player}.png）。
+已有合成示例地图/遮盖、角色卡/受损生命、隐藏守卫、TEAM/DM笔记与RP；不是私人团数据。
+本次仅部署和运行记录，不实现新业务或冒称A03c/A03d/e全部完成；云端/真实手机后置。
+下一开发步骤仍按下文A03c交接；本地Docker体验实例应继续保留运行。
+
+
 ## A03c 全部场景退役后的连续迁移与未映射对象恢复（2026-10-24）
 
 沿用 feat/accounts-and-invitations / 草稿 PR #1，不合并、不发布。

@@ -75,6 +75,73 @@ class ModuleLifecycleIT {
         return tree(upload(dm,c,command(version,false,false),bytes),200).get("id").asString();
     }
     Map<String,Object> selection(String pkg,long version){return Map.of("expectedVersion",version,"packageId",pkg,"selections",List.of(Map.of("path","/nodes/"+module+"/text","choice","INCOMING")));}
+    void blockedMigration(Browser dm,String target,long version,long customizationVersion,String blocker)throws Exception{
+        var review=Map.of("expectedVersion",version,"customizationVersion",customizationVersion);var before=dm.read(target);var impact=tree(dm.post(target+"/migration-impact",review),200);
+        assertTrue(impact.get("blockers").toString().contains(blocker),impact.get("blockers").toString());
+        int count=jdbc.queryForObject("select count(*) from campaign",Integer.class),receipts=jdbc.queryForObject("select count(*) from module_lifecycle_receipt",Integer.class);var filesBefore=files();var evidence=dm.read(target+"/migrations");
+        tree(dm.post(target+"/migrations",Map.of("requestId",UUID.randomUUID(),"expectedVersion",version,"customizationVersion",customizationVersion,"impactHash",impact.get("impactHash").asString(),"confirmations",impact.get("confirmations"))),409);
+        assertEquals(before,dm.read(target));assertEquals(impact.get("runtime"),tree(dm.post(target+"/migration-impact",review),200).get("runtime"));assertEquals(evidence,dm.read(target+"/migrations"));assertEquals(count,jdbc.queryForObject("select count(*) from campaign",Integer.class));assertEquals(receipts,jdbc.queryForObject("select count(*) from module_lifecycle_receipt",Integer.class));assertEquals(filesBefore,files());
+    }
+    @Test void migrationRejectsUnavailableDestinationMapBeforeRecoveryWrites()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=imageCopy(dm,c,List.of());var d=imageDocument();edit(dm,c,id,0,d);
+        String live=tree(dm.post(copies(c)+"/"+id+"/campaigns",fresh(1,"Destination map integrity")),200).get("id").asString();String target=instance(live);UUID campaign=UUID.fromString(live);
+        var before=dm.read(target);UUID asset=UUID.fromString(before.get("mapping").get("assets").get(imageId).asString());String key=jdbc.queryForObject("select storage_key from campaign_asset where id=?",String.class,asset);
+        // The live map was detached: recovery no longer reads the template asset.
+        jdbc.update("delete from scene_map where campaign_id=?",campaign);
+        ((tools.jackson.databind.node.ObjectNode)d.get("play").get("scenes").get(0).get("map")).put("offsetX",12);edit(dm,c,id,1,d);
+        files.discard(key);
+        var impact=tree(dm.post(target+"/migration-impact",Map.of("expectedVersion",0,"customizationVersion",2)),200);
+        assertTrue(impact.get("blockers").toString().contains("/map-assets/"+imageId),impact.toString());
+        int count=jdbc.queryForObject("select count(*) from campaign",Integer.class);var filesBefore=assetFiles();
+        tree(dm.post(target+"/migrations",Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"customizationVersion",2,"impactHash",impact.get("impactHash").asString(),"confirmations",impact.get("confirmations"))),409);
+        assertEquals(count,jdbc.queryForObject("select count(*) from campaign",Integer.class));assertEquals(filesBefore,assetFiles());assertEquals(before,dm.read(target));assertTrue(dm.read(target+"/migrations").isEmpty());
+        files.publish(key,new byte[]{1,2,3});blockedMigration(dm,target,0,2,"/map-assets/"+imageId);
+        files.discard(key);files.publish(key,png());jdbc.update("update campaign_asset set width=13 where id=?",asset);blockedMigration(dm,target,0,2,"/map-assets/"+imageId);jdbc.update("update campaign_asset set width=12 where id=?",asset);
+        jdbc.update("update campaign_asset set sha256=? where id=?","0".repeat(64),asset);blockedMigration(dm,target,0,2,"/map-assets/"+imageId);jdbc.update("update campaign_asset set sha256=? where id=?",ModuleArchive.hash(png()),asset);
+        jdbc.update("delete from campaign_asset where id=?",asset);blockedMigration(dm,target,0,2,"/map-assets/"+imageId);
+        jdbc.update("insert into campaign_asset(id,campaign_id,media_type,byte_size,width,height,storage_key,sha256) values (?,?,'image/png',?,12,10,?,?)",asset,campaign,png().length,key,ModuleArchive.hash(png()));
+        jdbc.update("update module_instance set mapping=jsonb_set(mapping,'{assets}', '{}'::jsonb) where campaign_id=?",campaign);blockedMigration(dm,target,0,2,"/map-assets/"+imageId);jdbc.update("update module_instance set mapping=?::jsonb where campaign_id=?",before.get("mapping").toString(),campaign);
+        impact=tree(dm.post(target+"/migration-impact",Map.of("expectedVersion",0,"customizationVersion",2)),200);assertTrue(impact.get("blockers").isEmpty());
+        var apply=Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"customizationVersion",2,"impactHash",impact.get("impactHash").asString(),"confirmations",impact.get("confirmations"));files.discard(key);tree(dm.post(target+"/migrations",apply),409);assertEquals(count,jdbc.queryForObject("select count(*) from campaign",Integer.class));assertEquals(before,dm.read(target));
+        files.publish(key,png());var ack=tree(dm.post(target+"/migrations",apply),200);assertEquals(ack,tree(dm.post(target+"/migrations",apply),200));
+        String scene=before.get("mapping").get("scenes").get(module).asString();var map=dm.read("/api/campaigns/"+live+"/scenes/"+scene+"/map").get("map");assertEquals(asset.toString(),map.get("assetId").asString());assertEquals(12,map.get("offsetX").asInt());
+        String recovered=dm.read(target+"/migrations").get(0).get("recoveryCampaignId").asString();var recoveredInstance=dm.read(instance(recovered));assertTrue(dm.read("/api/campaigns/"+recovered+"/scenes/"+recoveredInstance.get("mapping").get("scenes").get(module).asString()+"/map").get("map").isNull());
+    }
+    @Test void migrationIgnoresDocumentOrderingButStillBlocksMaterialEdits()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=copy(dm,c);var d=playable();var nodes=(tools.jackson.databind.node.ArrayNode)d.get("nodes");
+        var extra=(tools.jackson.databind.node.ObjectNode)nodes.get(2).deepCopy();extra.put("id",UUID.randomUUID().toString());extra.put("name","Second material");nodes.add(extra);edit(dm,c,id,0,d);
+        String live=tree(dm.post(copies(c)+"/"+id+"/campaigns",fresh(1,"Material ordering")),200).get("id").asString();String target=instance(live),root="/api/campaigns/"+live;var notes=dm.read(root+"/notes");
+        var first=nodes.remove(2);nodes.add(first);edit(dm,c,id,1,d);
+        var impact=tree(dm.post(target+"/migration-impact",Map.of("expectedVersion",0,"customizationVersion",2)),200);assertTrue(impact.get("changes").isEmpty());assertTrue(impact.get("blockers").isEmpty(),impact.toString());
+        tree(dm.post(target+"/migrations",Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"customizationVersion",2,"impactHash",impact.get("impactHash").asString(),"confirmations",impact.get("confirmations"))),200);var afterNotes=dm.read(root+"/notes");assertEquals(notes.get("notes"),afterNotes.get("notes"));assertEquals(notes.get("campaignVersion").asLong()+1,afterNotes.get("campaignVersion").asLong());
+        ((tools.jackson.databind.node.ObjectNode)nodes.get(2)).put("text","Changed published material");edit(dm,c,id,2,d);
+        impact=tree(dm.post(target+"/migration-impact",Map.of("expectedVersion",1,"customizationVersion",3)),200);assertTrue(impact.get("blockers").toString().contains("/published-materials"));
+        blockedMigration(dm,target,1,3,"/published-materials");
+    }
+    @Test void migrationBlocksChangedRuntimeLinksAndMissingMappedObjects()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=copy(dm,c);edit(dm,c,id,0,playable());String live=tree(dm.post(copies(c)+"/"+id+"/campaigns",fresh(1,"Broken links")),200).get("id").asString();String target=instance(live);UUID campaign=UUID.fromString(live);var before=dm.read(target);
+        UUID token=UUID.fromString(before.get("mapping").get("placements").get("10000000-0000-4000-8000-000000000004").asString()),scene=UUID.fromString(before.get("mapping").get("scenes").get(module).asString()),card=UUID.fromString(before.get("mapping").get("units").get("10000000-0000-4000-8000-000000000002").asString());
+        jdbc.update("update token set character_id=null where id=?",token);blockedMigration(dm,target,0,1,"/changed-placement-link/");jdbc.update("update token set character_id=? where id=?",card,token);
+        UUID side=UUID.randomUUID();jdbc.update("insert into scene(id,campaign_id,name,width,height,grid_size) values (?,?,'Side',24,16,48)",side,campaign);jdbc.update("update token set scene_id=? where id=?",side,token);blockedMigration(dm,target,0,1,"/changed-placement-link/");jdbc.update("update token set scene_id=? where id=?",scene,token);
+        jdbc.update("update token set module_retired=true where id=?",token);blockedMigration(dm,target,0,1,"/changed-placement-link/");jdbc.update("update token set module_retired=false where id=?",token);
+        jdbc.update("update scene set module_retired=true where id=?",scene);blockedMigration(dm,target,0,1,"/missing-scene/");jdbc.update("update scene set module_retired=false where id=?",scene);
+        jdbc.update("update module_instance set mapping=jsonb_set(mapping,'{units,10000000-0000-4000-8000-000000000002}',to_jsonb(?::text)) where campaign_id=?",UUID.randomUUID().toString(),campaign);blockedMigration(dm,target,0,1,"/missing-unit/");jdbc.update("update module_instance set mapping=?::jsonb where campaign_id=?",before.get("mapping").toString(),campaign);
+        assertTrue(tree(dm.post(target+"/migration-impact",Map.of("expectedVersion",0,"customizationVersion",1)),200).get("blockers").isEmpty());
+    }
+    @Test void migrationBlocksAdmissionPolicyChanges()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=copy(dm,c);var d=playable();edit(dm,c,id,0,d);String live=tree(dm.post(copies(c)+"/"+id+"/campaigns",fresh(1,"Policy boundary")),200).get("id").asString();
+        ((tools.jackson.databind.node.ObjectNode)d.get("play")).put("admissionMode","FREE");edit(dm,c,id,1,d);blockedMigration(dm,instance(live),0,2,"admissionMode");
+    }
+    @Test void migrationBlocksManifestRightsAdoptedByTheSourceCustomization()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=copy(dm,c);var d=playable();edit(dm,c,id,0,d);String live=tree(dm.post(copies(c)+"/"+id+"/campaigns",fresh(1,"Manifest boundary")),200).get("id").asString();
+        var archives=new ModuleArchive();var m=archives.verify(archive()).manifest();var revised=new ModuleArchive.Manifest(m.format(),2,m.moduleId(),m.moduleVersion(),m.name(),m.rules(),"Revised original fixture rights",m.dependencies(),m.content(),m.assets());
+        byte[] bytes=archives.export(revised,json.treeToValue(d,io.dndroll.modules.ModuleBlueprint.Document.class),Map.of(),module,"2.0.0","Changed rights");
+        long campaignVersion=dm.read(copies(c)).get("campaignVersion").asLong();String pkg=tree(upload(dm,c,command(campaignVersion,false,false),bytes),200).get("id").asString(),path=copies(c)+"/"+id;
+        var options=tree(dm.post(path+"/update-options",Map.of("expectedVersion",1,"packageId",pkg)),200);var choices=new ArrayList<Map<String,String>>();for(var change:options.get("changes"))choices.add(Map.of("path",change.get("path").asString(),"choice","INCOMING"));
+        var impact=tree(dm.post(path+"/update-impact",Map.of("expectedVersion",1,"packageId",pkg,"selections",choices)),200);
+        tree(dm.post(path+"/updates",Map.of("requestId",UUID.randomUUID(),"expectedVersion",1,"packageId",pkg,"selections",choices,"sha256",impact.get("sha256").asString(),"impactHash",impact.get("impactHash").asString())),200);
+        blockedMigration(dm,instance(live),0,2,"/manifest");
+    }
     @Test void structuralMigrationRequiresExactConfirmationAndCreatesPlayableRecovery()throws Exception{
         var dm=dm();UUID c=campaign(dm);String id=copy(dm,c);edit(dm,c,id,0,playable());
         String live=tree(dm.post(copies(c)+"/"+id+"/campaigns",fresh(1,"Structural party")),200).get("id").asString();

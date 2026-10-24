@@ -187,6 +187,16 @@ Map changes reset fog through the existing map store.
 Runtime notes, policies, manifest rights/assets/dependencies changes are blockers;
 they are not silently overwritten. Structural recovery does not undo later play.
 
+New or changed destination maps also validate their existing template-to-live
+asset link, actual PNG/JPEG bytes, hash, size, type and dimensions before writes,
+even when the asset is currently detached from every live scene. Missing links or
+unavailable/inconsistent files report `/map-assets/{templateAssetId}` blockers.
+Apply rechecks these files after review; no recovery, evidence or receipt is written
+when validation fails. Repairing the identical immutable bytes permits a fresh
+validation. Published-material comparison matches document nodes by stable identity;
+reordering the node list alone is allowed, while actual field/add/delete changes
+remain `/published-materials` blockers and leave existing notes/history intact.
+
 ## Ordered slices
 
 1. A03b: explicit per-item KEEP/INCOMING/conflict decisions, server-recomputed

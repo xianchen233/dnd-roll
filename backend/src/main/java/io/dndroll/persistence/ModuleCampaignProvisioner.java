@@ -91,6 +91,15 @@ public class ModuleCampaignProvisioner implements ModuleLifecycle.Provisioner {
     public List<String> migrationBlockers(UUID c,ModuleLifecycle.Instance before,ModuleBlueprint.Document next){
         var blockers=new ArrayList<String>();var mapped=before.mapping();
         for(var scene:next.play().scenes()){
+            var old=before.document().play().scenes().stream().filter(s->s.nodeId().equals(scene.nodeId())).findFirst().orElse(null);
+            // Recovery validates current maps; a newly attached destination may use
+            // a different, currently unused template asset. Check it before writes too.
+            if(scene.map()!=null&&(old==null||!Objects.equals(scene.map(),old.map())))try{
+                String id=scene.map().assetId();var expected=before.source().manifest().assets().stream().filter(a->a.id().equals(id)).findFirst().orElseThrow(ModuleBlueprint::invalid);
+                var stored=assets.asset(c,mapped.get("assets").get(id));if(stored==null)throw ModuleBlueprint.invalid();
+                byte[] bytes=files.read(stored.storageKey());var valid=AssetImage.validate(bytes,stored.asset().mediaType());
+                if(!valid.sha256().equals(expected.sha256())||!valid.sha256().equals(stored.sha256())||!valid.mediaType().equals(expected.mediaType())||bytes.length!=expected.size()||bytes.length!=stored.asset().byteSize()||valid.width()!=stored.asset().width()||valid.height()!=stored.asset().height())throw ModuleBlueprint.invalid();
+            }catch(DomainException unavailable){blockers.add("/map-assets/"+scene.map().assetId());}
             for(var p:next.play().placements())if(p.sceneId().equals(scene.nodeId())){
                 var state=placementState(c,before,p,false);
                 if(state.x()<0||state.y()<0||state.x()>=scene.width()||state.y()>=scene.height()){
