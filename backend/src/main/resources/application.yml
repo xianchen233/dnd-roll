@@ -7,6 +7,12 @@ spring:
     password: ${DATABASE_PASSWORD:}
   flyway:
     enabled: true
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 11MB
+assets:
+  storage-root: ${ASSET_STORAGE_ROOT:.runtime/assets}
 server:
   shutdown: graceful
   servlet:

@@ -46,6 +46,8 @@ test('two real sessions enforce visibility, persist a move and receive realtime 
       await login(dm, dmUsername, dmPassword);
       await login(player, playerUsername, playerPassword);
     });
+    // Select the stable demo fixture rather than whichever campaign sorts first.
+    await player.getByRole('combobox', { name: '选择战役' }).selectOption('84b37902-114a-4a26-9f66-4041022a2024');
     const campaignId = await player.getByRole('combobox', { name: '选择战役' }).inputValue();
     expect(campaignId).not.toBe('');
     await dm.getByRole('combobox', { name: '选择战役' }).selectOption(campaignId);
@@ -99,6 +101,8 @@ test('two real sessions enforce visibility, persist a move and receive realtime 
     });
     await test.step('reload restores the server-confirmed coordinates', async () => {
       await player.reload();
+      await expect(player.getByRole('combobox', { name: '选择战役' })).not.toHaveValue('');
+      await player.getByRole('combobox', { name: '选择战役' }).selectOption(campaignId);
       await expect(playerHero).toContainText(`(${x}, ${y})`);
       await expect(player.locator('.map-surface canvas')).toBeVisible();
       await expect(player.getByRole('button', { name: /Hidden enemy/ })).toHaveCount(0);

@@ -1,0 +1,252 @@
+[
+  {
+    "id": "e1086d6d-e523-53d9-93b9-7aa24c718e39",
+    "data": {
+      "name": "匕首",
+      "aliases": [
+        "Dagger"
+      ],
+      "type": "ATTACK",
+      "source": {
+        "book": "SRD 5.2.1",
+        "revision": "5.2.1",
+        "rules": "5R",
+        "detail": "https://www.dndbeyond.com/srd; Weapons, p.91"
+      },
+      "description": "简易近战武器；灵巧、轻型、投掷20/60尺；1磅、2GP。精通迅击须另有特性并明确选择。",
+      "spellLevel": 0,
+      "dice": "1d4",
+      "damageType": "穿刺",
+      "rights": "CC BY 4.0"
+    },
+    "builtin": true,
+    "license": "CC-BY-4.0",
+    "attribution": "This work includes material from the System Reference Document 5.2.1 (SRD 5.2.1) by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.",
+    "changes": "dnd-roll：中文概括、结构化字段提取；精选条目，省略部分细节。按来源人工核对完整规则。"
+  },
+  {
+    "id": "916bf8b1-a24e-5dea-be38-2caee47dad54",
+    "data": {
+      "name": "短棒",
+      "aliases": [
+        "Club"
+      ],
+      "type": "ATTACK",
+      "source": {
+        "book": "SRD 5.2.1",
+        "revision": "5.2.1",
+        "rules": "5R",
+        "detail": "https://www.dndbeyond.com/srd; Weapons, p.91"
+      },
+      "description": "简易近战武器；轻型；2磅、1SP。精通缓速须另行取得。",
+      "spellLevel": 0,
+      "dice": "1d4",
+      "damageType": "钝击",
+      "rights": "CC BY 4.0"
+    },
+    "builtin": true,
+    "license": "CC-BY-4.0",
+    "attribution": "This work includes material from the System Reference Document 5.2.1 (SRD 5.2.1) by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.",
+    "changes": "dnd-roll：中文概括、结构化字段提取；精选条目，省略部分细节。按来源人工核对完整规则。"
+  },
+  {
+    "id": "4eaf73dc-ccc5-5e5b-9ec5-2e76f59eda1d",
+    "data": {
+      "name": "手斧",
+      "aliases": [
+        "Handaxe"
+      ],
+      "type": "ATTACK",
+      "source": {
+        "book": "SRD 5.2.1",
+        "revision": "5.2.1",
+        "rules": "5R",
+        "detail": "https://www.dndbeyond.com/srd; Weapons, p.91"
+      },
+      "description": "简易近战武器；轻型、投掷20/60尺；2磅、5GP。精通侵扰须另行取得。",
+      "spellLevel": 0,
+      "dice": "1d6",
+      "damageType": "挥砍",
+      "rights": "CC BY 4.0"
+    },
+    "builtin": true,
+    "license": "CC-BY-4.0",
+    "attribution": "This work includes material from the System Reference Document 5.2.1 (SRD 5.2.1) by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.",
+    "changes": "dnd-roll：中文概括、结构化字段提取；精选条目，省略部分细节。按来源人工核对完整规则。"
+  },
+  {
+    "id": "1fd208e1-f443-5090-b83c-363a460245aa",
+    "data": {
+      "name": "短弓",
+      "aliases": [
+        "Shortbow"
+      ],
+      "type": "ATTACK",
+      "source": {
+        "book": "SRD 5.2.1",
+        "revision": "5.2.1",
+        "rules": "5R",
+        "detail": "https://www.dndbeyond.com/srd; Weapons, p.91"
+      },
+      "description": "简易远程武器；弹药80/320尺、双手；2磅、25GP。请明确选择敏捷；精通侵扰须另行取得。",
+      "spellLevel": 0,
+      "dice": "1d6",
+      "damageType": "穿刺",
+      "rights": "CC BY 4.0"
+    },
+    "builtin": true,
+    "license": "CC-BY-4.0",
+    "attribution": "This work includes material from the System Reference Document 5.2.1 (SRD 5.2.1) by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.",
+    "changes": "dnd-roll：中文概括、结构化字段提取；精选条目，省略部分细节。按来源人工核对完整规则。"
+  },
+  {
+    "id": "4ed4054c-9582-5705-905e-481dc6075e5a",
+    "data": {
+      "name": "人类",
+      "aliases": [
+        "Human"
+      ],
+      "type": "SPECIES",
+      "source": {
+        "book": "SRD 5.2.1",
+        "revision": "5.2.1",
+        "rules": "5R",
+        "detail": "https://www.dndbeyond.com/srd; Character Species, p.86"
+      },
+      "description": "类人生物；选择小型或中型，速度30尺。长休获得英雄激励；自选一项技能熟练与一项起源专长。需手动记录选择与效果。",
+      "spellLevel": 0,
+      "dice": "",
+      "damageType": "",
+      "rights": "CC BY 4.0"
+    },
+    "builtin": true,
+    "license": "CC-BY-4.0",
+    "attribution": "This work includes material from the System Reference Document 5.2.1 (SRD 5.2.1) by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.",
+    "changes": "dnd-roll：中文概括、结构化字段提取；精选条目，省略部分细节。按来源人工核对完整规则。"
+  },
+  {
+    "id": "bf23e7d6-d66b-5faa-ad6e-cb38643023b6",
+    "data": {
+      "name": "罪犯",
+      "aliases": [
+        "Criminal"
+      ],
+      "type": "BACKGROUND",
+      "source": {
+        "book": "SRD 5.2.1",
+        "revision": "5.2.1",
+        "rules": "5R",
+        "detail": "https://www.dndbeyond.com/srd; Character Backgrounds, p.83"
+      },
+      "description": "属性选择：敏捷、体质、智力；起源专长警戒；巧手、隐匿及盗贼工具熟练。装备在指定组合与50GP间选择；请手动记录具体选择。",
+      "spellLevel": 0,
+      "dice": "",
+      "damageType": "",
+      "rights": "CC BY 4.0"
+    },
+    "builtin": true,
+    "license": "CC-BY-4.0",
+    "attribution": "This work includes material from the System Reference Document 5.2.1 (SRD 5.2.1) by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.",
+    "changes": "dnd-roll：中文概括、结构化字段提取；精选条目，省略部分细节。按来源人工核对完整规则。"
+  },
+  {
+    "id": "aa0d6f83-515d-5d1e-aaad-7a277fe5794c",
+    "data": {
+      "name": "熟习",
+      "aliases": [
+        "Skilled"
+      ],
+      "type": "FEATURE",
+      "source": {
+        "book": "SRD 5.2.1",
+        "revision": "5.2.1",
+        "rules": "5R",
+        "detail": "https://www.dndbeyond.com/srd; Origin Feats, p.87"
+      },
+      "description": "起源专长；选择共三项技能或工具熟练；可以重复选择。仅保存说明，请手动记录三项选择。",
+      "spellLevel": 0,
+      "dice": "",
+      "damageType": "",
+      "rights": "CC BY 4.0"
+    },
+    "builtin": true,
+    "license": "CC-BY-4.0",
+    "attribution": "This work includes material from the System Reference Document 5.2.1 (SRD 5.2.1) by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.",
+    "changes": "dnd-roll：中文概括、结构化字段提取；精选条目，省略部分细节。按来源人工核对完整规则。"
+  },
+  {
+    "id": "fccb2b93-3861-5e10-8ee5-9bd27a15d64f",
+    "data": {
+      "name": "光亮术",
+      "aliases": [
+        "Light"
+      ],
+      "type": "SPELL",
+      "source": {
+        "book": "SRD 5.2.1",
+        "revision": "5.2.1",
+        "rules": "5R",
+        "detail": "https://www.dndbeyond.com/srd; Spells: Light"
+      },
+      "description": "塑能戏法；动作、触碰、V与M；持续1小时。触碰未被穿戴或携带且不超过大型的物件，使其发出20尺明亮光照及外20尺微光。遮住物件会挡光，再施展则原法术结束。",
+      "spellLevel": 0,
+      "dice": "",
+      "damageType": "",
+      "rights": "CC BY 4.0"
+    },
+    "builtin": true,
+    "license": "CC-BY-4.0",
+    "attribution": "This work includes material from the System Reference Document 5.2.1 (SRD 5.2.1) by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.",
+    "changes": "dnd-roll：中文概括、结构化字段提取；精选条目，省略部分细节。按来源人工核对完整规则。"
+  },
+  {
+    "id": "89c040ea-66ab-5b04-9f1f-cd4c359639c4",
+    "data": {
+      "name": "法师之手",
+      "aliases": [
+        "Mage Hand"
+      ],
+      "type": "SPELL",
+      "source": {
+        "book": "SRD 5.2.1",
+        "revision": "5.2.1",
+        "rules": "5R",
+        "detail": "https://www.dndbeyond.com/srd; Spells: Mage Hand"
+      },
+      "description": "咒法戏法；动作、30尺、V与S；持续1分钟。幽灵手可操控物件；离施法者超过30尺或再次施展时消失。后续以魔法动作控制；不能攻击、激活魔法物品或搬运超过10磅。",
+      "spellLevel": 0,
+      "dice": "",
+      "damageType": "",
+      "rights": "CC BY 4.0"
+    },
+    "builtin": true,
+    "license": "CC-BY-4.0",
+    "attribution": "This work includes material from the System Reference Document 5.2.1 (SRD 5.2.1) by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.",
+    "changes": "dnd-roll：中文概括、结构化字段提取；精选条目，省略部分细节。按来源人工核对完整规则。"
+  },
+  {
+    "id": "ab099a7a-0373-5c25-ba2c-62fae296f36d",
+    "data": {
+      "name": "匕首（物品）",
+      "aliases": [
+        "Dagger item"
+      ],
+      "type": "ITEM",
+      "source": {
+        "book": "SRD 5.2.1",
+        "revision": "5.2.1",
+        "rules": "5R",
+        "detail": "https://www.dndbeyond.com/srd; Weapons, p.91"
+      },
+      "description": "简易近战武器；1磅、2GP；1d4穿刺、灵巧、轻型、投掷20/60尺。此条只加入背包，不自动装备或创建攻击。",
+      "spellLevel": 0,
+      "dice": "",
+      "damageType": "",
+      "rights": "CC BY 4.0"
+    },
+    "builtin": true,
+    "license": "CC-BY-4.0",
+    "attribution": "This work includes material from the System Reference Document 5.2.1 (SRD 5.2.1) by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.",
+    "changes": "dnd-roll：中文概括、结构化字段提取；精选条目，省略部分细节。按来源人工核对完整规则。"
+  }
+]

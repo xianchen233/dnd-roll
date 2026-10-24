@@ -41,6 +41,7 @@ public class DemoBootstrap implements ApplicationRunner {
         jdbc.update("insert into campaign_member(campaign_id,username,role) values (?,?,?) on conflict do nothing", campaign, dm, "DM");
         jdbc.update("insert into campaign_member(campaign_id,username,role) values (?,?,?) on conflict do nothing", campaign, player, "PLAYER");
         jdbc.update("insert into scene(id,campaign_id,name,width,height,grid_size) values (?,?,?,24,16,48) on conflict do nothing", scene, campaign, "First scene");
+        jdbc.update("update campaign set current_scene_id=? where id=?", scene, campaign);
         jdbc.update("insert into token(id,scene_id,name,x,y,hidden) values (?,?,?,2,3,false) on conflict do nothing", hero, scene, "Adventurer");
         jdbc.update("insert into token(id,scene_id,name,x,y,hidden) values (?,?,?,12,8,true) on conflict do nothing", enemy, scene, "Hidden enemy");
         jdbc.update("insert into token_controller(token_id,username) values (?,?) on conflict do nothing", hero, player);

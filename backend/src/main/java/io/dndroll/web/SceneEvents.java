@@ -17,11 +17,14 @@ public class SceneEvents implements Events {
     public record Invalidation(String type, UUID campaignId) {}
     public SceneEvents(JdbcTemplate jdbc, SimpMessagingTemplate messaging) { this.jdbc = jdbc; this.messaging = messaging; }
     public void changed(UUID campaignId) {
+        diceChanged(campaignId, false);
+    }
+    public void diceChanged(UUID campaignId, boolean dmOnly) {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             public void afterCommit() {
                 // Delivery is a hint. A broker failure must not turn a committed move into an HTTP failure.
                 try {
-                    var members = jdbc.query("select username from campaign_member where campaign_id=?", (rs, n) -> rs.getString(1), campaignId);
+                    var members = jdbc.query("select username from campaign_member where campaign_id=? and (not ? or role='DM')", (rs, n) -> rs.getString(1), campaignId, dmOnly);
                     var event = new Invalidation("SCENE_CHANGED", campaignId);
                     for (var member : members) messaging.convertAndSendToUser(member, "/queue/scene-changes", event);
                 } catch (RuntimeException failure) { log.warn("Scene invalidation delivery failed; clients will refresh", failure); }
