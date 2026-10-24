@@ -11,6 +11,10 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Fixed
 
+- Correct the migration-preview response contract to retain all confirmations
+  when a review exceeds the application limit. Migration requests remain capped
+  at 500 exact items; oversized reviews remain blocked before writes.
+
 - Validate newly attached or changed migration map assets before writes, including
   currently detached files and broken links. Ignore document-node list order when
   checking published-material changes while continuing to block actual edits.

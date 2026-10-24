@@ -135,6 +135,13 @@ const liveReview={expectedVersion:0,customizationVersion:2};
 validate(schemas.ModuleLiveReview,liveReview);
 for(const invalid of [{expectedVersion:0},{...liveReview,customizationVersion:-1},{...liveReview,expectedVersion:0.5},{...liveReview,confirmStructural:true}])assert.throws(()=>validate(schemas.ModuleLiveReview,invalid));
 validate(schemas.ModuleLiveApply,{...liveReview,requestId:'00000000-0000-4000-8000-000000000001',impactHash:'a'.repeat(64)});
+// A blocked review retains every required item, even beyond the command limit.
+const migrationConfirmations=Array.from({length:501},(_,n)=>`APPLY /nodes/item-${n}/text`);
+const migrationApply={...liveReview,requestId:'00000000-0000-4000-8000-000000000001',impactHash:'a'.repeat(64),confirmations:migrationConfirmations.slice(0,500)};
+validate(schemas.ModuleMigrationApply,migrationApply);
+assert.throws(()=>validate(schemas.ModuleMigrationApply,{...migrationApply,confirmations:migrationConfirmations}));
+assert.throws(()=>validate(schemas.ModuleMigrationApply,{...migrationApply,confirmations:['duplicate','duplicate']}));
+validate(schemas.ModuleMigrationImpact,{version:0,customizationVersion:0,impactHash:'a'.repeat(64),confirmations:migrationConfirmations,blockers:['/confirmation-limit'],changes:[],runtime:{}});
 assert.match(api.paths['/api/campaigns/{campaignId}/module-instance/updates'].post['x-idempotency'].authorization,/source and target before receipt replay/);
 const updateSelection={path:'/nodes/00000000-0000-4000-8000-000000000001/text',choice:'INCOMING'};
 validate(schemas.ModuleUpdateSelection,updateSelection);

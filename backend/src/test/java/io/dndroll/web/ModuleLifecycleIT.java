@@ -75,6 +75,70 @@ class ModuleLifecycleIT {
         return tree(upload(dm,c,command(version,false,false),bytes),200).get("id").asString();
     }
     Map<String,Object> selection(String pkg,long version){return Map.of("expectedVersion",version,"packageId",pkg,"selections",List.of(Map.of("path","/nodes/"+module+"/text","choice","INCOMING")));}
+    @Test void migrationAcceptsExactlyFiveHundredConfirmationsAndBlocksFiveHundredOne()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=copy(dm,c);var d=playable();var nodes=(tools.jackson.databind.node.ArrayNode)d.get("nodes");nodes.removeAll();
+        nodes.add(json.valueToTree(Map.of("id",module,"kind","SCENE","name","Limit scene","text","","visibility","DM","nodeIds",List.of(),"assetIds",List.of(),"dependencyIds",List.of())));
+        for(int n=0;n<499;n++){var node=(tools.jackson.databind.node.ObjectNode)nodes.get(0).deepCopy();node.put("id",UUID.nameUUIDFromBytes(("confirmation:"+n).getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString());node.put("kind","CHAPTER");nodes.add(node);}
+        ((tools.jackson.databind.node.ArrayNode)d.get("play").get("units")).removeAll();((tools.jackson.databind.node.ArrayNode)d.get("play").get("placements")).removeAll();edit(dm,c,id,0,d);
+        String live=tree(dm.post(copies(c)+"/"+id+"/campaigns",fresh(1,"Confirmation capacity")),200).get("id").asString(),target=instance(live);var before=dm.read(target);
+        for(int n=1;n<=498;n++)((tools.jackson.databind.node.ObjectNode)nodes.get(n)).put("text","Changed");edit(dm,c,id,1,d);
+        var impact=tree(dm.post(target+"/migration-impact",Map.of("expectedVersion",0,"customizationVersion",2)),200);assertEquals(499,impact.get("confirmations").size());assertTrue(impact.get("blockers").isEmpty());
+        ((tools.jackson.databind.node.ObjectNode)nodes.get(499)).put("text","Changed");edit(dm,c,id,2,d);impact=tree(dm.post(target+"/migration-impact",Map.of("expectedVersion",0,"customizationVersion",3)),200);assertEquals(500,impact.get("confirmations").size());assertTrue(impact.get("blockers").isEmpty());
+        ((tools.jackson.databind.node.ObjectNode)nodes.get(0)).put("text","Changed");edit(dm,c,id,3,d);impact=tree(dm.post(target+"/migration-impact",Map.of("expectedVersion",0,"customizationVersion",4)),200);assertEquals(501,impact.get("confirmations").size());assertTrue(impact.get("blockers").toString().contains("/confirmation-limit"));
+        var confirmations=new ArrayList<String>();for(var value:impact.get("confirmations"))confirmations.add(value.asString());var filesBefore=files();int count=jdbc.queryForObject("select count(*) from campaign",Integer.class);
+        tree(dm.post(target+"/migrations",Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"customizationVersion",4,"impactHash",impact.get("impactHash").asString(),"confirmations",confirmations.subList(0,500))),409);assertEquals(before,dm.read(target));assertEquals(count,jdbc.queryForObject("select count(*) from campaign",Integer.class));assertEquals(filesBefore,files());assertTrue(dm.read(target+"/migrations").isEmpty());
+        ((tools.jackson.databind.node.ObjectNode)nodes.get(0)).put("text","");edit(dm,c,id,4,d);impact=tree(dm.post(target+"/migration-impact",Map.of("expectedVersion",0,"customizationVersion",5)),200);assertEquals(500,impact.get("confirmations").size());assertTrue(impact.get("blockers").isEmpty());
+        confirmations.clear();for(var value:impact.get("confirmations"))confirmations.add(value.asString());var apply=new LinkedHashMap<String,Object>(Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"customizationVersion",5,"impactHash",impact.get("impactHash").asString()));
+        var duplicate=new ArrayList<>(confirmations);duplicate.set(499,duplicate.getFirst());var unknown=new ArrayList<>(confirmations);unknown.set(0,"UNKNOWN");
+        for(var invalid:List.of(confirmations.subList(0,499),duplicate,unknown)){apply.put("confirmations",invalid);tree(dm.post(target+"/migrations",apply),409);assertEquals(before,dm.read(target));assertEquals(count,jdbc.queryForObject("select count(*) from campaign",Integer.class));assertEquals(filesBefore,files());assertTrue(dm.read(target+"/migrations").isEmpty());}
+        apply.put("confirmations",confirmations);var player=member(UUID.fromString(live),"PLAYER");tree(player.post(target+"/migrations",apply),403);var ack=tree(dm.post(target+"/migrations",apply),200);assertEquals(ack,tree(dm.post(target+"/migrations",apply),200));assertEquals(count+1,jdbc.queryForObject("select count(*) from campaign",Integer.class));
+        String recovery=dm.read(target+"/migrations").get(0).get("recoveryCampaignId").asString();assertEquals(500,dm.read(instance(recovery)).get("document").get("nodes").size());assertEquals(before,dm.read(target+"/migrations").get(0).get("before"));
+        jdbc.update("update campaign_member set role='PLAYER' where campaign_id=? and username=?",c,dm.username);tree(dm.post(target+"/migrations",apply),403);jdbc.update("update campaign_member set role='DM' where campaign_id=? and username=?",c,dm.username);assertEquals(ack,tree(dm.post(target+"/migrations",apply),200));assertEquals(count+1,jdbc.queryForObject("select count(*) from campaign",Integer.class));
+    }
+    UUID liveMap(UUID campaign,byte[] bytes)throws Exception{
+        var image=io.dndroll.domain.AssetImage.validate(bytes,"image/png");UUID scene=UUID.randomUUID(),asset=UUID.randomUUID();String key=UUID.randomUUID().toString();files.publish(key,bytes);
+        jdbc.update("insert into scene(id,campaign_id,name,width,height,grid_size) values (?,?,'Capacity side room',24,16,48)",scene,campaign);
+        jdbc.update("insert into campaign_asset(id,campaign_id,media_type,byte_size,width,height,storage_key,sha256) values (?,?,'image/png',?,?,?,?,?)",asset,campaign,bytes.length,image.width(),image.height(),key,image.sha256());
+        jdbc.update("insert into scene_map(scene_id,campaign_id,asset_id,grid_size,offset_x,offset_y,distance_per_cell) values (?,?,?,48,0,0,5)",scene,campaign,asset);return scene;
+    }
+    void removeLiveMap(UUID scene){
+        UUID asset=jdbc.queryForObject("select asset_id from scene_map where scene_id=?",UUID.class,scene);String key=jdbc.queryForObject("select storage_key from campaign_asset where id=?",String.class,asset);jdbc.update("delete from scene_map where scene_id=?",scene);jdbc.update("delete from scene where id=?",scene);jdbc.update("delete from campaign_asset where id=?",asset);files.discard(key);
+    }
+    void applyWithinArchiveLimit(Browser dm,String live,long customizationVersion)throws Exception{
+        String target=instance(live);var before=dm.read(target);var impact=tree(dm.post(target+"/migration-impact",Map.of("expectedVersion",0,"customizationVersion",customizationVersion)),200);assertTrue(impact.get("blockers").isEmpty(),impact.get("blockers").toString());
+        var body=Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"customizationVersion",customizationVersion,"impactHash",impact.get("impactHash").asString(),"confirmations",impact.get("confirmations"));var ack=tree(dm.post(target+"/migrations",body),200);assertEquals(ack,tree(dm.post(target+"/migrations",body),200));
+        var evidence=dm.read(target+"/migrations");assertEquals(1,evidence.size());assertEquals(before,evidence.get(0).get("before"));UUID original=UUID.fromString(live),recovery=UUID.fromString(evidence.get(0).get("recoveryCampaignId").asString());
+        assertEquals(jdbc.queryForList("select sha256,byte_size from campaign_asset where campaign_id=? order by sha256,byte_size",original),jdbc.queryForList("select sha256,byte_size from campaign_asset where campaign_id=? order by sha256,byte_size",recovery));
+        for(var stored:jdbc.queryForList("select storage_key,sha256 from campaign_asset where campaign_id=?",recovery))assertEquals(stored.get("sha256"),ModuleArchive.hash(files.read((String)stored.get("storage_key"))));
+    }
+    byte[] paddedPng(int size,boolean entropy)throws Exception{
+        byte[] original=png(),payload=new byte[size-original.length-12];if(entropy)new Random(77123).nextBytes(payload);var out=new ByteArrayOutputStream();out.write(original,0,original.length-12);var chunk=new DataOutputStream(out);chunk.writeInt(payload.length);byte[] type={'r','a','N','d'};chunk.write(type);chunk.write(payload);var crc=new CRC32();crc.update(type);crc.update(payload);chunk.writeInt((int)crc.getValue());out.write(original,original.length-12,12);byte[] bytes=out.toByteArray();assertEquals(size,bytes.length);io.dndroll.domain.AssetImage.validate(bytes,"image/png");return bytes;
+    }
+    @Test void migrationAppliesCombinedAssetCountLimitAndRecoversExactlyOneHundredTwentyEight()throws Exception{
+        var dm=dm();UUID c=campaign(dm);var archive=new ModuleArchive();var original=archive.verify(imageArchive(List.of()));var m=original.manifest();var entries=new ArrayList<ModuleArchive.Asset>();var images=new LinkedHashMap<String,byte[]>();
+        for(int n=0;n<127;n++){String asset=n==0?imageId:UUID.nameUUIDFromBytes(("asset-limit:"+n).getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString();byte[] bytes=png();entries.add(new ModuleArchive.Asset(asset,"image/png",bytes.length,ModuleArchive.hash(bytes)));images.put(asset,bytes);}
+        var manifest=new ModuleArchive.Manifest(m.format(),2,m.moduleId(),m.moduleVersion(),m.name(),m.rules(),m.rights(),m.dependencies(),m.content(),entries);var d=imageDocument();byte[] bytes=archive.export(manifest,json.treeToValue(d,io.dndroll.modules.ModuleBlueprint.Document.class),images,module,"1.0.0","127 images");
+        String pkg=tree(upload(dm,c,command(0,false,false),bytes),200).get("id").asString(),id=tree(dm.post(copies(c),Map.of("requestId",UUID.randomUUID(),"expectedVersion",1,"packageId",pkg,"name","Image count source")),200).get("id").asString();
+        String live=tree(dm.post(copies(c)+"/"+id+"/campaigns",fresh(0,"Image count limit")),200).get("id").asString(),target=instance(live);UUID campaign=UUID.fromString(live),mapped=liveMap(campaign,png()),shared=UUID.randomUUID();
+        jdbc.update("insert into scene(id,campaign_id,name,width,height,grid_size) values (?,?,'Shared map',24,16,48)",shared,campaign);jdbc.update("insert into scene_map(scene_id,campaign_id,asset_id,grid_size,offset_x,offset_y,distance_per_cell) select ?,campaign_id,asset_id,grid_size,offset_x,offset_y,distance_per_cell from scene_map where scene_id=?",shared,mapped);
+        var impact=tree(dm.post(target+"/migration-impact",Map.of("expectedVersion",0,"customizationVersion",0)),200);assertTrue(impact.get("blockers").isEmpty(),impact.get("blockers").toString());
+        UUID overflow=liveMap(campaign,png());blockedMigration(dm,target,0,0,"/recovery-definition");
+        removeLiveMap(overflow);
+        impact=tree(dm.post(target+"/migration-impact",Map.of("expectedVersion",0,"customizationVersion",0)),200);assertTrue(impact.get("blockers").isEmpty());var apply=Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"customizationVersion",0,"impactHash",impact.get("impactHash").asString(),"confirmations",impact.get("confirmations"));var ack=tree(dm.post(target+"/migrations",apply),200);assertEquals(ack,tree(dm.post(target+"/migrations",apply),200));
+        String recovered=dm.read(target+"/migrations").get(0).get("recoveryCampaignId").asString();assertEquals(128,dm.read("/api/campaigns/"+recovered+"/assets").get("assets").size());assertEquals(128,dm.read(instance(recovered)).get("source").get("manifest").get("assets").size());
+        assertEquals(3,dm.read(instance(recovered)).get("document").get("play").get("scenes").size());assertEquals(2,jdbc.queryForObject("select max(refs) from (select count(*) refs from scene_map where campaign_id=? group by asset_id) r",Integer.class,UUID.fromString(recovered)));
+    }
+    @Test void migrationBlocksCombinedExpandedAndCompressedArchiveSizesWithoutWrites()throws Exception{
+        var dm=dm();UUID c=campaign(dm);String id=imageCopy(dm,c,List.of());edit(dm,c,id,0,imageDocument());
+        String live=tree(dm.post(copies(c)+"/"+id+"/campaigns",fresh(1,"Expanded capacity")),200).get("id").asString();UUID campaign=UUID.fromString(live);int imageSize=8*1024*1024;byte[] large=paddedPng(imageSize,false);
+        for(int n=0;n<3;n++)liveMap(campaign,large);UUID expandedOverflow=liveMap(campaign,paddedPng(imageSize-png().length,false));
+        // Images alone fit 32 MiB exactly; manifest/content overhead must count too.
+        assertEquals(ModuleArchive.EXPANDED_LIMIT,jdbc.queryForObject("select sum(byte_size) from campaign_asset where campaign_id=?",Long.class,campaign));blockedMigration(dm,instance(live),0,1,"/recovery-definition");
+        removeLiveMap(expandedOverflow);liveMap(campaign,paddedPng(7*1024*1024,false));applyWithinArchiveLimit(dm,live,1);
+        String second=tree(dm.post(copies(c)+"/"+id+"/campaigns",fresh(1,"Compressed capacity")),200).get("id").asString();UUID other=UUID.fromString(second);byte[] noisy=paddedPng(6*1024*1024,true);liveMap(other,noisy);UUID compressedOverflow=liveMap(other,noisy);
+        assertTrue(jdbc.queryForObject("select sum(byte_size) from campaign_asset where campaign_id=?",Long.class,other)<ModuleArchive.EXPANDED_LIMIT);blockedMigration(dm,instance(second),0,1,"/recovery-definition");
+        removeLiveMap(compressedOverflow);applyWithinArchiveLimit(dm,second,1);
+    }
     void blockedMigration(Browser dm,String target,long version,long customizationVersion,String blocker)throws Exception{
         var review=Map.of("expectedVersion",version,"customizationVersion",customizationVersion);var before=dm.read(target);var impact=tree(dm.post(target+"/migration-impact",review),200);
         assertTrue(impact.get("blockers").toString().contains(blocker),impact.get("blockers").toString());

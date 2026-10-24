@@ -155,7 +155,20 @@ The runtime snapshot also binds asset metadata; the hash binds the validated
 recovery archive. Missing/corrupt bytes, invalid links, out-of-bounds tokens or
 recovery limits reject before creating any copy or files. The existing bounded
 archive limits apply to the combined recovery images, not only the template ZIP.
+The recovery archive allows at most 128 image identities, 10 MiB of compressed
+ZIP bytes, and 32 MiB expanded across all entries, including manifest/content
+overhead. A valid template plus additional live maps may exceed these combined
+limits and is blocked before writes. Shared live asset identities are counted
+once; distinct identities remain distinct even if their image hashes match.
 Original combat and historical events are never replayed into recovery.
+
+At most 500 exact confirmation strings may be required, including independent
+recovery-object confirmations, every definition change and the mandatory recovery
+confirmation. Exactly 500 is supported; more reports `/confirmation-limit`.
+Sending only 500 items from a larger blocked review cannot bypass the blocker.
+Missing, duplicate or unknown items reject without creating recovery/evidence/
+files/receipts. An invalid oversized command may be rejected by strict input
+validation before reaching migration; it never relaxes the review limit.
 
 Deleting all mapped scenes creates a usable current fallback scene. That scene
 is recovered as an independent ad-hoc scene on subsequent migrations, without

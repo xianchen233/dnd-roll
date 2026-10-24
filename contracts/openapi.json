@@ -18512,7 +18512,7 @@
             "items": {
               "type": "string"
             },
-            "maxItems": 500,
+            "description": "Complete required confirmations, including blocked reviews exceeding the 500-item application limit; /confirmation-limit prevents applying them.",
             "uniqueItems": true
           },
           "blockers": {
