@@ -65,6 +65,13 @@ collision/effect/special-speed automation or compatibility inference.
   returns only `{available:false}` for a currently controlled visible unlinked
   token; hidden/missing objects still404. Typed client clears only local movement
   state. No console assertions, mocks, retries or timeouts were weakened.
+- Post-8e242fe privacy audit extended that actual HTTP test: a visible controlled
+  token linked to a hidden card actually returned404 instead of the same200
+  unavailable capability (`a06-hidden-capability-red.log`). Hidden/import-review
+  linked cards now project the identical one-field unavailable result; token
+  visibility/control still precede the lookup and mutations still reject the
+  private card. The complete199-IT regression and final-HEAD CI must be rerun
+  after this follow-up; 8e242fe is intermediate evidence, not the delivered SHA.
 
 ## Current evidence and remaining gates
 

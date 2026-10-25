@@ -13,9 +13,12 @@ Routes under `/api/campaigns/{campaignId}/tokens/{tokenId}/movement`:
   version, character version, opaque budget version, random turnKey, tracked,
   allowance (current sheet speed unless DM overridden), used, complete, latest
   50 DM-only journal records. Players receive no journal/reasons/other cards.
-  A visible uncontrolled token returns 403, hidden/missing token/card 404.
-  A controlled visible unlinked token returns only `{available:false}` (200),
-  a normal unavailable capability without character, turn or budget fields.
+  A visible uncontrolled token returns 403, hidden/missing token 404.
+  A controlled visible token with an absent or currently unreadable linked card
+  returns only `{available:false}` (200), identical to an unlinked token; this
+  does not reveal a hidden/import-review card's existence or identity. Mutation
+  routes still reject hidden/missing cards with 404. No character/turn/budget
+  fields are included in the unavailable capability.
   Current P06 turn/grant permission is required for preview/commit, including
   before receipt replay. Reading is allowed outside the character's turn.
 - POST `/preview`: read-only authoritative calculation with the exact path body.

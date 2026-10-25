@@ -11,6 +11,10 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Fixed
 
+- Return the same unavailable movement capability for unlinked tokens and tokens
+  whose linked card is hidden or awaiting review, without disclosing private
+  character association through a distinct response status.
+
 - Correct the migration-preview response contract to retain all confirmations
   when a review exceeds the application limit. Migration requests remain capped
   at 500 exact items; oversized reviews remain blocked before writes.

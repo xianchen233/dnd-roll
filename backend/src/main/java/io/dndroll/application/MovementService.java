@@ -44,7 +44,8 @@ public final class MovementService {
         var role=cards.role(c,actor);require(role!=null);var scene=scenes.snapshot(c,actor);
         scene.tokens().stream().filter(t->t.id().equals(token)).findFirst().orElseThrow(DiceService::missing);
         require(role==Role.DM||store.controls(c,token,actor));
-        if(turns.characterForToken(c,token)==null)return Map.of("available",false);
+        var id=turns.characterForToken(c,token);var card=id==null?null:cards.card(c,id);
+        if(card==null||role!=Role.DM&&(card.hidden()||card.importReview()))return Map.of("available",false);
         return current(c,token,actor,false);
     });}
     private void versions(View v,long token,long scene,long character,String budget,long turn){AccountPolicy.version(v.token().version(),token);AccountPolicy.version(v.sceneVersion(),scene);AccountPolicy.version(v.characterVersion(),character);if(!v.budgetVersion().equals(budget)||v.turnKey()!=turn)throw new DomainException("VERSION_CONFLICT",409,"Movement context changed; reselect current state");}

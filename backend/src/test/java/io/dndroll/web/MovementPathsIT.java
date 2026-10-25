@@ -128,6 +128,8 @@ class MovementPathsIT {
     }
     @Test void unlinkedControlledTokenIsAnUnavailableCapabilityWithoutPrivateFields()throws Exception{
         var f=fixture();jdbc.update("update token set character_id=null where id=?",f.token);var result=tree(f.player.get(path(f)),200);assertEquals(json.readTree("{\"available\":false}"),result);
+        jdbc.update("update token set character_id=? where id=?",f.card,f.token);jdbc.update("update character_card set hidden=true where id=?",f.card);assertEquals(result,tree(f.player.get(path(f)),200));
+        jdbc.update("update character_card set hidden=false,import_review=true where id=?",f.card);assertEquals(result,tree(f.player.get(path(f)),200));
         jdbc.update("update token set hidden=true where id=?",f.token);tree(f.player.get(path(f)),404);
     }
 }
