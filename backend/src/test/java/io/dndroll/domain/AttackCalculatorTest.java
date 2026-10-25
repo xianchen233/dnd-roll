@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static io.dndroll.domain.AttackCalculator.*;
 
 class AttackCalculatorTest {
-    static final CharacterSheet.Source CORE = new CharacterSheet.Source("SRD", "5.2.1", "5R", "Longsword; DM reviewed");
+    static final CharacterSheet.Source CORE = new CharacterSheet.Source("SRD 5.2.1", "5.2.1", "5R", "Longsword; DM reviewed");
     Factor factor(String reason) { return new Factor(reason, CORE); }
     Damage damage(int modifier, List<Factor> immune, List<Factor> resist, List<Factor> vulnerable) {
         return new Damage(1,8,modifier,DamageType.SLASHING,immune,resist,vulnerable);
@@ -121,10 +121,10 @@ class AttackCalculatorTest {
     }
     @Test void sourceEditionMustMatchExactlyAndIsNotInferredFromYear() {
         var r=simple(20,0,0);
-        for(var source:List.of(new CharacterSheet.Source("SRD","5.2","5R",""),
-                new CharacterSheet.Source("SRD","5.2.1","2014",""),
+        for(var source:List.of(new CharacterSheet.Source("SRD 5.2.1","5.2","5R",""),
+                new CharacterSheet.Source("SRD 5.2.1","5.2.1","2014",""),
                 new CharacterSheet.Source("Players Handbook","2024","5R",""),
-                new CharacterSheet.Source("SRD","5.2.1","CUSTOM",""))) {
+                new CharacterSheet.Source("SRD 5.2.1","5.2.1","CUSTOM",""))) {
             assertEquals("MANUAL_REQUIRED",plan(new Request(PROFILE,r.action(),source,r.context(),r.roll(),0,0,r.damage())).status());
         }
     }
@@ -147,5 +147,18 @@ class AttackCalculatorTest {
         var d=new Damage(50,1000,10000,DamageType.FIRE,List.of(),List.of(),List.of(factor("fire")));
         var r=request(new Roll(List.of(20),List.of(),List.of()),10000,1000,d);
         assertEquals(220000,resolve(r,Collections.nCopies(100,1000)).damage());
+    }
+    @Test void existingCatalogWeaponSourceFlowsThroughWithoutRelabelingOrLosingProvenance() throws Exception {
+        try(var stream=getClass().getResourceAsStream("/content/srd-selection.json")) {
+            var entries=tools.jackson.databind.json.JsonMapper.builder().build().readValue(stream,ContentEntry[].class);
+            var entry=Arrays.stream(entries).filter(e->e.data().type().equals("ATTACK")).findFirst().orElseThrow();
+            var sheet=entry.fill(CharacterSheet.empty("Hero"),"STR","");
+            var source=sheet.attacks().getFirst().source();var r=simple(15,5,15);
+            var request=new Request(PROFILE,r.action(),source,r.context(),r.roll(),5,15,r.damage());
+            assertEquals("CANDIDATE",plan(request).status());
+            var result=resolve(request,List.of(5));
+            assertEquals(source,result.review().request().source());assertEquals("SRD 5.2.1",source.book());
+            assertTrue(source.detail().contains(entry.id().toString()));assertTrue(source.detail().contains(entry.attribution()));
+        }
     }
 }

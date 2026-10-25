@@ -106,10 +106,10 @@ public final class AttackCalculator {
         return new Resolution(review,dice,raw,result,explanation);
     }
     private static Explanation explain(String rule,String calculation,String detail){
-        return new Explanation(rule,calculation,new CharacterSheet.Source("SRD","5.2.1","5R",detail));
+        return new Explanation(rule,calculation,new CharacterSheet.Source("SRD 5.2.1","5.2.1","5R",detail));
     }
     private static boolean supported(CharacterSheet.Source source){
-        return source.book().equals("SRD")&&source.revision().equals("5.2.1")&&source.rules().equals("5R");
+        return source.book().equals("SRD 5.2.1")&&source.revision().equals("5.2.1")&&source.rules().equals("5R");
     }
     private static void validateSource(CharacterSheet.Source source){
         if(source==null)throw invalid();

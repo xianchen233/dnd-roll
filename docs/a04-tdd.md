@@ -34,6 +34,19 @@ additional boundary audits were added; they passed when first executed and are
 not claimed as extra product REDs. The same focused command with
 `-Log a04-calculator-green-final.log` passed **17 tests, 0 failures/errors/skips**.
 
+Final review found a real P04 source identity mismatch: existing catalog/fill
+preserves book `SRD 5.2.1`, while the first calculator used the invented short
+label `SRD`. Added an offline test reading the actual bundled catalog, filling
+a card with the original content service domain function and retaining its entry
+ID/licensing detail. `a04-source-red.log` first rejected supplied damage because
+the source had fallen back to manual; moved the candidate assertion before damage
+resolution to make that cause explicit. `a04-source-red-confirmed.log`: **18 tests,
+1 failure, 0 errors**, expected CANDIDATE but got MANUAL_REQUIRED. Aligned the
+calculator, evidence, fixtures and contract to the existing exact identity;
+`a04-source-green.log`: **18 passed**. One command initially used the wrong cwd
+(missing paths/POM); `a04-source-green-preparation-error.log` preserves that tool
+preparation failure, not a product RED. No content or historical source was renamed.
+
 Coverage: equality hit/miss, natural1/20 versus totals, discarded natural20,
 nonstacking and cancellation, tie selection, independent critical dice for 1d8
 and 2d6, single-type defenses and rounding order, nonnegative damage, unsupported
@@ -44,8 +57,8 @@ repeat evaluation. No entropy, network, database, clock or live game mutation.
 
 ## Local regression and delivery gate
 
-- `a01-maven.ps1 -UnitOnly -Log a04-unit-full.log`: **147 unit tests** (all old
-  130 + 17 new), zero failures/errors/skips, Maven offline with database environment
+- `a01-maven.ps1 -UnitOnly -Log a04-unit-full-source-final.log`: **148 unit tests** (all old
+  130 + 18 new), zero failures/errors/skips, Maven offline with database environment
   cleared. No Docker or database was started for this check.
 - `npm test`: **283 passed**, `a04-frontend.log`.
 - `npm run build`: passed, `a04-build.log`; existing large-chunk warning remains.
@@ -58,7 +71,7 @@ No new local PG/HTTP/production-browser/restart/volume-restore run is claimed.
 The internal calculator is not connected to P06 or any route. Full integration,
 54 production browsers, all old restart/restore and capacity assertions must
 also pass in both exact-HEAD CI runs before this bounded A04 is accepted.
-The external `a04-check-ci.mjs` requires 147 unit (including 17 calculator),
+The external `a04-check-ci.mjs` requires 148 unit (including 18 calculator),
 175 IT, 283 frontend/build, 116 contracts, 54 browsers and every unchanged old
 assertion, including 2 CONTROLS VERIFIED per browser job. It verifies exact
 local/remote/PR SHA, open draft/base main, completed/success for both events and

@@ -9,7 +9,7 @@ Request pins profile, action type, attack source, reviewed context, unsupported
 exceptions with sources, sourced advantage/disadvantage factors, immutable raw d20s,
 final hit modifier, final AC and one typed damage specification with defense factors.
 All lists are defensively copied. Exact profile is `5R-SRD-5.2.1-WEAPON-V1`;
-source must be `SRD / 5.2.1 / 5R`, action `WEAPON_ATTACK` and reviewed context true.
+source must be `SRD 5.2.1 / 5.2.1 / 5R`, action `WEAPON_ATTACK` and reviewed context true.
 Every exception, unsupported source/profile/action or unreviewed context yields
 explicit manual reasons, no verdict, attack total or damage plan. A supported profile
 does not automatically detect exceptions in free text or prove the action is legal.
