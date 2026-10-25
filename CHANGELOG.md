@@ -34,6 +34,12 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Added
 
+- Add a bounded 5R SRD 5.2.1 weapon attack candidate calculator with immutable
+  input/evidence, natural 1/20, sourced advantage/disadvantage, critical dice plans
+  and single-type immunity/resistance/vulnerability. Unreviewed contexts, unknown
+  versions and unsupported effects require manual adjudication. This internal
+  calculator does not apply HP, resources or effects; A05 remains separate.
+
 - Add Chinese per-path template selection, authoritative impact review, live text
   updates and individually confirmed structural migration with recovery access.
   Add typed live combination editing, ordering, target selection, explicit version

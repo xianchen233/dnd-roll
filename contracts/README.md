@@ -2,6 +2,11 @@
 
 Contract version: 0.1. All application paths are same-origin under `/api`. Production uses HTTPS. Identifiers are opaque UUID strings; coordinates are integer grid cells, with origin at the top left. JSON field names use camelCase.
 
+[A04 automatic attack calculations](automatic-attacks.md) define an internal pure
+candidate calculator and explicit manual fallback matrix. There is no automatic
+HTTP execution or change to the manual P06 routes. A05 confirmation/application
+and corrections remain a separate work package.
+
 ## Authentication
 
 - `GET /api/auth/csrf` → `{ "token": "...", "headerName": "X-CSRF-TOKEN" }`. Obtain a new token after login or logout. Send it on every POST using the returned header name. Requests include session cookies (`credentials: include`).
