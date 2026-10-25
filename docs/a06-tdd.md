@@ -72,6 +72,16 @@ collision/effect/special-speed automation or compatibility inference.
   visibility/control still precede the lookup and mutations still reject the
   private card. The complete199-IT regression and final-HEAD CI must be rerun
   after this follow-up; 8e242fe is intermediate evidence, not the delivered SHA.
+- Exact-head9b38521 push passed, but PR40169287786 browser job121096685358
+  exposed a real resource-denial race in the unchanged token revocation test:
+  the selected token's budget GET403 incorrectly called global campaign denial,
+  removing the still-visible token instead of disabling it. The complete failure
+  log is retained as `a06-job-121096685358.log`; it is not counted as a passing PR.
+  Added a focused component assertion that actually failed (`a06-resource-denial-red.log`),
+  then scoped403 to immediate private movement cleanup plus authoritative scene
+  recheck. Scene403 confirms campaign loss; session401 still denies immediately.
+  The session-denial assertion remains and a dedicated403 test now verifies the
+  distinction. All original real token-control assertions/timeouts/retries remain.
 
 ## Current evidence and remaining gates
 
@@ -83,7 +93,7 @@ Final full regression: **159 offline unit +199 real IT**, zero failures/errors/
 skips (`a06-backend-full.log`); includes 13 A06 HTTP tests +1 V24→V25 migration
 test retaining every prior table/column/row and all24 checksums, including pending
 A05 evidence/receipts. Earlier full197/198 runs are intermediate evidence only.
-**299 frontend tests, production build, 125 contracts** pass. Independent parsed
+**300 frontend tests, production build, 125 contracts** pass. Independent parsed
 comparison preserves every old path/schema/component/top-level policy
 (`a06-contract-preservation.log`). Bundle size warning remains visible.
 **56 real production Chrome flows pass**, zero retries (`a06-browser.log`),

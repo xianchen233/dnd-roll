@@ -11,6 +11,10 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Fixed
 
+- Recheck the authoritative scene after movement-control denial, so revoking one
+  token keeps the campaign and visible uncontrollable token available while
+  clearing private movement evidence. Session loss still clears access immediately.
+
 - Return the same unavailable movement capability for unlinked tokens and tokens
   whose linked card is hidden or awaiting review, without disclosing private
   character association through a distinct response status.

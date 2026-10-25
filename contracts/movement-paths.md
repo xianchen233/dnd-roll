@@ -70,3 +70,6 @@ commit. Uncertain writes lock edits and retain exact body/id; successful POST wi
 failed read permits read recovery only. Refresh never rebases the draft. New
 selection explicitly discards stale drafts. Campaign/API/role/token switches and
 authorization failures invalidate late results and clear private state.
+Resource-level 403 clears the movement panel and rechecks the authoritative
+scene; it must not discard a still-authorized campaign. Session401 clears access
+immediately, and a scene-level403 confirms campaign-wide denial.
