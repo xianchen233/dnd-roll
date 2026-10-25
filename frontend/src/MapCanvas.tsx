@@ -2,9 +2,9 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Application, Container, Graphics, ImageSource, Rectangle, Sprite, Text, Texture } from 'pixi.js';
 import type { Cell, Scene } from './types';
 import { distance, snapCell, zoomAt, type Viewport } from './map-geometry';
-interface Props { scene: Scene; selected?: string; disabled: boolean; onSelect(id: string): void; onMove(x: number, y: number): void; mapUrl?: string; distancePerCell?: number; revealed?: Cell[]; fogLocked?: boolean; onRectangle?(a: Cell, b: Cell, reveal: boolean): void }
+interface Props { scene: Scene; selected?: string; disabled: boolean; onSelect(id: string): void; onMove(x: number, y: number): void; mapUrl?: string; distancePerCell?: number; revealed?: Cell[]; path?: Cell[]; fogLocked?: boolean; onRectangle?(a: Cell, b: Cell, reveal: boolean): void }
 type Tool = 'move' | 'pan' | 'measure' | 'reveal' | 'cover';
-interface Drawing { layer: Container; unitsLayer: Container; draft: Graphics; units: Map<string, Container>; checkGesture(): void }
+interface Drawing { layer: Container; unitsLayer: Container; draft: Graphics; route: Graphics; units: Map<string, Container>; checkGesture(): void }
 
 export function MapCanvas(props: Props) {
   const host = useRef<HTMLDivElement>(null), current = useRef(props), renderer = useRef<Application | null>(null), viewport = useRef<Viewport>({ x: 0, y: 0, scale: 1 }), reset = useRef<() => void>(() => {}), resetInteraction = useRef<() => void>(() => {}), tool = useRef<Tool>('move'), drawing = useRef<Drawing | undefined>(undefined);
@@ -35,8 +35,8 @@ export function MapCanvas(props: Props) {
     for (let x = 0; x <= scene.width; x++) grid.moveTo(x * cell, 0).lineTo(x * cell, height);
     for (let y = 0; y <= scene.height; y++) grid.moveTo(0, y * cell).lineTo(width, y * cell);
     grid.stroke({ color: 0x73828b, alpha: 0.4, width: 1 }); layer.addChild(grid);
-    const units = new Map<string, Container>();
-    layer.addChild(draft, unitsLayer);
+    const units = new Map<string, Container>(), route = new Graphics();
+    layer.addChild(draft, route, unitsLayer);
     layer.addChild(overlay); app.stage.eventMode = 'static'; app.stage.hitArea = new Rectangle(0, 0, width, height);
     let gesture: { start: Cell; global: Cell; tokenId?: string; selectedId?: string; tokenState?: { id: string; version: number; x: number; y: number }; sceneVersion: number; mode: Tool; pan: boolean; moved: boolean; origin: Viewport } | undefined, measureStart: Cell | undefined;
     function matchesCurrent() {
@@ -85,7 +85,7 @@ export function MapCanvas(props: Props) {
     };
     const cancel = () => { gesture = undefined; measureStart = undefined; overlay.clear(); for (const t of current.current.scene.tokens) units.get(t.id)?.position.set((t.x + 0.5) * cell, (t.y + 0.5) * cell); paint(); };
     resetInteraction.current = cancel;
-    drawing.current = { layer, unitsLayer, draft, units, checkGesture: () => { if (!matchesCurrent()) cancel(); } };
+    drawing.current = { layer, unitsLayer, draft, route, units, checkGesture: () => { if (!matchesCurrent()) cancel(); } };
     const wheel = (event: WheelEvent) => {
       event.preventDefault(); const bounds = app.canvas.getBoundingClientRect(), p = { x: (event.clientX - bounds.left) * width / bounds.width, y: (event.clientY - bounds.top) * height / bounds.height };
       viewport.current = zoomAt(viewport.current, p, event.deltaY < 0 ? 1.2 : 1 / 1.2); applyView();
@@ -134,6 +134,11 @@ export function MapCanvas(props: Props) {
     d.draft.fill({ color: 0x65c997, alpha: 0.12 });
     paint();
   }, [props.revealed, scope, ready]);
+  useLayoutEffect(() => {
+    const d=drawing.current;if(!d)return;d.route.clear();const cell=props.scene.gridSize;
+    for(const [i,p] of (props.path??[]).entries()){const x=(p.x+0.5)*cell,y=(p.y+0.5)*cell;if(i===0)d.route.moveTo(x,y);else d.route.lineTo(x,y);}
+    d.route.stroke({color:0xe0bd83,width:4});paint();
+  },[props.path,scope,ready]);
   useLayoutEffect(() => { viewport.current = { x: 0, y: 0, scale: 1 }; reset.current(); setMeasurement(''); }, [props.scene.id]);
   const tools: [Tool, string][] = [['move', '选择与移动'], ['pan', '平移地图'], ['measure', '两点测距'], ...(props.onRectangle ? [['reveal', '矩形揭露'], ['cover', '矩形遮盖']] as [Tool, string][] : [])];
   return <><div className="map-tools" role="toolbar" aria-label="地图交互">{tools.map(([value, label]) => <button key={value} aria-pressed={mode === value} disabled={(value === 'reveal' || value === 'cover') && props.fogLocked} onClick={() => { resetInteraction.current(); setMode(value); setMeasurement(''); }}>{label}</button>)}<button onClick={() => reset.current()}>重置视图</button><output aria-label="地图缩放">{Math.round(scale * 100)}%</output></div><p className="hint">滚轮以光标为中心缩放；中键或平移工具拖动。选中单位后拖动预览并吸附，松开后等待服务器确认。测距为直线几何辅助。</p><div className="map-surface"><div ref={host} aria-label="场景网格地图" role="img" data-map-image={props.mapUrl && loadedUrl === props.mapUrl ? 'ready' : 'empty'} data-interaction-ready={interactionScope === scope ? 'ready' : 'loading'} />{error && <p role="alert">{error}</p>}</div>{measurement && <output className="map-measurement" aria-label="测距结果">{measurement}</output>}</>;

@@ -11,6 +11,9 @@ public final class TurnService implements SceneService.MovementPermission {
     public record Command(UUID requestId,long expectedVersion,String kind,String characterId,List<UUID> order,String reason) {}
     public record State(long version,String status,int round,List<UUID> order,String currentId,List<UUID> grants,long endVersion,String reason) {}
     public record History(String actor,String kind,Instant at,State before,State after) {}
+    public interface MovementTurns { void entered(UUID c,History history); }
+    private MovementTurns movement=(c,h)->{};
+    public TurnService tracking(MovementTurns movement){this.movement=movement;return this;}
     public interface Store {
         State state(UUID c);void state(UUID c,State state);void history(UUID c,History h);List<History> history(UUID c);
         UUID characterForToken(UUID c,UUID token);
@@ -63,6 +66,7 @@ public final class TurnService implements SceneService.MovementPermission {
             boolean visibleChange=!publicBase(c,old).equals(publicBase(c,candidate));
             long endVersion=status.equals("ACTIVE")?(visibleChange||old.endVersion()==0?java.util.concurrent.ThreadLocalRandom.current().nextLong(1,9007199254740991L):old.endVersion()):0;
             var next=new State(candidate.version(),status,round,order,current,grants,endVersion,d.reason());store.state(c,next);store.history(c,new History(actor,d.kind(),clock.instant(),old,next));var ack=new CombatService.Ack(c,r==Role.DM?next.version():next.endVersion());receipts.receipt(c,actor,d.requestId(),new CombatService.Receipt(fp,ack));
+            movement.entered(c,new History(actor,d.kind(),clock.instant(),old,next));
             boolean publicGrant=d.kind().equals("GRANT")&&visible(c,UUID.fromString(d.characterId()))&&cards.card(c,UUID.fromString(d.characterId())).controllers().stream().anyMatch(user->cards.role(c,user)==Role.PLAYER);
             events.changed(c,!visibleChange&&!publicGrant);return ack;
         }));

@@ -34,6 +34,12 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Added
 
+- Declared 5R movement paths with per-cell modes/terrain, authoritative budget
+  previews, character-owned spent distance across placements, advisory overage
+  warnings and private DM cost/final-budget decisions. Durable journals and
+  idempotent receipts commit with the position and budget; legacy unmeasured
+  moves make the ledger incomplete until DM review.
+
 - Persist DM-only SRD 5.2.1 weapon previews with trusted catalog/card snapshots,
   server attack and independent critical-damage dice, explanations and an evidence
   hash. Unsupported or unreviewed cases remain explicit manual adjudication.

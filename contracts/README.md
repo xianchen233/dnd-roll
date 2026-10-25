@@ -2,6 +2,15 @@
 
 Contract version: 0.1. All application paths are same-origin under `/api`. Production uses HTTPS. Identifiers are opaque UUID strings; coordinates are integer grid cells, with origin at the top left. JSON field names use camelCase.
 
+[A06 movement paths and advisory budgets](movement-paths.md) add explicit entered
+cells, character-owned spent movement and reasoned DM overrides. Legacy moves
+remain manual and mark an existing ledger incomplete.
+
+`GET /api/campaigns/{campaignId}/tokens/{tokenId}/movement`
+`POST /api/campaigns/{campaignId}/tokens/{tokenId}/movement/preview`
+`POST /api/campaigns/{campaignId}/tokens/{tokenId}/movement/paths`
+`POST /api/campaigns/{campaignId}/tokens/{tokenId}/movement/adjustments`
+
 [A04 automatic attack calculations](automatic-attacks.md) define an internal pure
 candidate calculator and explicit manual fallback matrix. There is no automatic
 change to the manual P06 routes. [A05 durable previews](attack-previews.md) add a

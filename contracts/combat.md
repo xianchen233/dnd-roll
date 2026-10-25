@@ -91,7 +91,9 @@ Already delivered public information cannot be retracted.
   a linked, visible, currently controlled character that is current or DM-granted.
   Unlinked/nonparticipant tokens require DM direct adjustment. DM moves any token.
   Current combat permission precedes historical move receipts. Snapshot canMove
-  reflects it. No path/budget/effect automation. Out-of-turn dice/actions/resources
+  reflects it. Legacy coordinate moves do not calculate a path or execute effects.
+  [A06](movement-paths.md) adds separate declared-path/budget hints; unmeasured
+  coordinate moves mark an existing ledger incomplete. Out-of-turn dice/actions/resources
   remain available; turn advance does not silently tick/remove conditions. P03
   explicit DM tick/removal remains the duration confirmation entry.
 

@@ -14,6 +14,7 @@ const [apiText, eventText, readme, accounts, scenes, assets, tokens, mapVisibili
   read('../contracts/characters.md'),
 ]);
 const api = JSON.parse(apiText);
+for(const [suffix,method]of [['','get'],['/preview','post'],['/paths','post'],['/adjustments','post']])assert.ok(api.paths['/api/campaigns/{campaignId}/tokens/{tokenId}/movement'+suffix]?.[method],`A06 missing ${method} ${suffix}`);
 for(const [suffix,method]of [['/attack-previews','get'],['/attack-previews','post'],['/attack-previews/{id}','get'],['/attack-previews/{id}/events','post'],['/attack-results','get']])assert.ok(api.paths['/api/campaigns/{campaignId}'+suffix]?.[method],`A05 missing ${method} ${suffix}`);
 for(const [suffix,method] of [['','get'],['/{id}','post'],['/{id}/impact','post'],['/{id}/executions','post'],['/{id}/executions','get']])assert.ok(api.paths['/api/campaigns/{campaignId}/module-operations'+suffix]?.[method],`A03d missing ${method} ${suffix}`);
 for(const [suffix,method]of [['update-options','post'],['update-impact','post'],['updates','post'],['updates','get'],['updates/{version}/content','get']])assert.ok(api.paths['/api/campaigns/{campaignId}/module-customizations/{id}/'+suffix]?.[method],`A03b missing ${method} ${suffix}`);
@@ -133,6 +134,12 @@ assert.deepEqual(api.paths['/api/auth/csrf'].get.security, []);
 assert.deepEqual(api.paths['/api/auth/login'].post.security, []);
 assert.equal(api.paths['/api/auth/logout'].post.responses['204'].content, undefined);
 const schemas = api.components.schemas;
+const movementSample={requestId:'00000000-0000-4000-8000-000000000001',expectedVersion:0,sceneVersion:1,characterVersion:2,budgetVersion:'00000000-0000-4000-8000-000000000002',turnKey:42,reviewed:true,path:[{x:2,y:2,mode:'WALK',difficult:false}],override:false,cost:0,reason:''};
+validate(schemas.MovementPath,movementSample);
+for(const key of Object.keys(movementSample)){const invalid={...movementSample};delete invalid[key];assert.throws(()=>validate(schemas.MovementPath,invalid));assert.throws(()=>validate(schemas.MovementPath,{...movementSample,[key]:null}));}
+for(const invalid of [{...movementSample,actor:'forged'},{...movementSample,path:[]},{...movementSample,path:Array(201).fill(movementSample.path[0])},{...movementSample,path:[{...movementSample.path[0],mode:'FLY'}]},{...movementSample,expectedVersion:-1},{...movementSample,turnKey:0.5},{...movementSample,reason:'x'.repeat(1001)}])assert.throws(()=>validate(schemas.MovementPath,invalid));
+assert.equal(api.paths['/api/campaigns/{campaignId}/tokens/{tokenId}/movement/preview'].post['x-read-only'],true);
+for(const suffix of ['/paths','/adjustments'])assert.match(api.paths['/api/campaigns/{campaignId}/tokens/{tokenId}/movement'+suffix].post['x-idempotency'].authorization,/before receipt replay/);
 const attackPreviewCreate={requestId:'00000000-0000-4000-8000-000000000001',characterId:'00000000-0000-4000-8000-000000000001',sourceVersion:0,targetId:'00000000-0000-4000-8000-000000000002',targetVersion:0,attackId:'content:trusted',reviewed:true,exceptions:[],advantage:[],disadvantage:[],immunities:[],resistances:[],vulnerabilities:[]};
 const attackPreviewCommand={requestId:attackPreviewCreate.requestId,expectedVersion:0,kind:'CONFIRM',previewHash:'a'.repeat(64),changes:[],correctionOf:'',reason:'DM reviewed',summary:''};
 for(const [schema,sample]of [[schemas.AttackPreviewCreate,attackPreviewCreate],[schemas.AttackPreviewCommand,attackPreviewCommand]]){

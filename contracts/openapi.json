@@ -13244,6 +13244,282 @@
         },
         "x-required-role": "MEMBER"
       }
+    },
+    "/api/campaigns/{campaignId}/tokens/{tokenId}/movement": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/CampaignId"
+        },
+        {
+          "$ref": "#/components/parameters/TokenId"
+        }
+      ],
+      "get": {
+        "operationId": "getMovementBudget",
+        "description": "Read current token/card controls and character-owned budget. Outside-turn reads are allowed. Players get no journal, reasons or global turn counters.",
+        "x-grid-bounds": {
+          "x": "0 <= x < scene.width",
+          "y": "0 <= y < scene.height"
+        },
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered movement result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/MovementView"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MovementUnavailable"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "VERSION_CONFLICT or IDEMPOTENCY_CONFLICT",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Declared movement and advisory budgets; see movement-paths.md"
+      }
+    },
+    "/api/campaigns/{campaignId}/tokens/{tokenId}/movement/preview": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/CampaignId"
+        },
+        {
+          "$ref": "#/components/parameters/TokenId"
+        }
+      ],
+      "post": {
+        "operationId": "previewMovementPath",
+        "description": "Read-only declared 5-foot path calculation. Check current controls, turn/grant, token, scene, card, budget and opaque turn key. No position, ledger, journal or receipt is written.",
+        "x-grid-bounds": {
+          "x": "0 <= x < scene.width",
+          "y": "0 <= y < scene.height"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MovementPath"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered movement result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovementPreview"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "VERSION_CONFLICT or IDEMPOTENCY_CONFLICT",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Declared movement and advisory budgets; see movement-paths.md",
+        "x-read-only": true
+      }
+    },
+    "/api/campaigns/{campaignId}/tokens/{tokenId}/movement/paths": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/CampaignId"
+        },
+        {
+          "$ref": "#/components/parameters/TokenId"
+        }
+      ],
+      "post": {
+        "operationId": "commitMovementPath",
+        "description": "Commit the explicitly reviewed path and advisory cost atomically with token position, character budget, immutable private journal and receipt. Current token/card/turn permission precedes receipt replay. DM overrides require a reason.",
+        "x-idempotency": {
+          "authorization": "current membership, token and character control, visibility and turn permission before receipt replay",
+          "atomicity": "position, character budget, immutable journal and both receipts in one transaction",
+          "retry": "exact actor/request/body returns original result; changed body conflicts"
+        },
+        "x-grid-bounds": {
+          "x": "0 <= x < scene.width",
+          "y": "0 <= y < scene.height"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MovementPath"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered movement result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovementResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "VERSION_CONFLICT or IDEMPOTENCY_CONFLICT",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Declared movement and advisory budgets; see movement-paths.md"
+      }
+    },
+    "/api/campaigns/{campaignId}/tokens/{tokenId}/movement/adjustments": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/CampaignId"
+        },
+        {
+          "$ref": "#/components/parameters/TokenId"
+        }
+      ],
+      "post": {
+        "operationId": "adjustMovementBudget",
+        "description": "Current DM sets final used movement and allowance, with reason, versions and receipt. No token position or character sheet is changed.",
+        "x-idempotency": {
+          "authorization": "current membership, token and character control, visibility and turn permission before receipt replay",
+          "atomicity": "position, character budget, immutable journal and both receipts in one transaction",
+          "retry": "exact actor/request/body returns original result; changed body conflicts"
+        },
+        "x-grid-bounds": {
+          "x": "0 <= x < scene.width",
+          "y": "0 <= y < scene.height"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MovementAdjustment"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Current permission-filtered movement result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovementResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "VERSION_CONFLICT or IDEMPOTENCY_CONFLICT",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Declared movement and advisory budgets; see movement-paths.md"
+      }
     }
   },
   "components": {
@@ -21366,6 +21642,435 @@
             "format": "date-time"
           }
         }
+      },
+      "MovementStep": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "x",
+          "y",
+          "mode",
+          "difficult"
+        ],
+        "properties": {
+          "x": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "y": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "WALK",
+              "CRAWL",
+              "CLIMB",
+              "SWIM",
+              "MANUAL"
+            ]
+          },
+          "difficult": {
+            "type": "boolean"
+          }
+        }
+      },
+      "MovementPath": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "sceneVersion",
+          "characterVersion",
+          "budgetVersion",
+          "turnKey",
+          "reviewed",
+          "path",
+          "override",
+          "cost",
+          "reason"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "sceneVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "characterVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "budgetVersion": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "turnKey": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "reviewed": {
+            "type": "boolean"
+          },
+          "path": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MovementStep"
+            },
+            "minItems": 1,
+            "maxItems": 200
+          },
+          "override": {
+            "type": "boolean"
+          },
+          "cost": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        }
+      },
+      "MovementAdjustment": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "sceneVersion",
+          "characterVersion",
+          "budgetVersion",
+          "turnKey",
+          "used",
+          "allowance",
+          "reason"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "sceneVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "characterVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "budgetVersion": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "turnKey": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "used": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "allowance": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1
+          }
+        }
+      },
+      "MovementPreview": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "cost",
+          "usedAfter",
+          "remaining",
+          "overBudget",
+          "complete",
+          "tracked"
+        ],
+        "properties": {
+          "cost": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "usedAfter": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "remaining": {
+            "type": "integer",
+            "minimum": -100000,
+            "maximum": 100000
+          },
+          "overBudget": {
+            "type": "boolean"
+          },
+          "complete": {
+            "type": "boolean"
+          },
+          "tracked": {
+            "type": "boolean"
+          }
+        }
+      },
+      "MovementBefore": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "token",
+          "sceneVersion",
+          "characterId",
+          "characterVersion",
+          "budgetVersion",
+          "turnKey",
+          "tracked",
+          "allowance",
+          "used",
+          "complete",
+          "history"
+        ],
+        "properties": {
+          "token": {
+            "$ref": "#/components/schemas/TokenView"
+          },
+          "sceneVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "characterId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "characterVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "budgetVersion": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "turnKey": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "tracked": {
+            "type": "boolean"
+          },
+          "allowance": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "used": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "complete": {
+            "type": "boolean"
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MovementJournal"
+            },
+            "minItems": 0,
+            "maxItems": 0
+          }
+        }
+      },
+      "MovementJournal": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "kind",
+          "actor",
+          "at",
+          "tokenId",
+          "command",
+          "before",
+          "calculation",
+          "source"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "PATH",
+              "ADJUST"
+            ]
+          },
+          "actor": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "tokenId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "command": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MovementPath"
+              },
+              {
+                "$ref": "#/components/schemas/MovementAdjustment"
+              }
+            ]
+          },
+          "before": {
+            "$ref": "#/components/schemas/MovementBefore"
+          },
+          "calculation": {
+            "$ref": "#/components/schemas/MovementPreview"
+          },
+          "source": {
+            "$ref": "#/components/schemas/CharacterSource"
+          }
+        }
+      },
+      "MovementView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "token",
+          "sceneVersion",
+          "characterId",
+          "characterVersion",
+          "budgetVersion",
+          "turnKey",
+          "tracked",
+          "allowance",
+          "used",
+          "complete",
+          "history"
+        ],
+        "properties": {
+          "token": {
+            "$ref": "#/components/schemas/TokenView"
+          },
+          "sceneVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "characterId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "characterVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "budgetVersion": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "turnKey": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "tracked": {
+            "type": "boolean"
+          },
+          "allowance": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "used": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "complete": {
+            "type": "boolean"
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MovementJournal"
+            },
+            "minItems": 0,
+            "maxItems": 50
+          }
+        }
+      },
+      "MovementResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "token",
+          "calculation"
+        ],
+        "properties": {
+          "token": {
+            "$ref": "#/components/schemas/TokenView"
+          },
+          "calculation": {
+            "$ref": "#/components/schemas/MovementPreview"
+          }
+        }
+      },
+      "MovementUnavailable": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "available"
+        ],
+        "properties": {
+          "available": {
+            "type": "boolean",
+            "const": false
+          }
+        }
       }
     }
   },
@@ -21502,5 +22207,11 @@
     "atomicity": "one actor then campaign transaction includes P05 rolls, P06 action, cards, histories, preview and receipt",
     "correction": "current-version explicit final values; preserve later play and immutable originals",
     "support": "A04 bundled SRD 5.2.1 ATTACK identity and explicit DM context review; unsupported manual fallback without rolls"
+  },
+  "x-movement-policy": {
+    "profile": "GRID_5R_5FT; adjacent diagonal=5 feet; declared terrain adds 5; crawl/climb/swim without special speeds adds 5",
+    "advisory": "Over budget warns; no collision/hidden data/effect automation. Explicit DM override and final-value adjustment retain reason and history.",
+    "ownership": "Per-character shared placements; own turn entry resets; grants do not reset. Unmeasured moves invalidate completeness.",
+    "authorization": "Current membership, visibility and both controls before receipts; journal is DM-only; no global combat counters."
   }
 }

@@ -22,9 +22,12 @@ public final class SceneService {
     }
     public interface Events { void changed(UUID campaignId); }
     public interface MovementPermission { boolean canMove(UUID campaign,UUID token,String actor,Role role); }
+    public interface MovementAudit { void unmeasured(UUID campaign,UUID token); }
     private final Store store;
     private final Events events;
     private final MovementPermission permission;
+    private MovementAudit audit=(c,t)->{};
+    public SceneService auditing(MovementAudit audit){this.audit=audit;return this;}
     public SceneService(Store store, Events events) { this(store,events,(c,t,a,r)->true); }
     public SceneService(Store store, Events events,MovementPermission permission) { this.store = store; this.events = events;this.permission=permission; }
     public List<CampaignView> campaigns(String actor) { return store.campaigns(actor); }
@@ -37,6 +40,10 @@ public final class SceneService {
         });
     }
     public TokenView move(UUID campaignId, UUID tokenId, String actor, Command command) {
+        return moveRecorded(campaignId,tokenId,actor,command,()->audit.unmeasured(campaignId,tokenId));
+    }
+    /** Internal measured adapter records its ledger in this same transaction. */
+    public TokenView moveRecorded(UUID campaignId,UUID tokenId,String actor,Command command,Runnable record) {
         return store.locked(campaignId, () -> {
             var role = requireMember(campaignId, actor);
             var scene = store.scene(campaignId);
@@ -55,6 +62,7 @@ public final class SceneService {
             var moved = Movement.move(token, role, actor, command, scene.width(), scene.height());
             var response = Movement.view(moved, role, actor);
             store.save(campaignId, actor, moved, command, response);
+            record.run();
             events.changed(campaignId);
             return response;
         });

@@ -5,6 +5,11 @@ import type { Catalog,ContentData,ContentFilters,ContentChoice,ContentPreview,Co
 import type {DiceCommand,DiceTextCommand,Roll,RollList,Initiative,InitiativeGenerate,InitiativeConfirm,InitiativeHistory} from './dice';
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
 export class Api {
+  movement(c:string,t:string):Promise<import('./movement').MovementRead>{return this.call(this.movementRoute(c,t));}
+  previewMovement(c:string,t:string,body:import('./movement').MovementPath):Promise<import('./movement').MovementPreview>{return this.post(this.movementRoute(c,t)+'/preview',body);}
+  movePath(c:string,t:string,body:import('./movement').MovementPath):Promise<import('./movement').MovementResult>{return this.post(this.movementRoute(c,t)+'/paths',body);}
+  adjustMovement(c:string,t:string,body:import('./movement').MovementAdjustment):Promise<import('./movement').MovementResult>{return this.post(this.movementRoute(c,t)+'/adjustments',body);}
+  private movementRoute(c:string,t:string){return `/campaigns/${encodeURIComponent(c)}/tokens/${encodeURIComponent(t)}/movement`;}
   attackPreviews(c:string):Promise<import('./attack-previews').AttackPreview[]>{return this.call(`/campaigns/${encodeURIComponent(c)}/attack-previews`);}
   attackPreview(c:string,id:string):Promise<import('./attack-previews').AttackPreview>{return this.call(`/campaigns/${encodeURIComponent(c)}/attack-previews/${encodeURIComponent(id)}`);}
   createAttackPreview(c:string,body:import('./attack-previews').AttackPreviewCreate):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/attack-previews`,body);}
