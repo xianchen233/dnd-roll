@@ -70,5 +70,18 @@ public final class DiceService {
         }));
     }
     private static boolean shortcut(String key){return key.equals("initiative")||key.matches("(ability|skill|save|attack|damage|spellAttack):.+");}
+    /** Internal A05 plan only. No HTTP payload can choose critical dice counts. */
+    Roll plannedDamage(UUID c,String actor,UUID request,CharacterService.Card card,String attackId,int count,int sides,int modifier){
+        if(request==null)throw CharacterSheet.invalid();CharacterSheet.number(count,1,100);CharacterSheet.number(sides,2,1000);CharacterSheet.number(modifier,-10000,10000);
+        return cards.actorLocked(actor,()->cards.locked(c,()->{
+            require(member(c,actor)==Role.DM);var current=cards.card(c,card.id());if(current==null)throw missing();AccountPolicy.version(current.version(),card.version());
+            String expression=count+"d"+sides+(modifier<0?"":"+")+modifier;
+            String fp=fingerprint(json,List.of(c,"A05_DAMAGE",card.id(),card.version(),attackId,expression));var prior=store.receipt(actor,request);
+            if(prior!=null){if(!prior.fingerprint().equals(fp))throw new DomainException("IDEMPOTENCY_CONFLICT",409,"Request ID already used");return store.roll(c,prior.id());}
+            var calculation=card.sheet().calculate().get("damage:"+attackId);if(calculation==null)throw CharacterSheet.invalid();
+            var roll=new Roll(UUID.randomUUID(),card.id().toString(),card.version(),actor,card.sheet().name(),clock.instant(),"DM","damage:"+attackId,calculation,List.of(),List.of(),Dice.roll(expression,List.of(),List.of(),entropy));
+            store.save(c,roll);store.receipt(c,actor,request,new Receipt(fp,roll.id()));events.changed(c,true);return roll;
+        }));
+    }
     public static String fingerprint(JsonMapper json,Object data){try{return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(json.writeValueAsString(data).getBytes(StandardCharsets.UTF_8)));}catch(java.security.NoSuchAlgorithmException e){throw new IllegalStateException(e);}}
 }

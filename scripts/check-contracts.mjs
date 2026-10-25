@@ -14,6 +14,7 @@ const [apiText, eventText, readme, accounts, scenes, assets, tokens, mapVisibili
   read('../contracts/characters.md'),
 ]);
 const api = JSON.parse(apiText);
+for(const [suffix,method]of [['/attack-previews','get'],['/attack-previews','post'],['/attack-previews/{id}','get'],['/attack-previews/{id}/events','post'],['/attack-results','get']])assert.ok(api.paths['/api/campaigns/{campaignId}'+suffix]?.[method],`A05 missing ${method} ${suffix}`);
 for(const [suffix,method] of [['','get'],['/{id}','post'],['/{id}/impact','post'],['/{id}/executions','post'],['/{id}/executions','get']])assert.ok(api.paths['/api/campaigns/{campaignId}/module-operations'+suffix]?.[method],`A03d missing ${method} ${suffix}`);
 for(const [suffix,method]of [['update-options','post'],['update-impact','post'],['updates','post'],['updates','get'],['updates/{version}/content','get']])assert.ok(api.paths['/api/campaigns/{campaignId}/module-customizations/{id}/'+suffix]?.[method],`A03b missing ${method} ${suffix}`);
 assert.equal(api.paths['/api/campaigns/{campaignId}/module-customizations/{id}/update-preview']?.post?.['x-read-only'],true,'A03 read-only update preview missing');
@@ -132,6 +133,17 @@ assert.deepEqual(api.paths['/api/auth/csrf'].get.security, []);
 assert.deepEqual(api.paths['/api/auth/login'].post.security, []);
 assert.equal(api.paths['/api/auth/logout'].post.responses['204'].content, undefined);
 const schemas = api.components.schemas;
+const attackPreviewCreate={requestId:'00000000-0000-4000-8000-000000000001',characterId:'00000000-0000-4000-8000-000000000001',sourceVersion:0,targetId:'00000000-0000-4000-8000-000000000002',targetVersion:0,attackId:'content:trusted',reviewed:true,exceptions:[],advantage:[],disadvantage:[],immunities:[],resistances:[],vulnerabilities:[]};
+const attackPreviewCommand={requestId:attackPreviewCreate.requestId,expectedVersion:0,kind:'CONFIRM',previewHash:'a'.repeat(64),changes:[],correctionOf:'',reason:'DM reviewed',summary:''};
+for(const [schema,sample]of [[schemas.AttackPreviewCreate,attackPreviewCreate],[schemas.AttackPreviewCommand,attackPreviewCommand]]){
+ validate(schema,sample);for(const field of Object.keys(sample)){const missing={...sample};delete missing[field];assert.throws(()=>validate(schema,missing));assert.throws(()=>validate(schema,{...sample,[field]:null}));}
+ for(const field of ['actor','dice','armorClass','sheet','damage','total'])assert.throws(()=>validate(schema,{...sample,[field]:20}));
+}
+for(const invalid of [{...attackPreviewCreate,sourceVersion:0.5},{...attackPreviewCreate,targetVersion:-1},{...attackPreviewCreate,advantage:Array(11).fill({reason:'x',source:{book:'SRD 5.2.1',revision:'5.2.1',rules:'5R',detail:''}})},{...attackPreviewCommand,previewHash:'forged'},{...attackPreviewCommand,kind:'AUTOMATIC'}])assert.throws(()=>validate(invalid.kind?schemas.AttackPreviewCommand:schemas.AttackPreviewCreate,invalid));
+assert.deepEqual(Object.keys(schemas.AttackPublicResult.properties).sort(),['actor','at','id','name','summary','targetName']);
+validate(schemas.AttackFactor,{reason:'Reviewed factor',source:{book:'Unreviewed source',revision:'1',rules:'UNKNOWN',detail:'x'.repeat(1000)}});
+assert.throws(()=>validate(schemas.AttackFactor,{reason:'Reviewed factor',source:{book:'Unreviewed source',revision:'1',rules:'UNKNOWN',detail:'x'.repeat(1001)}}));
+for(const suffix of ['/attack-previews','/attack-previews/{id}/events'])assert.match(api.paths['/api/campaigns/{campaignId}'+suffix].post['x-idempotency'].authorization,/current campaign DM.*before receipt replay/);
 const opId='00000000-0000-4000-8000-000000000001';
 const opStep={kind:'REVEAL_TOKEN',sceneId:opId,tokenId:opId,expectedVersion:0};
 const opSave={requestId:opId,expectedVersion:0,name:'中文组合',steps:[opStep]};

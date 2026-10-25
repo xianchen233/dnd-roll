@@ -12428,6 +12428,822 @@
         "operationId": "listModuleOperationExecutions",
         "description": "Current target campaign DM. Bounded editable manual combination; see module-operations.md."
       }
+    },
+    "/api/campaigns/{campaignId}/attack-previews": {
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "listAttackPreviews",
+        "summary": "listAttackPreviews",
+        "description": "Durable bounded A05 weapon preview; see attack-previews.md.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Authorized result",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AttackPreview"
+                  },
+                  "maxItems": 50
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "DM"
+      },
+      "post": {
+        "operationId": "createAttackPreview",
+        "summary": "createAttackPreview",
+        "description": "Durable bounded A05 weapon preview; see attack-previews.md.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authorized result",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharacterAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "DM",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttackPreviewCreate"
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "namespace": "attack-preview-commands",
+          "key": [
+            "sessionActor",
+            "requestId"
+          ],
+          "authorization": "current campaign DM and source/target existence before receipt replay",
+          "payload": [
+            "campaignId",
+            "route",
+            "full body"
+          ],
+          "samePayload": "original ack before stale versions; no repeated roll or effect",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT"
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/attack-previews/{id}": {
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getAttackPreview",
+        "summary": "getAttackPreview",
+        "description": "Durable bounded A05 weapon preview; see attack-previews.md.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Authorized result",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackPreview"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "DM"
+      }
+    },
+    "/api/campaigns/{campaignId}/attack-previews/{id}/events": {
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "commandAttackPreview",
+        "summary": "commandAttackPreview",
+        "description": "Durable bounded A05 weapon preview; see attack-previews.md.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authorized result",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharacterAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "DM",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttackPreviewCommand"
+              }
+            }
+          }
+        },
+        "x-idempotency": {
+          "namespace": "attack-preview-commands",
+          "key": [
+            "sessionActor",
+            "requestId"
+          ],
+          "authorization": "current campaign DM and source/target existence before receipt replay",
+          "payload": [
+            "campaignId",
+            "route",
+            "full body"
+          ],
+          "samePayload": "original ack before stale versions; no repeated roll or effect",
+          "differentPayload": "409 IDEMPOTENCY_CONFLICT"
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}/attack-results": {
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "listAttackResults",
+        "summary": "listAttackResults",
+        "description": "Durable bounded A05 weapon preview; see attack-previews.md.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Authorized result",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AttackPublicResult"
+                  },
+                  "maxItems": 50
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "INVALID_INPUT, current permission denial, VERSION_CONFLICT / IDEMPOTENCY_CONFLICT or transaction unavailable; no partial state",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store, private"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "MEMBER"
+      }
     }
   },
   "components": {
@@ -19702,6 +20518,854 @@
             "maxItems": 20
           }
         }
+      },
+      "AttackFactorSource": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "book",
+          "revision",
+          "rules",
+          "detail"
+        ],
+        "properties": {
+          "book": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "revision": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "rules": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "detail": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        }
+      },
+      "AttackFactor": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reason",
+          "source"
+        ],
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "source": {
+            "$ref": "#/components/schemas/AttackFactorSource"
+          }
+        }
+      },
+      "AttackPreviewCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "characterId",
+          "sourceVersion",
+          "targetId",
+          "targetVersion",
+          "attackId",
+          "reviewed",
+          "exceptions",
+          "advantage",
+          "disadvantage",
+          "immunities",
+          "resistances",
+          "vulnerabilities"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "characterId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sourceVersion": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "targetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "targetVersion": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "attackId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "reviewed": {
+            "type": "boolean"
+          },
+          "exceptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttackFactor"
+            },
+            "maxItems": 10
+          },
+          "advantage": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttackFactor"
+            },
+            "maxItems": 10
+          },
+          "disadvantage": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttackFactor"
+            },
+            "maxItems": 10
+          },
+          "immunities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttackFactor"
+            },
+            "maxItems": 10
+          },
+          "resistances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttackFactor"
+            },
+            "maxItems": 10
+          },
+          "vulnerabilities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttackFactor"
+            },
+            "maxItems": 10
+          }
+        }
+      },
+      "AttackPreviewCommand": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "expectedVersion",
+          "kind",
+          "previewHash",
+          "changes",
+          "correctionOf",
+          "reason",
+          "summary"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "kind": {
+            "enum": [
+              "CONFIRM",
+              "APPLY",
+              "CORRECT",
+              "PUBLISH"
+            ]
+          },
+          "previewHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CombatChange"
+            },
+            "maxItems": 2
+          },
+          "correctionOf": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 36
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 1000
+          }
+        }
+      },
+      "AttackCatalogData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "aliases",
+          "type",
+          "source",
+          "description",
+          "spellLevel",
+          "dice",
+          "damageType",
+          "rights"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 0,
+              "maxLength": 100
+            },
+            "maxItems": 20
+          },
+          "type": {
+            "const": "ATTACK"
+          },
+          "source": {
+            "$ref": "#/components/schemas/CharacterSource"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 5000
+          },
+          "spellLevel": {
+            "type": "integer"
+          },
+          "dice": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 100
+          },
+          "damageType": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 100
+          },
+          "rights": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 1000
+          }
+        }
+      },
+      "AttackCatalog": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "data",
+          "builtin",
+          "license",
+          "attribution",
+          "changes"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AttackCatalogData"
+          },
+          "builtin": {
+            "const": true
+          },
+          "license": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 1000
+          },
+          "attribution": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 5000
+          },
+          "changes": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 5000
+          }
+        }
+      },
+      "AttackCalculationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile",
+          "action",
+          "source",
+          "context",
+          "roll",
+          "hitModifier",
+          "armorClass",
+          "damage"
+        ],
+        "properties": {
+          "profile": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 100
+          },
+          "action": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 100
+          },
+          "source": {
+            "$ref": "#/components/schemas/CharacterSource"
+          },
+          "context": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "reviewed",
+              "exceptions"
+            ],
+            "properties": {
+              "reviewed": {
+                "type": "boolean"
+              },
+              "exceptions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AttackFactor"
+                },
+                "maxItems": 10
+              }
+            }
+          },
+          "roll": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "d20",
+              "advantages",
+              "disadvantages"
+            ],
+            "properties": {
+              "d20": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 20
+                },
+                "maxItems": 2
+              },
+              "advantages": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AttackFactor"
+                },
+                "maxItems": 10
+              },
+              "disadvantages": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AttackFactor"
+                },
+                "maxItems": 10
+              }
+            }
+          },
+          "hitModifier": {
+            "type": "integer"
+          },
+          "armorClass": {
+            "type": "integer"
+          },
+          "damage": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "count",
+              "sides",
+              "modifier",
+              "type",
+              "immunities",
+              "resistances",
+              "vulnerabilities"
+            ],
+            "properties": {
+              "count": {
+                "type": "integer"
+              },
+              "sides": {
+                "type": "integer"
+              },
+              "modifier": {
+                "type": "integer"
+              },
+              "type": {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 30
+              },
+              "immunities": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AttackFactor"
+                },
+                "maxItems": 10
+              },
+              "resistances": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AttackFactor"
+                },
+                "maxItems": 10
+              },
+              "vulnerabilities": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AttackFactor"
+                },
+                "maxItems": 10
+              }
+            }
+          }
+        }
+      },
+      "AttackCandidate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "mode",
+          "keptIndex",
+          "natural",
+          "total",
+          "verdict",
+          "damageCount",
+          "damageSides"
+        ],
+        "properties": {
+          "mode": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 1000
+          },
+          "keptIndex": {
+            "type": "integer"
+          },
+          "natural": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "verdict": {
+            "enum": [
+              "HIT",
+              "MISS",
+              "CRITICAL"
+            ]
+          },
+          "damageCount": {
+            "type": "integer"
+          },
+          "damageSides": {
+            "type": "integer"
+          }
+        }
+      },
+      "AttackExplanation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "rule",
+          "calculation",
+          "source"
+        ],
+        "properties": {
+          "rule": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 1000
+          },
+          "calculation": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 5000
+          },
+          "source": {
+            "$ref": "#/components/schemas/CharacterSource"
+          }
+        }
+      },
+      "AttackReview": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "request",
+          "status",
+          "reasons",
+          "candidate",
+          "explanation"
+        ],
+        "properties": {
+          "request": {
+            "$ref": "#/components/schemas/AttackCalculationRequest"
+          },
+          "status": {
+            "enum": [
+              "CANDIDATE",
+              "MANUAL_REQUIRED"
+            ]
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 0,
+              "maxLength": 1000
+            },
+            "maxItems": 100
+          },
+          "candidate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AttackCandidate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "explanation": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttackExplanation"
+            },
+            "maxItems": 100
+          }
+        }
+      },
+      "AttackResolution": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "review",
+          "dice",
+          "rawDamage",
+          "damage",
+          "explanation"
+        ],
+        "properties": {
+          "review": {
+            "$ref": "#/components/schemas/AttackReview"
+          },
+          "dice": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 100
+          },
+          "rawDamage": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "damage": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "explanation": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttackExplanation"
+            },
+            "maxItems": 100
+          }
+        }
+      },
+      "AttackPreviewEvidence": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "review",
+          "source",
+          "target",
+          "entry",
+          "manualReasons",
+          "attackRoll",
+          "damageRoll",
+          "resolution",
+          "actionId"
+        ],
+        "properties": {
+          "review": {
+            "$ref": "#/components/schemas/AttackPreviewCreate"
+          },
+          "source": {
+            "$ref": "#/components/schemas/CombatCard"
+          },
+          "target": {
+            "$ref": "#/components/schemas/CombatCard"
+          },
+          "entry": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AttackCatalog"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "manualReasons": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 0,
+              "maxLength": 1000
+            },
+            "maxItems": 100
+          },
+          "attackRoll": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DiceRoll"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "damageRoll": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DiceRoll"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resolution": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AttackResolution"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "actionId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "AttackPreviewEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "kind",
+          "actor",
+          "at",
+          "changes",
+          "correctionOf",
+          "reason",
+          "summary",
+          "combatEventId"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "enum": [
+              "CONFIRM",
+              "APPLY",
+              "CORRECT",
+              "PUBLISH"
+            ]
+          },
+          "actor": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 80
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CombatChange"
+            },
+            "maxItems": 2
+          },
+          "correctionOf": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 36
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 1000
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 1000
+          },
+          "combatEventId": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 36
+          }
+        }
+      },
+      "AttackPreview": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "version",
+          "status",
+          "actor",
+          "at",
+          "evidence",
+          "hash",
+          "events"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "status": {
+            "enum": [
+              "MANUAL_REQUIRED",
+              "PREVIEW",
+              "CONFIRMED",
+              "APPLIED"
+            ]
+          },
+          "actor": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 80
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/AttackPreviewEvidence"
+          },
+          "hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttackPreviewEvent"
+            },
+            "maxItems": 100000
+          }
+        }
+      },
+      "AttackPublicResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "targetName",
+          "summary",
+          "actor",
+          "at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 100
+          },
+          "targetName": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 100
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "actor": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 80
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
       }
     }
   },
@@ -19832,5 +21496,11 @@
     "authorization": "current target DM before receipt replay; no source library membership needed",
     "atomicity": "actor then campaign lock; validate every target/version/dependency/hash before writes; original service writes/history/receipts/evidence in one transaction; events after commit",
     "preparation": "Only explicit manual execution. Generate leaves DRAFT for P05 confirmation; START needs exact CONFIRMED initiative. Text publication rejects attachments. No arbitrary code, effects or automatic conditions."
+  },
+  "x-attack-preview-policy": {
+    "privacy": "DM-only raw evidence; published summaries independently confirmed; filter current visible targets before limit",
+    "atomicity": "one actor then campaign transaction includes P05 rolls, P06 action, cards, histories, preview and receipt",
+    "correction": "current-version explicit final values; preserve later play and immutable originals",
+    "support": "A04 bundled SRD 5.2.1 ATTACK identity and explicit DM context review; unsupported manual fallback without rolls"
   }
 }

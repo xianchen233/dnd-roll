@@ -5,6 +5,11 @@ import type { Catalog,ContentData,ContentFilters,ContentChoice,ContentPreview,Co
 import type {DiceCommand,DiceTextCommand,Roll,RollList,Initiative,InitiativeGenerate,InitiativeConfirm,InitiativeHistory} from './dice';
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
 export class Api {
+  attackPreviews(c:string):Promise<import('./attack-previews').AttackPreview[]>{return this.call(`/campaigns/${encodeURIComponent(c)}/attack-previews`);}
+  attackPreview(c:string,id:string):Promise<import('./attack-previews').AttackPreview>{return this.call(`/campaigns/${encodeURIComponent(c)}/attack-previews/${encodeURIComponent(id)}`);}
+  createAttackPreview(c:string,body:import('./attack-previews').AttackPreviewCreate):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/attack-previews`,body);}
+  attackPreviewCommand(c:string,id:string,body:import('./attack-previews').AttackPreviewCommand):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/attack-previews/${encodeURIComponent(id)}/events`,body);}
+  attackResults(c:string):Promise<import('./attack-previews').AttackPublicResult[]>{return this.call(`/campaigns/${encodeURIComponent(c)}/attack-results`);}
   moduleOperations(c:string):Promise<import('./modules').ModuleOperation[]>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-operations`);}
   saveModuleOperation(c:string,id:string,body:import('./modules').ModuleOperationSave):Promise<import('./modules').ModuleOperation>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-operations/${encodeURIComponent(id)}`,body);}
   moduleOperationImpact(c:string,id:string,body:import('./modules').ModuleOperationReview):Promise<import('./modules').ModuleOperationImpact>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-operations/${encodeURIComponent(id)}/impact`,body);}

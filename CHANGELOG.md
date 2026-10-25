@@ -34,6 +34,17 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Added
 
+- Persist DM-only SRD 5.2.1 weapon previews with trusted catalog/card snapshots,
+  server attack and independent critical-damage dice, explanations and an evidence
+  hash. Unsupported or unreviewed cases remain explicit manual adjudication.
+- Separate final-value confirmation from atomic P06 application. Preserve exact
+  receipts, immutable evidence and linked current-value corrections across later
+  edits; publish chosen summaries independently without exposing dark dice or HP.
+- Add Chinese preview, confirmation, application, correction and summary controls,
+  with locked exact retries and private-state isolation across campaign/API changes.
+- Add V24 preview/receipt storage and restart/isolated-restore acceptance for both
+  HTTP-created pending previews and records created through the real browser.
+
 - Add a bounded 5R SRD 5.2.1 weapon attack candidate calculator with immutable
   input/evidence, natural 1/20, sourced advantage/disadvantage, critical dice plans
   and single-type immunity/resistance/vulnerability. Unreviewed contexts, unknown

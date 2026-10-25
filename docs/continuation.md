@@ -1,5 +1,44 @@
 # 继续工作的入口
 
+## A05 持久预览、DM确认、原子应用与更正（2026-10-25）
+
+沿用 feat/accounts-and-invitations / 草稿 PR #1，不合并、不发布。
+开工 fetch 后 clean，本地/origin/PR 精确 68a8a06；独立新取 push40154621542 /
+PR40154625315 六完整日志，148unit+175真实IT、283前端/构建、116契约、54浏览器
+及全部旧重启/隔离恢复/容量断言通过（外 .tools/a05-entry-ci.log）。
+先读交接/验收/设计/契约/工作包并用规则技能回读SRD，再定 contracts/attack-previews.md。
+仅可信内置SRD 5.2.1普通单目标武器与DM明确审阅情境；来源/条目被改、精通、未知
+例外或未审阅转人工，无部分候选/骰。P04原来源/许可与覆盖标记、A04公式和P06手动
+语义保持；不承诺自动识别角色自由文本或执行所有核心/扩展效果。
+服务端从当前角色/目录组装并保存暗骰、实际重击额外骰、来源/计算快照和hash。
+CONFIRM只存明确最终值，APPLY以双方及关联P06行动原版本一次事务执行P06结果/资源/历史/回执；
+CORRECT关联原事件、使用当前版本最终值，保留后续变化；PUBLISH单独公开所选摘要。
+当前DM先于旧回执；公开前按当前源/目标可见性过滤，不泄露骰点/AC/精确HP/私密理由。
+中文控件锁住不确定请求，精确保留原body/hash/版本；确认后读取失败只重新读取。
+切团/API/角色域与并发晚到撤权清理私密状态；完整来源、逐骰、计算和历史可展开。
+
+真实RED/GREEN、测试准备错误及限制见 a05-tdd.md：4离线runtime RED、4真实HTTP404
+RED、5前端RED及契约RED；另真实RED修复可变列表证据与长依据/P05标签上限。
+最终全量153unit+185真实IT（9新HTTP+1迁移）、291前端/生产构建、121契约、55真实
+生产Chrome全部通过，零失败/错误/跳过/浏览器重试。V24逐表保留V23旧列/行及23checksum。
+独立PG55434/新库dnd_a05_final/HTTP18089/18090实际停Java/web/PG并重启，新会话逐字段核验HTTP和浏览器
+创建的预览/待确认状态/证据/hash/骰/回执及原A03e组合恢复数据（a05-final-restart-verify.log）。
+此新验收实例完整迁移备份后停止源，恢复到独立PG55435、新库/素材/HTTP18087/18088；
+a05-final-restore.log验证全部数据库行/迁移/引用/文件，a05-final-restore-verify.log验证两类预览及
+原组合控件，且实际继续确认/应用一个恢复后的待确认预览，原骰与hash保持、重试单效。
+已查看桌面/390px截图；这不是真实手机验证。验收进程按身份停止、数据和新验收source
+fence保留；旧source fence/恢复目标、dnd-roll-local及其数据完全未操作。
+停止验收PG并清除数据库环境后153离线unit复验见 a05-unit-pg-stopped-final.log。
+
+交付HEAD的push/PR必须独立重取六完整日志，不能复用68a8a06：外 .tools/a05-check-ci.mjs
+严格要求153/185、291/构建、121契约、55浏览器、全部旧断言、每browser两条CONTROLS、
+六条ATTACK PREVIEWS及一条ATTACK RESUMED。最终索引a05-ci-{HEAD}.json、六a05-job日志
+及a05-head-ci-final.log；缺失/pending/failure不算通过。CI保留原容器重启/独立项目卷恢复/
+容量流程，新增HTTP与真实浏览器预览精确验证及恢复后继续应用。以精确HEAD证据为准。
+下一可执行：先独立核验交付HEAD，再推进A06移动路径/预算契约与5R依据、实际RED；
+A03便携组合/附图公开、M3剩余范围、云端/TLS/物理异机/真实手机继续保留。
+
+
 ## A04 有界自动结算矩阵与纯计算器（2026-10-25）
 
 沿用 feat/accounts-and-invitations / 草稿 PR #1，不合并、不发布。

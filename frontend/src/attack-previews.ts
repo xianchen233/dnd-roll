@@ -1,0 +1,10 @@
+import type {Sheet,Source} from './characters';
+import type {CombatChange} from './combat';
+import type {Roll} from './dice';
+export type AttackFactor={reason:string;source:Omit<Source,'rules'>&{rules:string}};
+export type AttackPreviewCreate={requestId:string;characterId:string;sourceVersion:number;targetId:string;targetVersion:number;attackId:string;reviewed:boolean;exceptions:AttackFactor[];advantage:AttackFactor[];disadvantage:AttackFactor[];immunities:AttackFactor[];resistances:AttackFactor[];vulnerabilities:AttackFactor[]};
+export type AttackPreviewCommand={requestId:string;expectedVersion:number;kind:'CONFIRM'|'APPLY'|'CORRECT'|'PUBLISH';previewHash:string;changes:CombatChange[];correctionOf:string;reason:string;summary:string};
+export type AttackCard={id:string;version:number;sheet:Sheet};
+export type AttackPreviewEvent={id:string;kind:string;actor:string;at:string;changes:CombatChange[];correctionOf:string;reason:string;summary:string;combatEventId:string};
+export type AttackPreview={id:string;version:number;status:'MANUAL_REQUIRED'|'PREVIEW'|'CONFIRMED'|'APPLIED';actor:string;at:string;hash:string;events:AttackPreviewEvent[];evidence:{review:AttackPreviewCreate;source:AttackCard;target:AttackCard;entry:unknown;manualReasons:string[];attackRoll:Roll|null;damageRoll:Roll|null;actionId:string|null;resolution:{review:{candidate:{verdict:string;natural:number;total:number;damageCount:number;damageSides:number}};dice:number[];rawDamage:number;damage:number;explanation:{rule:string;calculation:string;source:Source}[]}|null}};
+export type AttackPublicResult={id:string;name:string;targetName:string;summary:string;actor:string;at:string};

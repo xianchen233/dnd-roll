@@ -4,8 +4,15 @@ Contract version: 0.1. All application paths are same-origin under `/api`. Produ
 
 [A04 automatic attack calculations](automatic-attacks.md) define an internal pure
 candidate calculator and explicit manual fallback matrix. There is no automatic
-HTTP execution or change to the manual P06 routes. A05 confirmation/application
-and corrections remain a separate work package.
+change to the manual P06 routes. [A05 durable previews](attack-previews.md) add a
+current-DM authenticated adapter, saved server dice, independent confirmation,
+atomic application, linked current-value correction and separate public summaries.
+
+`GET /api/campaigns/{campaignId}/attack-previews`
+`POST /api/campaigns/{campaignId}/attack-previews`
+`GET /api/campaigns/{campaignId}/attack-previews/{id}`
+`POST /api/campaigns/{campaignId}/attack-previews/{id}/events`
+`GET /api/campaigns/{campaignId}/attack-results`
 
 ## Authentication
 

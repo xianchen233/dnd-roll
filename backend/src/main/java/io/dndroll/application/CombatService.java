@@ -98,8 +98,13 @@ public final class CombatService {
         });
     }
     private List<Applied> apply(UUID c,String actor,Command command){
+        var changes=reviewChanges(c,command.changes());
+        for(var change:changes){cards.save(change.after(),false);cards.history(new CharacterService.History(change.after().version(),actor,"COMBAT_"+command.kind(),command.reason(),clock.instant(),change.before(),change.after()));}
+        return changes;
+    }
+    List<Applied> reviewChanges(UUID c,List<Change> requested){
         var seen=new HashSet<UUID>();var changes=new ArrayList<Applied>();
-        for(var v:command.changes()){
+        for(var v:requested){
             if(!seen.add(v.characterId())||v.expectedVersion()<0||v.resources()==null||v.resources().size()>100)throw CharacterSheet.invalid();
             var before=cards.card(c,v.characterId());AccountPolicy.version(before.version(),v.expectedVersion());var s=before.sheet();var b=s.combat();
             var combat=new Combat(b.maxHp(),v.hp(),v.tempHp(),b.speed(),b.deathSuccesses(),b.deathFailures(),b.acMode(),b.manualAc(),b.source());
@@ -108,7 +113,6 @@ public final class CombatService {
             var sheet=s.change(s.name(),combat,resources,s.conditions(),s.overrides());sheet.validate();
             var after=new CharacterService.Card(before.id(),c,before.version()+1,before.hidden(),before.shareFull(),before.importReview(),before.controllers(),sheet);changes.add(new Applied(before,after));
         }
-        for(var change:changes){cards.save(change.after(),false);cards.history(new CharacterService.History(change.after().version(),actor,"COMBAT_"+command.kind(),command.reason(),clock.instant(),change.before(),change.after()));}
         return List.copyOf(changes);
     }
     private <T>T locked(UUID c,String actor,UUID request,Supplier<T> work){if(request==null)throw CharacterSheet.invalid();return cards.actorLocked(actor,()->cards.locked(c,work));}

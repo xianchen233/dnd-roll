@@ -64,6 +64,10 @@
 .combat-workspace fieldset { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; margin: 1rem 0; padding: 1rem; }
 .combat-workspace label { display: flex; flex-direction: column; gap: .35rem; max-width: 100%; }
 .combat-workspace p { max-width: 80ch; line-height: 1.6; }
+.attack-preview-workspace { min-width: 0; overflow-wrap: anywhere; }
+.attack-preview-workspace pre { max-height: 24rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: .8rem; }
+.attack-preview-workspace input[type=checkbox] { width: auto; min-height: auto; }
+.attack-preview-workspace label:has(input[type=checkbox]) { flex-direction: row; align-items: center; }
 .combat-workspace article { padding: 1rem; border: 1px solid #5c625f; }
 .combat-workspace details { padding: .65rem; border-bottom: 1px solid #5c625f; overflow-wrap: anywhere; }
 .combat-workspace textarea { min-width: min(32rem,80vw); min-height: 5rem; }
