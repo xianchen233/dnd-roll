@@ -143,6 +143,7 @@ for(const invalid of [{...attackPreviewCreate,sourceVersion:0.5},{...attackPrevi
 assert.deepEqual(Object.keys(schemas.AttackPublicResult.properties).sort(),['actor','at','id','name','summary','targetName']);
 validate(schemas.AttackFactor,{reason:'Reviewed factor',source:{book:'Unreviewed source',revision:'1',rules:'UNKNOWN',detail:'x'.repeat(1000)}});
 assert.throws(()=>validate(schemas.AttackFactor,{reason:'Reviewed factor',source:{book:'Unreviewed source',revision:'1',rules:'UNKNOWN',detail:'x'.repeat(1001)}}));
+validate(schemas.AttackPreviewEvidence.properties.manualReasons,['UNSUPPORTED_EXCEPTION: '+'x'.repeat(1000)]);
 for(const suffix of ['/attack-previews','/attack-previews/{id}/events'])assert.match(api.paths['/api/campaigns/{campaignId}'+suffix].post['x-idempotency'].authorization,/current campaign DM.*before receipt replay/);
 const opId='00000000-0000-4000-8000-000000000001';
 const opStep={kind:'REVEAL_TOKEN',sceneId:opId,tokenId:opId,expectedVersion:0};

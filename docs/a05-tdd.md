@@ -37,6 +37,12 @@ without rolls or partial candidates. Extensions remain unsupported.
   factor source (unknown rules label / 1000-character detail) because it reused
   the narrower character-source schema. Added a dedicated factor source schema
   and matching client type; 1000 accepted, 1001 rejected, all 121 operations pass.
+  After the initial push, the final response audit verified all real captured
+  previews/public summaries, then caught an output-only bound: a valid
+  1000-character exception plus its manual-reason prefix exceeds 1000. Executed
+  `a05-reason-contract-red.log`, widened only new manual-reason response strings to
+  2000 and reran 121 contracts and actual-response validation. No runtime behavior
+  or input bound changed; the new HEAD must have its own full dual CI verification.
 - `npm test -- --run src/attack-previews.test.tsx`: five actual failures against
   the pending UI (`a05-ui-red.log`), then five pass (`a05-ui-green.log`). Later
   audits add API encoding, old-domain late denial and current-value correction.
