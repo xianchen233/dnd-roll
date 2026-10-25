@@ -36,7 +36,9 @@ repository or clock is used. Manual results have no damage or partial calculatio
 
 Only a future authenticated service may assemble this request from current permitted
 cards/content and immutable server P05 rolls. This internal type is not a trusted
-client payload. A05 must bind campaign/actor/targets/object versions/roll IDs/hash,
+client payload. Matching source labels alone do not prove trusted catalog identity,
+content admission or supported semantics; the adapter must verify those separately.
+A05 must bind campaign/actor/targets/object versions/roll IDs/hash,
 recheck authorization before receipts, preserve private evidence and apply one
 transaction only after DM confirmation, with concurrency/retry/correction and
 restart/recovery tests. A04 neither supplies those guarantees nor adds a bypass.

@@ -85,3 +85,26 @@ a client command and cannot be used as an authorization or application receipt.
 A03 portable combinations/attached-material publication, A06/M3, cloud/TLS,
 physical cross-host and real-phone gates remain open. No operation on
 `dnd-roll-local`, its processes/data, or old source-fence/restore targets occurred.
+
+## Verified implementation HEAD
+
+Code **668f9d6a224772219fab06583ec60847ae3ebc7f** independently passed
+[push40153847972](https://github.com/xianchen233/dnd-roll/actions/runs/40153847972)
+and [PR40153850400](https://github.com/xianchen233/dnd-roll/actions/runs/40153850400),
+both completed/success. The strict checker downloaded all six complete logs again
+and verified 148 unit (including all 18 calculator tests), 175 real IT, 283 frontend/
+build, 116 contracts, 54 production browser scenarios, all original restart,
+isolated project/volume restore and capacity assertions, including 2 CONTROLS
+VERIFIED per browser job. Evidence: `a04-code-ci.log`,
+`a04-ci-668f9d6a224772219fab06583ec60847ae3ebc7f.json`, six `a04-job-*.log`.
+
+Earlier implementation 52e4131's two runs were cancelled after the source fix was
+pushed. They are not accepted as complete passing runs. The connector could read
+PR #1 but returned 403 on metadata updates; the existing Git credential was used
+in memory for authenticated REST updates of the same open draft, without printing
+or committing credentials. No comment, merge, release or deployment was created.
+
+The defined A04 matrix/calculator is accepted; A05 and the other deferred packages
+remain open. This evidence/handoff update changes documentation only. Its new HEAD
+must still independently pass `a04-check-ci.mjs`; final evidence belongs in
+`a04-head-ci-final.log` and `a04-ci-{SHA}.json`, never substituted by code-HEAD green.
