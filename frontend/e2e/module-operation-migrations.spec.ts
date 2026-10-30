@@ -1,0 +1,13 @@
+import {test,expect} from '@playwright/test';
+import {writeFile} from 'node:fs/promises';
+import {Session,required} from '../../scripts/acceptance-support.mjs';
+import {prepareSelected,finishSelected} from '../../scripts/operation-migration-evidence.mjs';
+import {enter,login,click,noOverflow} from './p10-support';
+
+test('selected portable migration retains local before-images, retries exactly and creates independent unbound recovery mappings',async({browser,baseURL},info)=>{
+ const dm=await new Session().login(required('E2E_DM_USERNAME'),required('E2E_DM_PASSWORD')),player=await new Session().login(required('E2E_PLAYER_USERNAME'),required('E2E_PLAYER_PASSWORD')),e=await prepareSelected(dm,player),context=await browser.newContext({baseURL});try{
+  await login(context.request,'DM');const page=await context.newPage(),errors:string[]=[];page.on('pageerror',x=>errors.push(x.message));await enter(page,e.campaign);await click(page,'打开模组模板库');const panel=page.getByRole('region',{name:'便携组合选择迁移',exact:true});await click(page,'读取便携组合更新选择');await expect(panel.getByRole('button',{name:'预览组合选择迁移'})).toBeDisabled();await panel.getByLabel('组合决定 '+e.prepareNode,{exact:true}).selectOption('INCOMING');await panel.getByLabel('组合决定 '+e.startNode,{exact:true}).selectOption('RETIRE');await click(page,'预览组合选择迁移');await expect(panel).toContainText('A03h 本团编辑前像保留');const checks=panel.getByRole('checkbox');await expect(checks.first()).toBeVisible();for(const check of await checks.all())await check.check();
+  const bodies:string[]=[];let lost=false;const path=e.root+'/module-instance/operation-migrations';await page.route('**'+path,async route=>{bodies.push(route.request().postData()!);if(!lost){lost=true;const response=await route.fetch();expect(response.status()).toBe(200);await route.abort('failed');}else await route.continue();});await click(page,'确认组合选择迁移');await expect(panel).toContainText('结果未确认');await click(page,'读取便携组合更新选择');await click(page,'重试同一组合迁移');await expect(panel).toContainText('请求已确认');expect(bodies).toHaveLength(2);expect(bodies[0]).toBe(bodies[1]);const command=JSON.parse(bodies[0]),ack=await dm.post(path,command);await finishSelected(dm,player,e,command,ack);
+  await click(page,'读取便携组合更新选择');await expect(panel).toContainText('已退役');await noOverflow(page);await panel.screenshot({path:info.outputPath('a03h-selection-desktop.png')});await page.setViewportSize({width:390,height:844});await noOverflow(page);await panel.screenshot({path:info.outputPath('a03h-selection-mobile-layout.png')});expect(errors).toEqual([]);if(process.env.E2E_A03HS_CAPTURE_FILE)await writeFile(process.env.E2E_A03HS_CAPTURE_FILE,JSON.stringify({entries:[e]},null,2),{flag:'wx'});
+ }finally{await context.close();}
+});

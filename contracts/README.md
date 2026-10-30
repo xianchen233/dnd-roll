@@ -1,6 +1,116 @@
+[A24d typed JSON/hash review](campaign-evidence-rebind.md): explicit A08-A23 record field rebinding and original-algorithm persisted hash regeneration. Source receipts stay with source; always BLOCKED/non-executable, no campaign writer.
+
+[A24c typed nested evidence graph](campaign-evidence-graph.md): audited read-only A08-A23 record extraction, historical version/provenance/alias/canonical checks. Always BLOCKED/non-executable; no JSON rebinding or campaign writer.
+
+[A24b offline campaign identity proposal](campaign-remap-plan.md): 76-table scope/column policies, namespaced relational identity suggestions and canonical timeline aliases in the same read-only audited snapshot. Always BLOCKED and non-executable; JSON rebinding and a writer remain pending.
+
+[A24a offline recovery audit](recovery-audit.md): explicit 76-table M3 inventory, native same-ID archive verification, and a read-only campaign-remap readiness report. No new HTTP route; remap remains BLOCKED until a typed writer exists.
+
+[A23 initial instability healing](initial-instability-healing-effects.md): preview and explicitly heal the unchanged original A18 outcome, preserving any unapplied new Help evidence.
+
+`POST /api/campaigns/{campaignId}/characters/{id}/stabilization/instability/healing-preview`
+`POST /api/campaigns/{campaignId}/characters/{id}/stabilization/instability/healings`
+`GET /api/campaigns/{campaignId}/characters/{id}/stabilization/instability/healing-history`
+
+[A22 instability healing](instability-healing-effects.md): explicit healing of the unchanged original A21 outcome, resetting death counts and removing its sole original Unconscious record.
+
+`POST /api/campaigns/{campaignId}/characters/{id}/stabilization/restabilization/instability/healing-preview`
+`POST /api/campaigns/{campaignId}/characters/{id}/stabilization/restabilization/instability/healings`
+`GET /api/campaigns/{campaignId}/characters/{id}/stabilization/restabilization/instability/healing-history`
+
+[A21 restabilization damage](restabilization-damage-effects.md): preview then explicitly record first bounded damage to the original A19 outcome.
+
+`POST /api/campaigns/{campaignId}/characters/{id}/stabilization/restabilization/damage-preview`
+`POST /api/campaigns/{campaignId}/characters/{id}/stabilization/restabilization/damages`
+`GET /api/campaigns/{campaignId}/characters/{id}/stabilization/restabilization/damage-history`
+
+[A20 restabilization healing](restabilization-healing-effects.md): preview then explicitly heal the unchanged A19 outcome and remove its exact source records.
+
+`POST /api/campaigns/{campaignId}/characters/{id}/stabilization/restabilization/healing-preview`
+`POST /api/campaigns/{campaignId}/characters/{id}/stabilization/restabilization/healings`
+`GET /api/campaigns/{campaignId}/characters/{id}/stabilization/restabilization/healing-history`
+
+[A19 restabilization](restabilization-effects.md): new dedicated Help check after A18, independent preview and explicit application; retain original Unconscious and reset death counts.
+
+`GET /api/campaigns/{campaignId}/characters/{id}/stabilization/restabilization`
+`GET /api/campaigns/{campaignId}/characters/{id}/stabilization/restabilization/history`
+`POST /api/campaigns/{campaignId}/characters/{id}/stabilization/restabilization/rolls`
+`POST /api/campaigns/{campaignId}/characters/{id}/stabilization/restabilization/preview`
+`POST /api/campaigns/{campaignId}/characters/{id}/stabilization/restabilization/applications`
+
+[A18 stabilization damage](stabilization-damage-effects.md): preview then explicitly record first bounded damage, lose Stable and retain 0HP Unconscious with one/two death failures.
+
+`POST /api/campaigns/{campaignId}/characters/{id}/stabilization/damage-preview`
+`POST /api/campaigns/{campaignId}/characters/{id}/stabilization/damages`
+`GET /api/campaigns/{campaignId}/characters/{id}/stabilization/damage-history`
+
+[A17 stabilization healing](stabilization-healing-effects.md): preview adjudicated real healing, then explicitly restore HP and remove the original A16 record pair.
+
+`POST /api/campaigns/{campaignId}/characters/{id}/stabilization/healing-preview`
+`POST /api/campaigns/{campaignId}/characters/{id}/stabilization/healings`
+`GET /api/campaigns/{campaignId}/characters/{id}/stabilization/healing-history`
+
+[A16 stabilization](stabilization-effects.md): dedicated private Help check, server plan and explicit application; successful stabilization leaves 0 HP and Unconscious.
+
+`GET /api/campaigns/{campaignId}/characters/{id}/stabilization`
+`GET /api/campaigns/{campaignId}/characters/{id}/stabilization/history`
+`POST /api/campaigns/{campaignId}/characters/{id}/stabilization/rolls`
+`POST /api/campaigns/{campaignId}/characters/{id}/stabilization/preview`
+`POST /api/campaigns/{campaignId}/characters/{id}/stabilization/applications`
+
+[A15 first aid](knockout-first-aid-effects.md): save a dedicated server Medicine check, preview the bound result, then explicitly remove the original knockout record.
+
+`POST /api/campaigns/{campaignId}/attack-previews/{id}/knockout-first-aid-rolls`
+`POST /api/campaigns/{campaignId}/attack-previews/{id}/knockout-first-aid-effect`
+`POST /api/campaigns/{campaignId}/attack-previews/{id}/knockout-first-aid-completions`
+
+[A14 knockout Short Rest completion](knockout-rest-effects.md): DM reviews uninterrupted game time, previews, then explicitly removes the original record without numeric recovery.
+
+`POST /api/campaigns/{campaignId}/attack-previews/{id}/knockout-rest-effect`
+`POST /api/campaigns/{campaignId}/attack-previews/{id}/knockout-rest-completions`
+
+[A13 knockout healing](knockout-healing-effects.md): DM previews adjudicated healing, then atomically restores actual HP and removes the original A11/A12 record.
+
+`POST /api/campaigns/{campaignId}/attack-previews/{id}/knockout-healing-effect`
+`POST /api/campaigns/{campaignId}/attack-previews/{id}/knockout-healings`
+
+[A12 dagger melee knockout](dagger-knockout-effects.md) adds an independent reviewed dagger/STR-or-DEX profile; thrown attacks remain manual.
+
+`POST /api/campaigns/{campaignId}/attack-previews/{id}/dagger-knockout-effect`
+`POST /api/campaigns/{campaignId}/attack-previews/{id}/dagger-knockout-confirmations`
+
 # First playable slice: HTTP and realtime contract
 
 Contract version: 0.1. All application paths are same-origin under `/api`. Production uses HTTPS. Identifiers are opaque UUID strings; coordinates are integer grid cells, with origin at the top left. JSON field names use camelCase.
+
+[A11 bounded melee knockout](knockout-effects.md) adds a separate club melee
+choice, review, confirmation and atomic 1 HP/unconscious record; follow-up is manual.
+
+`POST /api/campaigns/{campaignId}/attack-previews/{id}/knockout-effect`
+`POST /api/campaigns/{campaignId}/attack-previews/{id}/knockout-confirmations`
+
+[A10 ordinary monster death](monster-death-effects.md) adds explicit DM treatment,
+review, separate confirmation and atomic HP/death annotation. Existing zero-HP gates remain.
+
+`POST /api/campaigns/{campaignId}/attack-previews/{id}/monster-death-effect`
+`POST /api/campaigns/{campaignId}/attack-previews/{id}/monster-death-confirmations`
+
+[A09 shortbow ammunition effects](ammunition-effects.md) add an explicit source
+arrow-counter mapping, authoritative plan and separate confirmation before APPLY.
+
+`POST /api/campaigns/{campaignId}/attack-previews/{id}/ammunition-effect`
+`POST /api/campaigns/{campaignId}/attack-previews/{id}/ammunition-confirmations`
+
+[A08 bounded damage effects](damage-effects.md) add a server-derived HP/temp HP
+plan and explicit `CONFIRM_DAMAGE` before the existing separate APPLY.
+
+`GET /api/campaigns/{campaignId}/attack-previews/{id}/damage-effect`
+
+[A07 visible-token range hints](range-hints.md) add a read-only 5R distance and
+declared reach/range comparison. The explicit [support matrix](../docs/research/range-hints-5r.md)
+excludes action legality, effects and automatic application.
+
+`POST /api/campaigns/{campaignId}/range-hints/preview`
 
 [A06 movement paths and advisory budgets](movement-paths.md) add explicit entered
 cells, character-owned spent movement and reasoned DM overrides. Legacy moves
@@ -196,6 +306,26 @@ A03c structural review, explicit confirmation and independent playable recovery:
 
 [A03d manual operations](module-operations.md): bounded editable definitions and
 original-service atomic execution, current DM before historical receipt replay.
+[A03f illustrated materials](module-materials.md) add an explicit publication
+step with independent public image copies; PUBLISH_TEXT keeps its original scope.
+[A03g portable definitions](module-portable-operations.md) add explicit module v3
+inert stable-reference combinations. [A03h explicit binding](module-bindings.md)
+reserves independent identities in new campaigns and reviews current live targets
+before saving executable definitions. Binding never executes. Later selective
+source updates, retirement and independent recovery mappings remain pending.
+
+`GET /api/campaigns/{campaignId}/module-operation-bindings`
+`POST /api/campaigns/{campaignId}/module-operation-bindings/{nodeId}/preview`
+`POST /api/campaigns/{campaignId}/module-operation-bindings/{nodeId}/bind`
+`GET /api/campaigns/{campaignId}/module-operation-bindings/{nodeId}/history`
+
+[A03h selected operation migrations](module-operation-migrations.md) add explicit
+per-node KEEP/INCOMING/RETIRE, immutable before-images and independent unbound
+recovery mappings. The original two migration gates retain their blockers.
+
+`POST /api/campaigns/{campaignId}/module-instance/operation-options`
+`POST /api/campaigns/{campaignId}/module-instance/operation-migration-impact`
+`POST /api/campaigns/{campaignId}/module-instance/operation-migrations`
 
 `GET /api/campaigns/{campaignId}/module-operations`
 `POST /api/campaigns/{campaignId}/module-operations/{id}`

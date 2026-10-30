@@ -23,6 +23,12 @@ preparation; review/execution must resolve every target and version.
 
 Each step is one strict discriminated shape:
 
+- `{kind:"PUBLISH_MATERIAL",noteId,expectedVersion}` explicitly copies a current
+  DM note and its ordered images into independent TEAM note/image identities.
+  [Illustrated publication](module-materials.md) defines byte validation, atomic
+  file lifecycle, current authorization and exact retries. It shares duplicate
+  note-target identity with PUBLISH_TEXT; the latter still rejects attachments.
+
 - `{kind:"REVEAL_TOKEN",sceneId,tokenId,expectedVersion}` reveals that token,
   preserving position/name/controllers and its character link. Character hiding
   is independent and requires its own step.

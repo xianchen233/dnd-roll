@@ -36,4 +36,17 @@ class NoteImagesTest {
     @Test void currentVisibilityAndMembershipPrecedeOldUploadReceipts()throws Exception{
         var f=new Fixture();byte[] bytes=f.png();var image=f.service.upload(f.campaign,"author",f.request,0,"TEAM",bytes,"image/png");f.readable=false;assertEquals(404,assertThrows(DomainException.class,()->f.service.upload(f.campaign,"author",f.request,0,"TEAM",bytes,"image/png")).status());assertEquals(404,assertThrows(DomainException.class,()->f.service.content(f.campaign,image.id(),"author")).status());when(f.cards.role(f.campaign,"author")).thenReturn(null);assertEquals(403,assertThrows(DomainException.class,()->f.service.upload(f.campaign,"author",f.request,0,"TEAM",bytes,"image/png")).status());
     }
+    @Test void publicationValidatesPrivateBytesAndCopiesToIndependentPublicIdentityWithoutChangingOriginal()throws Exception{
+        var f=new Fixture();when(f.cards.role(f.campaign,"author")).thenReturn(Role.DM);when(f.store.readableImage(eq(f.campaign),any(),eq("author"),eq(true))).thenReturn(true);
+        byte[] bytes=f.png();var original=f.service.upload(f.campaign,"author",f.request,0,"DM",bytes,"image/png");var source=f.saved;
+        assertEquals(List.of(new NoteImages.PublicationImage(original,source.sha256())),f.service.reviewPublication(f.campaign,List.of(original.id()),"author"));
+        var copies=f.service.copyForPublication(f.campaign,List.of(original.id()),"author");var captured=org.mockito.ArgumentCaptor.forClass(NoteImages.Image.class);
+        verify(f.store).copyImage(eq(f.campaign),captured.capture(),org.mockito.AdditionalMatchers.aryEq(bytes));var copy=captured.getValue();assertEquals(List.of(copy.metadata().id()),copies);assertNotEquals(original.id(),copy.metadata().id());assertNotEquals(source.storageKey(),copy.storageKey());assertEquals("TEAM",copy.visibility());assertEquals(source.sha256(),copy.sha256());assertEquals(source,f.saved);assertEquals(1,f.files.size());
+    }
+    @Test void publicationRejectsUnavailableMismatchedBytesAndLostAuthorityBeforeCopying()throws Exception{
+        var f=new Fixture();when(f.cards.role(f.campaign,"author")).thenReturn(Role.DM);when(f.store.readableImage(eq(f.campaign),any(),eq("author"),eq(true))).thenReturn(true);var original=f.service.upload(f.campaign,"author",f.request,0,"DM",f.png(),"image/png");var source=f.saved;
+        for(byte[] invalid:List.of(new byte[]{1},new byte[0])){f.files.put(source.storageKey(),invalid);assertEquals(503,assertThrows(DomainException.class,()->f.service.reviewPublication(f.campaign,List.of(original.id()),"author")).status());}
+        f.files.put(source.storageKey(),f.png());f.saved=new NoteImages.Image(original,source.actor(),source.visibility(),source.storageKey(),"a".repeat(64));assertEquals(503,assertThrows(DomainException.class,()->f.service.copyForPublication(f.campaign,List.of(original.id()),"author")).status());
+        f.saved=source;when(f.cards.role(f.campaign,"author")).thenReturn(Role.PLAYER);assertEquals(403,assertThrows(DomainException.class,()->f.service.copyForPublication(f.campaign,List.of(original.id()),"author")).status());verify(f.store,never()).copyImage(any(),any(),any());
+    }
 }

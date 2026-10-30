@@ -1,5 +1,29 @@
 import {expect,it,vi} from 'vitest';
 import {Api} from './api';
+it('keeps dedicated aid action, read-only plan and completion on exact encoded CSRF routes',async()=>{
+ const request=vi.fn().mockResolvedValueOnce(Response.json({token:'csrf',headerName:'X-CSRF-TOKEN'})).mockImplementation(()=>Promise.resolve(Response.json({id:'p',version:3})));const api=new Api(request),attempt={requestId:'action',expectedVersion:2,previewHash:'a'.repeat(64),targetVersion:5,helperId:'helper',helperVersion:3,reviewed:true,reason:'Reviewed action'},review={expectedVersion:3,previewHash:attempt.previewHash,targetVersion:5,helperId:'helper',helperVersion:3,rollId:'roll',reviewed:true},complete={...review,requestId:'apply',planHash:'b'.repeat(64),reason:'Reviewed result'};
+ await api.rollKnockoutFirstAid('c/x','p/x',attempt);await api.previewKnockoutFirstAid('c/x','p/x',review);await api.completeKnockoutFirstAid('c/x','p/x',complete);
+ expect(request.mock.calls.map(c=>c[0])).toEqual(['/api/auth/csrf','/api/campaigns/c%2Fx/attack-previews/p%2Fx/knockout-first-aid-rolls','/api/campaigns/c%2Fx/attack-previews/p%2Fx/knockout-first-aid-effect','/api/campaigns/c%2Fx/attack-previews/p%2Fx/knockout-first-aid-completions']);for(const [i,body]of [attempt,review,complete].entries())expect(request.mock.calls[i+1][1]).toMatchObject({method:'POST',credentials:'include',headers:{'X-CSRF-TOKEN':'csrf'},body:JSON.stringify(body)});
+});
+it('keeps rest review and completion on distinct encoded CSRF routes with exact game-time evidence',async()=>{
+ const request=vi.fn().mockResolvedValueOnce(Response.json({token:'csrf',headerName:'X-CSRF-TOKEN'})).mockImplementation(()=>Promise.resolve(Response.json({id:'p',version:3})));const api=new Api(request),review={expectedVersion:2,previewHash:'a'.repeat(64),targetVersion:5,minutes:60,interrupted:false,reviewed:true},complete={...review,requestId:'exact',planHash:'b'.repeat(64),reason:'Reviewed'};
+ await api.previewKnockoutRest('c/x','p/x',review);await api.completeKnockoutRest('c/x','p/x',complete);
+ expect(request.mock.calls.map(c=>c[0])).toEqual(['/api/auth/csrf','/api/campaigns/c%2Fx/attack-previews/p%2Fx/knockout-rest-effect','/api/campaigns/c%2Fx/attack-previews/p%2Fx/knockout-rest-completions']);expect(request.mock.calls[1][1]).toMatchObject({method:'POST',credentials:'include',headers:{'X-CSRF-TOKEN':'csrf'},body:JSON.stringify(review)});expect(request.mock.calls[2][1]).toMatchObject({method:'POST',body:JSON.stringify(complete)});
+});
+it('keeps healing review and application on distinct encoded CSRF routes without final values',async()=>{
+ const request=vi.fn().mockResolvedValueOnce(Response.json({token:'csrf',headerName:'X-CSRF-TOKEN'})).mockImplementation(()=>Promise.resolve(Response.json({id:'p',version:3})));const api=new Api(request),review={expectedVersion:2,previewHash:'a'.repeat(64),targetVersion:5,amount:4,reviewed:true},apply={...review,requestId:'exact',planHash:'b'.repeat(64),reason:'Reviewed'};
+ await api.previewKnockoutHealing('c/x','p/x',review);await api.applyKnockoutHealing('c/x','p/x',apply);
+ expect(request.mock.calls.map(c=>c[0])).toEqual(['/api/auth/csrf','/api/campaigns/c%2Fx/attack-previews/p%2Fx/knockout-healing-effect','/api/campaigns/c%2Fx/attack-previews/p%2Fx/knockout-healings']);expect(request.mock.calls[1][1]).toMatchObject({method:'POST',credentials:'include',headers:{'X-CSRF-TOKEN':'csrf'},body:JSON.stringify(review)});expect(request.mock.calls[2][1]).toMatchObject({method:'POST',body:JSON.stringify(apply)});
+});
+it('keeps ammunition read-only and confirmation CSRF bodies on distinct encoded routes',async()=>{
+ const request=vi.fn().mockResolvedValueOnce(Response.json({token:'csrf',headerName:'X-CSRF-TOKEN'})).mockImplementation(()=>Promise.resolve(Response.json({id:'p',version:1})));const api=new Api(request),review={expectedVersion:0,previewHash:'a'.repeat(64),resourceId:'arrows',reviewed:true},confirm={...review,requestId:'exact',reason:'Reviewed'};
+ await api.previewAmmunitionEffect('c/x','p/x',review);await api.confirmAmmunitionEffect('c/x','p/x',confirm);
+ expect(request.mock.calls.map(c=>c[0])).toEqual(['/api/auth/csrf','/api/campaigns/c%2Fx/attack-previews/p%2Fx/ammunition-effect','/api/campaigns/c%2Fx/attack-previews/p%2Fx/ammunition-confirmations']);expect(request.mock.calls[1][1]).toMatchObject({method:'POST',credentials:'include',headers:{'X-CSRF-TOKEN':'csrf'},body:JSON.stringify(review)});expect(request.mock.calls[2][1]).toMatchObject({method:'POST',body:JSON.stringify(confirm)});
+});
+it('reads the private damage plan with encoded identities and no mutation',async()=>{
+ const request=vi.fn().mockResolvedValue(Response.json({status:'MANUAL_REQUIRED'}));await new Api(request).attackDamageEffect('c/x','p/x');
+ expect(request).toHaveBeenCalledTimes(1);expect(request.mock.calls[0]).toEqual(['/api/campaigns/c%2Fx/attack-previews/p%2Fx/damage-effect',{credentials:'include',method:'GET',headers:{}}]);
+});
 it('keeps preview identity, full command/hash and same-origin encoded routes intact',async()=>{
  const request=vi.fn().mockResolvedValueOnce(Response.json([])).mockResolvedValueOnce(Response.json({token:'csrf',headerName:'X-CSRF-TOKEN'})).mockImplementation(()=>Promise.resolve(Response.json({id:'p',version:1})));const api=new Api(request);
  const create={requestId:'r',characterId:'a',sourceVersion:3,targetId:'b',targetVersion:5,attackId:'trusted',reviewed:true,exceptions:[],advantage:[],disadvantage:[],immunities:[],resistances:[],vulnerabilities:[]};
@@ -7,4 +31,12 @@ it('keeps preview identity, full command/hash and same-origin encoded routes int
  await api.attackPreviews('c/x');await api.createAttackPreview('c/x',create);await api.attackPreview('c/x','p/x');await api.attackPreviewCommand('c/x','p/x',command);await api.attackResults('c/x');
  expect(request.mock.calls.map(c=>c[0])).toEqual(['/api/campaigns/c%2Fx/attack-previews','/api/auth/csrf','/api/campaigns/c%2Fx/attack-previews','/api/campaigns/c%2Fx/attack-previews/p%2Fx','/api/campaigns/c%2Fx/attack-previews/p%2Fx/events','/api/campaigns/c%2Fx/attack-results']);
  expect(request.mock.calls[2][1]).toMatchObject({method:'POST',credentials:'include',body:JSON.stringify(create)});expect(request.mock.calls[4][1]).toMatchObject({method:'POST',credentials:'include',headers:{'X-CSRF-TOKEN':'csrf'},body:JSON.stringify(command)});
+});
+
+it('keeps death review and confirmation on separate encoded CSRF routes',async()=>{
+ const request=vi.fn().mockResolvedValueOnce(Response.json({token:'csrf',headerName:'X-CSRF-TOKEN'})).mockImplementation(()=>Promise.resolve(Response.json({id:'p',version:1})));const api=new Api(request),review={expectedVersion:0,previewHash:'a'.repeat(64),treatment:'MONSTER_DIES_AT_ZERO' as const,reviewed:true},confirm={...review,requestId:'exact',reason:'Reviewed'};await api.previewMonsterDeathEffect('c/x','p/x',review);await api.confirmMonsterDeathEffect('c/x','p/x',confirm);expect(request.mock.calls.map(c=>c[0])).toEqual(['/api/auth/csrf','/api/campaigns/c%2Fx/attack-previews/p%2Fx/monster-death-effect','/api/campaigns/c%2Fx/attack-previews/p%2Fx/monster-death-confirmations']);expect(request.mock.calls[1][1]).toMatchObject({method:'POST',credentials:'include',headers:{'X-CSRF-TOKEN':'csrf'},body:JSON.stringify(review)});expect(request.mock.calls[2][1]).toMatchObject({method:'POST',body:JSON.stringify(confirm)});
+});
+
+it('keeps knockout review and confirmation on separate encoded CSRF routes',async()=>{
+ const request=vi.fn().mockResolvedValueOnce(Response.json({token:'csrf',headerName:'X-CSRF-TOKEN'})).mockImplementation(()=>Promise.resolve(Response.json({id:'p',version:1})));const api=new Api(request),review={expectedVersion:0,previewHash:'a'.repeat(64),treatment:'KNOCK_OUT_MELEE' as const,reviewed:true},confirm={...review,requestId:'exact',reason:'Reviewed'};await api.previewKnockoutEffect('c/x','p/x',review);await api.confirmKnockoutEffect('c/x','p/x',confirm);expect(request.mock.calls.map(c=>c[0])).toEqual(['/api/auth/csrf','/api/campaigns/c%2Fx/attack-previews/p%2Fx/knockout-effect','/api/campaigns/c%2Fx/attack-previews/p%2Fx/knockout-confirmations']);expect(request.mock.calls[1][1]).toMatchObject({method:'POST',credentials:'include',headers:{'X-CSRF-TOKEN':'csrf'},body:JSON.stringify(review)});expect(request.mock.calls[2][1]).toMatchObject({method:'POST',body:JSON.stringify(confirm)});
 });

@@ -57,7 +57,20 @@ public final class CombatService {
             var a=new Action(UUID.randomUUID(),0,0,source.id(),source.sheet().name(),source.version(),d.targetId(),cards.card(c,d.targetId()).sheet().name(),attack,d.visibility(),actor,clock.instant(),"",List.of());store.save(c,a,true);return finish(c,actor,d.requestId(),fp,new Ack(a.id(),0),d.visibility().equals("DM"));
         });
     }
-    public Ack append(UUID c,UUID id,String actor,Command command){
+    public Ack append(UUID c,UUID id,String actor,Command command){return append(c,id,actor,command,null);}
+    Ack appendMonsterDeath(UUID c,UUID id,String actor,Command command,UUID preview){
+        if(preview==null||!command.kind().equals("APPLY")||command.changes().size()!=1||command.changes().getFirst().hp()!=0||command.changes().getFirst().tempHp()!=0)throw CharacterSheet.invalid();
+        return append(c,id,actor,command,MonsterDeathEffect.annotation(preview));
+    }
+    Ack appendKnockout(UUID c,UUID id,String actor,Command command,UUID preview){
+        if(preview==null||!command.kind().equals("APPLY")||command.changes().size()!=1||command.changes().getFirst().hp()!=1||command.changes().getFirst().tempHp()!=0)throw CharacterSheet.invalid();
+        return append(c,id,actor,command,KnockoutEffect.annotation(preview));
+    }
+    Ack appendDaggerKnockout(UUID c,UUID id,String actor,Command command,UUID preview){
+        if(preview==null||!command.kind().equals("APPLY")||command.changes().size()!=1||command.changes().getFirst().hp()!=1||command.changes().getFirst().tempHp()!=0)throw CharacterSheet.invalid();
+        return append(c,id,actor,command,DaggerKnockoutEffect.annotation(preview));
+    }
+    private Ack append(UUID c,UUID id,String actor,Command command,Condition annotation){
         CharacterSheet.text(command.reason(),1000,false);CharacterSheet.text(command.rollId(),36,false);CharacterSheet.text(command.correctionOf(),36,false);CharacterSheet.text(command.verdict(),10,false);
         if(command.expectedVersion()<0||!Set.of("LINK_ROLL","VERDICT","APPLY","CORRECT").contains(command.kind())||command.changes()==null||command.changes().size()>2)throw CharacterSheet.invalid();
         return locked(c,actor,command.requestId(),()->{
@@ -70,7 +83,7 @@ public final class CombatService {
                 if(!roll.characterId().equals(old.characterId().toString())||!Set.of("attack:"+old.attack().id(),"damage:"+old.attack().id()).contains(roll.key()))throw CharacterSheet.invalid();
             }else if(!command.rollId().isEmpty())throw CharacterSheet.invalid();
             for(var change:command.changes()){if(change==null||!List.of(old.characterId(),old.targetId()).contains(change.characterId()))throw CharacterSheet.invalid();card(c,change.characterId(),r);}
-            String fingerprint=fp(c,id,command);var prior=replay(actor,command.requestId(),fingerprint);if(prior!=null)return prior;
+            String fingerprint=annotation==null?fp(c,id,command):fp(c,id,command,annotation);var prior=replay(actor,command.requestId(),fingerprint);if(prior!=null)return prior;
             AccountPolicy.version(r==Role.DM?old.version():old.publicVersion(),command.expectedVersion());
             boolean privateOnly=old.visibility().equals("DM")||(roll!=null&&roll.visibility().equals("DM"));
             if(link){var linked=roll; if(old.events().stream().anyMatch(e->e.roll()!=null&&e.roll().id().equals(linked.id())))throw new DomainException("VERSION_CONFLICT",409,"Roll already linked");}
@@ -88,7 +101,7 @@ public final class CombatService {
                 }
                 if(!command.verdict().isEmpty()&&!Set.of("HIT","MISS","OTHER").contains(command.verdict()))throw CharacterSheet.invalid();
             }
-            var applied=apply(c,actor,command);
+            var applied=apply(c,actor,command,annotation);
             var event=new Event(UUID.randomUUID(),actor,clock.instant(),command.kind(),command.verdict(),command.reason(),command.correctionOf(),roll,applied,privateOnly);
             var journal=new ArrayList<>(old.events());journal.add(event);
             // A private correction may not rewrite a public verdict implicitly.
@@ -97,8 +110,14 @@ public final class CombatService {
             store.save(c,next,false);return finish(c,actor,command.requestId(),fingerprint,new Ack(id,r==Role.DM?next.version():next.publicVersion()),privateOnly);
         });
     }
-    private List<Applied> apply(UUID c,String actor,Command command){
+    private List<Applied> apply(UUID c,String actor,Command command,Condition annotation){
         var changes=reviewChanges(c,command.changes());
+        if(annotation!=null){
+            var change=changes.getFirst();var after=change.after();var sheet=after.sheet();
+            if(!sheet.conditions().isEmpty())throw CharacterSheet.invalid();
+            var marked=sheet.change(sheet.name(),sheet.combat(),sheet.resources(),List.of(annotation),sheet.overrides());marked.validate();
+            changes=List.of(new Applied(change.before(),new CharacterService.Card(after.id(),c,after.version(),after.hidden(),after.shareFull(),after.importReview(),after.controllers(),marked)));
+        }
         for(var change:changes){cards.save(change.after(),false);cards.history(new CharacterService.History(change.after().version(),actor,"COMBAT_"+command.kind(),command.reason(),clock.instant(),change.before(),change.after()));}
         return changes;
     }

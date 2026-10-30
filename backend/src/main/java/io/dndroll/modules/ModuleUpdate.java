@@ -8,7 +8,7 @@ import tools.jackson.databind.json.JsonMapper;
 public final class ModuleUpdate {
     private static final JsonMapper JSON=JsonMapper.builder().build();
     private static final JsonNode NULL=JSON.readTree("null");
-    private static final Map<String,String> IDENTITIES=Map.of("/nodes","id","/play/scenes","nodeId","/play/units","nodeId","/play/placements","id","/manifest/assets","id","/manifest/dependencies","id");
+    private static final Map<String,String> IDENTITIES=Map.of("/nodes","id","/play/scenes","nodeId","/play/units","nodeId","/play/placements","id","/manifest/assets","id","/manifest/dependencies","id","/operations/definitions","nodeId");
     public record Change(String path,JsonNode baseline,JsonNode current,JsonNode incoming,boolean conflict) {}
     public record Selection(String path,String choice) {}
     public static ModuleBlueprint.Document select(ModuleBlueprint.Document baseline,ModuleBlueprint.Document current,ModuleBlueprint.Document incoming,List<Selection> selections) {

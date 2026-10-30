@@ -1,5 +1,14 @@
 # A02: templates, customizations and independent campaigns
 
+[A03g v3 portable definitions](module-portable-operations.md) add a separate
+versioned operations envelope. The v2 play shape below remains unchanged. Current
+copy/edit/save-as/download routes preserve either exact document shape; nonempty
+portable definitions now reserve independent unbound identities on campaign
+creation; [A03h binding](module-bindings.md) requires explicit current-target
+review before saving executable definitions. [Selected operation migration](module-operation-migrations.md)
+adds explicit source adoption/retirement and independent UNBOUND recovery mappings;
+the original text/structural routes retain their portable-definition blockers.
+
 Source packages remain immutable A01 library records. A customization has its own
 UUID and version, immutable source package ID/SHA and editing baseline, and a
 current editable version-2 document. Creating another copy never shares mutable

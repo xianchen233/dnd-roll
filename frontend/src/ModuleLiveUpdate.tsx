@@ -2,6 +2,7 @@ import {useLayoutEffect,useRef,useState} from 'react';
 import type {Api} from './api';
 import type {ModuleInstance,ModuleLiveEvidence,ModuleLiveImpact,ModuleMigrationEvidence,ModuleMigrationImpact} from './modules';
 import {useModuleTask} from './useModuleTask';
+import {ModuleOperationMigration} from './ModuleOperationMigration';
 type Props={api:Api;campaignId:string;instance:ModuleInstance;revision:number;disabled?:boolean;onDenied():void;onApplied():void|Promise<unknown>;onCreated?(id:string):void|Promise<unknown>};
 type Review={kind:'text';value:ModuleLiveImpact}|{kind:'structure';value:ModuleMigrationImpact};
 function confirmationText(value:string){
@@ -38,5 +39,5 @@ function Panel({api,campaignId:c,instance,revision,disabled,onDenied,onApplied,o
  {review.kind==='structure'&&<><details><summary>查看迁移前实况与恢复范围</summary><pre>{JSON.stringify(review.value.runtime,null,2)}</pre></details><p>恢复副本拥有独立身份，仅归迁移 DM 控制；原团历史与战斗留在原团。恢复副本不会撤销后续游玩。</p>{confirmations.map(x=><div key={x}><label><input type="checkbox" aria-label={`确认 ${x}`} checked={confirmed.includes(x)} onChange={e=>setConfirmed(old=>e.target.checked?[...old,x]:old.filter(s=>s!==x))}/><span>{confirmationText(x)}</span></label><details><summary>查看本项路径与精确确认标识</summary><code>{x}</code></details></div>)}</>}
  <p>影响校验 {review.value.impactHash}</p><button disabled={blocked||(review.kind==='structure'&&confirmations.some(x=>!confirmed.includes(x)))} onClick={apply}>{review.kind==='text'?'应用备团文字更新':'确认并迁移实况'}</button></>}
  </fieldset><button onClick={()=>void evidence()}>读取实况更新历史</button>{texts?.map(h=><details key={'t'+h.version}><summary>文字更新版本 {h.version} · {h.actor}</summary><pre>{JSON.stringify(h,null,2)}</pre></details>)}{migrations?.map(h=><article key={h.version}><p>结构迁移版本 {h.version} · {h.actor} · 恢复战役 {h.recoveryCampaignId}</p>{onCreated&&<button onClick={()=>void Promise.resolve(onCreated(h.recoveryCampaignId)).catch(()=>{if(task.valid(task.capture()))task.setMessage('恢复战役入口读取失败，请刷新战役列表。');})}>进入恢复战役 {h.version}</button>}<details><summary>查看迁移证据与前像 {h.version}</summary><pre>{JSON.stringify(h,null,2)}</pre></details></article>)}
- </>}</section>;
+ </>}<ModuleOperationMigration api={api} campaignId={c} instance={instance} revision={revision} disabled={disabled} onDenied={onDenied} onApplied={onApplied}/></section>;
 }

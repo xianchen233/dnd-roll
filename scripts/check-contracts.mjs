@@ -14,6 +14,40 @@ const [apiText, eventText, readme, accounts, scenes, assets, tokens, mapVisibili
   read('../contracts/characters.md'),
 ]);
 const api = JSON.parse(apiText);
+for(const suffix of ['knockout-first-aid-rolls','knockout-first-aid-effect','knockout-first-aid-completions'])assert.ok(api.paths['/api/campaigns/{campaignId}/attack-previews/{id}/'+suffix]?.post,`A15 ${suffix} route missing`);
+const aidRoute=api.paths['/api/campaigns/{campaignId}/attack-previews/{id}/knockout-first-aid-effect'].post;
+assert.equal(aidRoute['x-read-only'],true);assert.ok(aidRoute.parameters.some(p=>p.$ref==='#/components/parameters/CsrfHeader'));
+assert.equal(aidRoute.requestBody.content['application/json'].schema.$ref,'#/components/schemas/FirstAidReview');
+for(const code of ['200','400','401','403','404','409'])assert.ok(aidRoute.responses[code]);
+for(const kind of ['ROLL_KNOCKOUT_FIRST_AID','END_KNOCKOUT_FIRST_AID'])assert.ok(api.components.schemas.AttackPreviewEvent.properties.kind.enum.includes(kind));
+for(const suffix of ['knockout-rest-effect','knockout-rest-completions'])assert.ok(api.paths['/api/campaigns/{campaignId}/attack-previews/{id}/'+suffix]?.post,`A14 ${suffix} route missing`);
+const restRoute=api.paths['/api/campaigns/{campaignId}/attack-previews/{id}/knockout-rest-effect'].post;
+assert.equal(restRoute['x-read-only'],true);assert.ok(restRoute.parameters.some(p=>p.$ref==='#/components/parameters/CsrfHeader'));
+assert.equal(restRoute.requestBody.content['application/json'].schema.$ref,'#/components/schemas/KnockoutRestReview');
+for(const code of ['200','400','401','403','404','409'])assert.ok(restRoute.responses[code]);
+const restComplete=api.components.schemas.KnockoutRestComplete;
+assert.equal(restComplete.additionalProperties,false);assert.deepEqual([...restComplete.required].sort(),['requestId','expectedVersion','previewHash','targetVersion','minutes','interrupted','reviewed','planHash','reason'].sort());
+assert.ok(api.components.schemas.AttackPreviewEvent.properties.kind.enum.includes('END_KNOCKOUT_REST'));
+for(const suffix of ['knockout-healing-effect','knockout-healings'])assert.ok(api.paths['/api/campaigns/{campaignId}/attack-previews/{id}/'+suffix]?.post,`A13 ${suffix} route missing`);
+const healingRoute=api.paths['/api/campaigns/{campaignId}/attack-previews/{id}/knockout-healing-effect'].post;
+assert.equal(healingRoute['x-read-only'],true);
+assert.ok(healingRoute.parameters.some(p=>p.$ref==='#/components/parameters/CsrfHeader'));
+assert.equal(healingRoute.requestBody.content['application/json'].schema.$ref,'#/components/schemas/KnockoutHealingReview');
+for(const code of ['200','400','401','403','404','409'])assert.ok(healingRoute.responses[code]);
+const healingApply=api.components.schemas.KnockoutHealingApply;
+assert.equal(healingApply.additionalProperties,false);
+assert.deepEqual([...healingApply.required].sort(),['requestId','expectedVersion','previewHash','targetVersion','amount','reviewed','planHash','reason'].sort());
+assert.equal(healingApply.properties.amount.minimum,1);assert.equal(healingApply.properties.amount.maximum,100000);
+assert.ok(api.components.schemas.AttackPreviewEvent.properties.kind.enum.includes('HEAL_KNOCKOUT'));
+for(const suffix of ['ammunition-effect','ammunition-confirmations'])assert.ok(api.paths['/api/campaigns/{campaignId}/attack-previews/{id}/'+suffix]?.post,`A09 ${suffix} route missing`);
+assert.ok(api.paths['/api/campaigns/{campaignId}/attack-previews/{id}/damage-effect']?.get,'A08 damage effect route missing');
+const rangeRoute=api.paths['/api/campaigns/{campaignId}/range-hints/preview']?.post;
+assert.ok(rangeRoute,'A07 range hint route missing');
+assert.equal(rangeRoute['x-read-only'],true);
+assert.ok(rangeRoute.parameters.some(p=>p.$ref==='#/components/parameters/CsrfHeader'));
+assert.equal(rangeRoute.requestBody.content['application/json'].schema.$ref,'#/components/schemas/RangeHintRequest');
+for(const code of ['200','400','401','403','404','409'])assert.ok(rangeRoute.responses[code],`A07 missing ${code}`);
+for(const [suffix,method]of [['','get'],['/{nodeId}/preview','post'],['/{nodeId}/bind','post'],['/{nodeId}/history','get']])assert.ok(api.paths['/api/campaigns/{campaignId}/module-operation-bindings'+suffix]?.[method],`A03h missing ${method} ${suffix}`);
 for(const [suffix,method]of [['','get'],['/preview','post'],['/paths','post'],['/adjustments','post']])assert.ok(api.paths['/api/campaigns/{campaignId}/tokens/{tokenId}/movement'+suffix]?.[method],`A06 missing ${method} ${suffix}`);
 for(const [suffix,method]of [['/attack-previews','get'],['/attack-previews','post'],['/attack-previews/{id}','get'],['/attack-previews/{id}/events','post'],['/attack-results','get']])assert.ok(api.paths['/api/campaigns/{campaignId}'+suffix]?.[method],`A05 missing ${method} ${suffix}`);
 for(const [suffix,method] of [['','get'],['/{id}','post'],['/{id}/impact','post'],['/{id}/executions','post'],['/{id}/executions','get']])assert.ok(api.paths['/api/campaigns/{campaignId}/module-operations'+suffix]?.[method],`A03d missing ${method} ${suffix}`);
@@ -99,6 +133,25 @@ function checkRefs(value) {
   Object.values(value).forEach(checkRefs);
 }
 
+const healingExample={profile:'5R-SRD-5.2.1-KNOCKOUT-HEALING-V1',status:'CANDIDATE',reasons:[],hp:5,tempHp:0,healed:4,conditionId:'a11-knockout:origin',targetVersion:2,hash:'a'.repeat(64)};
+const aidExample={profile:'5R-SRD-5.2.1-KNOCKOUT-FIRST-AID-V1',status:'CANDIDATE',reasons:[],dc:10,total:10,hp:1,tempHp:0,conditionId:'a11-knockout:origin',targetVersion:2,hash:'a'.repeat(64)};
+validate(api.components.schemas.FirstAidPlan,aidExample);validate(api.components.schemas.FirstAidPlan,{...aidExample,status:'MANUAL_REQUIRED',reasons:['FIRST_AID_CHECK_FAILED'],total:9,hp:null,tempHp:null,conditionId:null});
+const aidAttempt={requestId:'00000000-0000-0000-0000-000000000015',expectedVersion:2,previewHash:'a'.repeat(64),targetVersion:2,helperId:'00000000-0000-0000-0000-000000000016',helperVersion:3,reviewed:true,reason:'Action reviewed'};
+validate(api.components.schemas.FirstAidAttempt,aidAttempt);
+const aidReview={expectedVersion:3,previewHash:aidAttempt.previewHash,targetVersion:2,helperId:aidAttempt.helperId,helperVersion:3,rollId:'00000000-0000-0000-0000-000000000017',reviewed:true};
+validate(api.components.schemas.FirstAidReview,aidReview);const aidComplete={...aidReview,requestId:aidAttempt.requestId,planHash:'b'.repeat(64),reason:'Result reviewed'};validate(api.components.schemas.FirstAidComplete,aidComplete);
+for(const patch of [{total:20},{dc:5},{hp:1},{conditionId:'client'},{helperVersion:-1},{reviewed:null}])assert.throws(()=>validate(api.components.schemas.FirstAidComplete,{...aidComplete,...patch}));
+const restExample={profile:'5R-SRD-5.2.1-KNOCKOUT-REST-V1',status:'CANDIDATE',reasons:[],hp:1,tempHp:0,conditionId:'a11-knockout:origin',targetVersion:2,hash:'a'.repeat(64)};
+validate(api.components.schemas.KnockoutRestPlan,restExample);validate(api.components.schemas.KnockoutRestPlan,{...restExample,status:'MANUAL_REQUIRED',reasons:['UNINTERRUPTED_REST_REQUIRED'],hp:null,tempHp:null,conditionId:null});
+const restRequest={requestId:'00000000-0000-0000-0000-000000000014',expectedVersion:2,previewHash:'a'.repeat(64),targetVersion:2,minutes:60,interrupted:false,reviewed:true,planHash:'b'.repeat(64),reason:'Reviewed'};
+validate(restComplete,restRequest);
+for(const patch of [{minutes:-1},{minutes:60.5},{minutes:100001},{hp:1},{conditionId:'client'},{interrupted:null},{reviewed:null}])assert.throws(()=>validate(restComplete,{...restRequest,...patch}));
+validate(api.components.schemas.KnockoutHealingPlan,healingExample);
+validate(api.components.schemas.KnockoutHealingPlan,{...healingExample,status:'MANUAL_REQUIRED',reasons:['NO_ACTUAL_HEALING'],hp:null,tempHp:null,healed:null,conditionId:null});
+const healingRequest={requestId:'00000000-0000-0000-0000-000000000013',expectedVersion:2,previewHash:'a'.repeat(64),targetVersion:2,amount:4,reviewed:true,planHash:'b'.repeat(64),reason:'Reviewed'};
+validate(healingApply,healingRequest);
+for(const patch of [{amount:0},{amount:1.5},{amount:100001},{hp:5},{conditionId:'client'},{reviewed:null}])assert.throws(()=>validate(healingApply,{...healingRequest,...patch}));
+
 assert.equal(api.openapi, '3.1.0');
 assert.equal(api.jsonSchemaDialect, 'https://json-schema.org/draft/2020-12/schema');
 assert.equal(event.$schema, api.jsonSchemaDialect);
@@ -116,6 +169,14 @@ const actualOperations = Object.entries(api.paths).flatMap(([path, item]) =>
   Object.keys(item).filter((method) => ['get', 'post'].includes(method))
     .map((method) => `${method.toUpperCase()} ${path}`));
 assert.deepEqual(actualOperations.sort(), [...new Set(documentedOperations)].sort());
+const rangeSchemas=api.components.schemas;
+const rangeRequest={sceneId:'00000000-0000-0000-0000-000000000001',sceneVersion:0,sourceId:'00000000-0000-0000-0000-000000000002',sourceVersion:0,targetId:'00000000-0000-0000-0000-000000000003',targetVersion:0,profile:'GRID_5R_5FT_RANGE_V1',reviewed:true,mode:'RANGED',normalFeet:10,longFeet:15};
+validate(rangeSchemas.RangeHintRequest,rangeRequest);
+for(const field of Object.keys(rangeRequest)){const bad={...rangeRequest};delete bad[field];assert.throws(()=>validate(rangeSchemas.RangeHintRequest,bad));}
+for(const extra of [{x:1},{actor:'forged'},{hidden:true},{normalFeet:2.5},{longFeet:100001},{sceneVersion:9007199254740992},{profile:'2014'},{mode:'SPELL_AREA'},{reviewed:'true'}])assert.throws(()=>validate(rangeSchemas.RangeHintRequest,{...rangeRequest,...extra}));
+validate(rangeSchemas.RangeHintResult,{status:'CANDIDATE',distanceFeet:15,band:'LONG_RANGE',reason:''});
+validate(rangeSchemas.RangeHintResult,{status:'MANUAL_REQUIRED',distanceFeet:null,band:null,reason:'GRID_REQUIRES_MANUAL'});
+assert.throws(()=>validate(rangeSchemas.RangeHintResult,{status:'MANUAL_REQUIRED',distanceFeet:15,band:'LONG_RANGE',reason:'GRID_REQUIRES_MANUAL'}));
 assert.deepEqual(api.security, [{ sessionCookie: [] }]);
 assert.equal(api.components.securitySchemes.sessionCookie.in, 'cookie');
 for (const [path, item] of Object.entries(api.paths)) {
@@ -134,6 +195,39 @@ assert.deepEqual(api.paths['/api/auth/csrf'].get.security, []);
 assert.deepEqual(api.paths['/api/auth/login'].post.security, []);
 assert.equal(api.paths['/api/auth/logout'].post.responses['204'].content, undefined);
 const schemas = api.components.schemas;
+const ammunitionSample={expectedVersion:0,previewHash:'a'.repeat(64),resourceId:'arrows',reviewed:true};
+const ammunitionConfirm={...ammunitionSample,requestId:'00000000-0000-4000-8000-000000000001',reason:'Explicit arrow mapping and exceptions reviewed'};
+for(const [schema,sample]of [[schemas.AmmunitionReview,ammunitionSample],[schemas.AmmunitionConfirm,ammunitionConfirm]]){
+ validate(schema,sample);for(const key of Object.keys(sample)){const bad={...sample};delete bad[key];assert.throws(()=>validate(schema,bad));assert.throws(()=>validate(schema,{...sample,[key]:null}));}
+ for(const bad of [{actor:'dm'},{changes:[]},{amount:1},{hp:1},{resourceId:''},{reviewed:'true'},{previewHash:'bad'},{expectedVersion:-1}])assert.throws(()=>validate(schema,{...sample,...bad}));
+}
+const ammunitionPlan={profile:'5R-SRD-5.2.1-SHORTBOW-AMMO-V1',status:'CANDIDATE',reasons:[],resourceId:'arrows',before:1,after:0,hp:20,tempHp:1};validate(schemas.AmmunitionEffect,ammunitionPlan);
+validate(schemas.AmmunitionEffect,{...ammunitionPlan,status:'MANUAL_REQUIRED',reasons:['INSUFFICIENT_AMMUNITION'],before:null,after:null,hp:null,tempHp:null});
+for(const bad of [{...ammunitionPlan,profile:'2014'},{...ammunitionPlan,after:-1},{...ammunitionPlan,status:'MANUAL_REQUIRED',reasons:['INSUFFICIENT_AMMUNITION']},{...ammunitionPlan,amount:1}])assert.throws(()=>validate(schemas.AmmunitionEffect,bad));
+assert.ok(schemas.AttackPreviewEvent.properties.kind.enum.includes('CONFIRM_AMMUNITION'));
+assert.ok(!schemas.AttackPreviewCommand.properties.kind.enum.includes('CONFIRM_AMMUNITION'));
+for(const suffix of ['ammunition-effect','ammunition-confirmations']){const route=api.paths['/api/campaigns/{campaignId}/attack-previews/{id}/'+suffix].post;assert.equal(route['x-read-only'],suffix==='ammunition-effect');for(const response of Object.values(route.responses))assert.equal(response.headers['Cache-Control'].schema.const,'no-store, private');}
+const damageRoute=api.paths['/api/campaigns/{campaignId}/attack-previews/{id}/damage-effect'].get;
+assert.equal(damageRoute['x-read-only'],true);assert.equal(damageRoute['x-required-role'],'DM');
+for(const response of Object.values(damageRoute.responses))assert.equal(response.headers['Cache-Control'].schema.const,'no-store, private');
+assert.ok(schemas.AttackPreviewCommand.properties.kind.enum.includes('CONFIRM_DAMAGE'));
+assert.ok(schemas.AttackPreviewEvent.properties.kind.enum.includes('CONFIRM_DAMAGE'));
+const damagePlan={profile:'5R-SRD-5.2.1-DAMAGE-HP-V1',status:'CANDIDATE',reasons:[],hp:18,tempHp:0,absorbed:2,hpLoss:2};
+validate(schemas.DamageEffect,damagePlan);
+validate(schemas.DamageEffect,{...damagePlan,status:'MANUAL_REQUIRED',reasons:['ZERO_HP_REQUIRES_MANUAL'],hp:null,tempHp:null,absorbed:null,hpLoss:null});
+for(const bad of [{...damagePlan,profile:'2014'},{...damagePlan,hp:-1},{...damagePlan,damage:4},{...damagePlan,status:'MANUAL_REQUIRED',reasons:['ZERO_HP_REQUIRES_MANUAL']},{...damagePlan,status:'CANDIDATE',reasons:['CONDITIONS_REQUIRE_MANUAL']}])assert.throws(()=>validate(schemas.DamageEffect,bad));
+const bindingReviewSample={expectedVersion:1,operationVersion:0,instanceVersion:2,campaignVersion:3},bindingBindSample={...bindingReviewSample,requestId:'00000000-0000-4000-8000-000000000001',impactHash:'a'.repeat(64),reason:'Explicit current targets'};
+for(const [schema,sample]of [[schemas.ModuleBindingReview,bindingReviewSample],[schemas.ModuleBindingBind,bindingBindSample]]){validate(schema,sample);for(const field of Object.keys(sample)){const broken={...sample};delete broken[field];assert.throws(()=>validate(schema,broken));assert.throws(()=>validate(schema,{...sample,[field]:null}));}for(const extra of ['steps','actor','automatic','sourceVersion'])assert.throws(()=>validate(schema,{...sample,[extra]:'forged'}));}
+for(const bad of [{...bindingReviewSample,expectedVersion:0},{...bindingReviewSample,operationVersion:-1},{...bindingReviewSample,instanceVersion:0.5}])assert.throws(()=>validate(schemas.ModuleBindingReview,bad));
+for(const bad of [{...bindingBindSample,reason:''},{...bindingBindSample,reason:'x'.repeat(1001)},{...bindingBindSample,impactHash:'bad'}])assert.throws(()=>validate(schemas.ModuleBindingBind,bad));
+const selectedReviewSample={expectedVersion:0,customizationVersion:1,campaignVersion:2,selections:[{nodeId:'10000000-0000-4000-8000-000000000001',choice:'KEEP',bindingVersion:2,operationVersion:3}]};
+for(const choice of ['KEEP','INCOMING','RETIRE'])validate(schemas.ModuleOperationMigrationReview,{...selectedReviewSample,selections:[{...selectedReviewSample.selections[0],choice}]});
+for(const field of Object.keys(selectedReviewSample)){const broken={...selectedReviewSample};delete broken[field];assert.throws(()=>validate(schemas.ModuleOperationMigrationReview,broken));}
+for(const bad of [{...selectedReviewSample,actor:'forged'},{...selectedReviewSample,selections:[{...selectedReviewSample.selections[0],choice:'DELETE'}]},{...selectedReviewSample,selections:[{...selectedReviewSample.selections[0],operationVersion:-1}]},{...selectedReviewSample,selections:Array(201).fill(selectedReviewSample.selections[0])}])assert.throws(()=>validate(schemas.ModuleOperationMigrationReview,bad));
+validate(schemas.ModuleOperationMigrationApply,{...selectedReviewSample,requestId:'10000000-0000-4000-8000-000000000002',impactHash:'a'.repeat(64),confirmations:['OPERATION stable KEEP']});
+for(const suffix of ['operation-options','operation-migration-impact','operation-migrations']){const p=api.paths['/api/campaigns/{campaignId}/module-instance/'+suffix].post;assert.equal(p['x-read-only'],suffix!=='operation-migrations');assert.ok(p.parameters.some(x=>x.$ref==='#/components/parameters/CsrfHeader'));assert.equal(p.responses['403'].headers['Cache-Control'].schema.const,'no-store, private');}
+assert.equal(api.paths['/api/campaigns/{campaignId}/module-operation-bindings/{nodeId}/preview'].post['x-read-only'],true);
+assert.match(api.paths['/api/campaigns/{campaignId}/module-operation-bindings/{nodeId}/bind'].post['x-idempotency'].authorization,/current target.*before receipt replay/);
 const movementSample={requestId:'00000000-0000-4000-8000-000000000001',expectedVersion:0,sceneVersion:1,characterVersion:2,budgetVersion:'00000000-0000-4000-8000-000000000002',turnKey:42,reviewed:true,path:[{x:2,y:2,mode:'WALK',difficult:false}],override:false,cost:0,reason:''};
 validate(schemas.MovementPath,movementSample);
 for(const key of Object.keys(movementSample)){const invalid={...movementSample};delete invalid[key];assert.throws(()=>validate(schemas.MovementPath,invalid));assert.throws(()=>validate(schemas.MovementPath,{...movementSample,[key]:null}));}
@@ -156,6 +250,10 @@ const opId='00000000-0000-4000-8000-000000000001';
 const opStep={kind:'REVEAL_TOKEN',sceneId:opId,tokenId:opId,expectedVersion:0};
 const opSave={requestId:opId,expectedVersion:0,name:'中文组合',steps:[opStep]};
 validate(schemas.ModuleOperationSave,opSave);
+const materialStep={kind:'PUBLISH_MATERIAL',noteId:opId,expectedVersion:0};
+validate(schemas.ModuleOperationSave,{...opSave,steps:[materialStep]});
+for(const field of Object.keys(materialStep)){const missing={...materialStep};delete missing[field];assert.throws(()=>validate(schemas.ModuleOperationStep,missing));assert.throws(()=>validate(schemas.ModuleOperationStep,{...materialStep,[field]:null}));}
+for(const extra of [{attachments:[]},{visibility:'TEAM'},{actor:'forged'}])assert.throws(()=>validate(schemas.ModuleOperationStep,{...materialStep,...extra}));
 for(const invalid of [{...opSave,steps:[]},{...opSave,steps:Array(21).fill(opStep)},{...opSave,actor:'forged'},{...opSave,steps:[{...opStep,expectedVersion:0.5}]},{...opSave,steps:[{...opStep,hidden:false}]},{...opSave,steps:[{kind:'SCRIPT',code:'anything'}]}])assert.throws(()=>validate(schemas.ModuleOperationSave,invalid));
 for(const field of Object.keys(opSave)){const missing={...opSave};delete missing[field];assert.throws(()=>validate(schemas.ModuleOperationSave,missing));assert.throws(()=>validate(schemas.ModuleOperationSave,{...opSave,[field]:null}));}
 for(const step of [{kind:'REVEAL_CHARACTER',characterId:opId,expectedVersion:0},{kind:'PUBLISH_TEXT',noteId:opId,expectedVersion:0},{kind:'START_ENCOUNTER',expectedVersion:0,initiativeVersion:2,reason:'DM starts'}])validate(schemas.ModuleOperationStep,step);
@@ -743,7 +841,7 @@ for (const field of ['hp', 'maxHp', 'resources', 'notes', 'controllers', 'sheet'
 for (const path of Object.keys(api.paths).filter(p => p.includes('/characters'))) {
   for (const [method, op] of Object.entries(api.paths[path]).filter(([method]) => ['get', 'post'].includes(method))) {
     assert.ok(op['x-character-permission']);
-    if (method === 'post' && !path.endsWith('/content-preview')) { assert.equal(op['x-idempotency'].namespace, 'character-commands'); assert.match(op['x-idempotency'].authorization, /before receipt replay/); assert.match(op['x-idempotency'].samePayload, /before stale.*no mutation or event/); }
+    if (method === 'post' && !path.endsWith('/content-preview') && !path.endsWith('/stabilization/preview') && !path.endsWith('/stabilization/healing-preview') && !path.endsWith('/stabilization/damage-preview') && !path.endsWith('/restabilization/preview') && !path.endsWith('/restabilization/healing-preview') && !path.endsWith('/restabilization/damage-preview') && !path.endsWith('/instability/healing-preview')) { assert.equal(op['x-idempotency'].namespace, path.includes('/stabilization/')?'stabilization-commands':'character-commands'); assert.match(op['x-idempotency'].authorization, /before receipt replay/); assert.match(op['x-idempotency'].samePayload, /before stale.*no mutation or event/); }
   }
 }
 assert.deepEqual(schemas.CharacterSource.properties.rules.enum, ['5R', '2014', 'CUSTOM']);
@@ -828,7 +926,8 @@ for(const invalid of [{...moduleCommand,actor:'forged'},{...moduleCommand,expect
 const moduleManifest={format:'dnd-roll.module',formatVersion:1,moduleId:id,moduleVersion:'1.2.3',name:'Synthetic',rules:'5R',rights:'Original',dependencies:[],content:{size:10,sha256:'a'.repeat(64)},assets:[]};
 validate(schemas.ModuleManifest,moduleManifest);
 validate(schemas.ModuleManifest,{...moduleManifest,formatVersion:2});
-for(const invalid of [{...moduleManifest,moduleVersion:'01.2.3'},{...moduleManifest,formatVersion:3},{...moduleManifest,script:'run()'},{...moduleManifest,rules:'2024'}])assert.throws(()=>validate(schemas.ModuleManifest,invalid));
+validate(schemas.ModuleManifest,{...moduleManifest,formatVersion:3});
+for(const invalid of [{...moduleManifest,moduleVersion:'01.2.3'},{...moduleManifest,formatVersion:4},{...moduleManifest,script:'run()'},{...moduleManifest,rules:'2024'}])assert.throws(()=>validate(schemas.ModuleManifest,invalid));
 const moduleNode={id,kind:'SCENE',name:'Literal text',text:'<script>literal</script>',visibility:'DM',nodeIds:[],assetIds:[],dependencyIds:[]};validate(schemas.ModuleDocument,{nodes:[moduleNode]});
 for(const invalid of [{...moduleNode,script:'x'},{...moduleNode,assetIds:[id,id]},{...moduleNode,text:'x'.repeat(10001)}])assert.throws(()=>validate(schemas.ModuleNode,invalid));
 const moduleRoot=api.paths['/api/campaigns/{campaignId}/module-packages'];assert.match(moduleRoot.post['x-idempotency'].authorization,/current DM before receipt replay/);
@@ -836,7 +935,138 @@ for(const [suffix,fields]of [['',['command','file']],['/preview',['file']]]){con
 assert.match(api['x-modules-policy'].validation,/no extraction or package code execution/);assert.match(api['x-modules-policy'].atomicity,/BYTEA.*one transaction.*P09/);
 const moduleDefinition={nodes:[moduleNode],play:{scenes:[{nodeId:id,width:20,height:15,gridSize:48,map:null}],units:[],placements:[],admissionMode:'REVIEW',approvedDependencyIds:[]}};
 validate(schemas.ModuleDefinition,moduleDefinition);
+const portableDefinition={...moduleDefinition,operations:{formatVersion:1,definitions:[{nodeId:id,steps:[{kind:'REVEAL_TOKEN',placementId:id},{kind:'REVEAL_CHARACTER',unitId:id},{kind:'PUBLISH_MATERIAL',documentId:id},{kind:'START_ENCOUNTER',reason:'Explicit later binding'}]}]}};
+validate(schemas.ModuleDefinitionV3,portableDefinition);
+assert.throws(()=>validate(schemas.ModuleDefinition,portableDefinition));
+for(const bad of [{...portableDefinition,operations:null},{...portableDefinition,operations:{formatVersion:2,definitions:[]}},{...portableDefinition,operations:{formatVersion:1,definitions:[{nodeId:id,steps:[]}]}}])assert.throws(()=>validate(schemas.ModuleDefinitionV3,bad));
+for(const extra of [{expectedVersion:0},{tokenId:id},{actor:'forged'},{requestId:id},{initiativeVersion:1}])assert.throws(()=>validate(schemas.ModulePortableStep,{kind:'REVEAL_TOKEN',placementId:id,...extra}));
+for(const kind of ['PUBLISH_TEXT','PUBLISH_MATERIAL'])validate(schemas.ModulePortableStep,{kind,documentId:id});
 for(const key of Object.keys(moduleDefinition.play)){const play={...moduleDefinition.play};delete play[key];assert.throws(()=>validate(schemas.ModuleDefinition,{...moduleDefinition,play}));}
 for(const name of ['ModuleCopyCommand','ModuleEditCommand','ModuleTemplateCommand','ModuleLaunchCommand','ModuleProgressCommand']){assert.equal(schemas[name].additionalProperties,false);assert.ok(schemas[name].required.includes('requestId'));assert.ok(schemas[name].required.includes('expectedVersion'));}
 for(const suffix of ['/module-customizations','/module-customizations/{id}','/module-customizations/{id}/templates','/module-customizations/{id}/campaigns','/module-instance'])assert.match(api.paths['/api/campaigns/{campaignId}'+suffix].post['x-idempotency'].authorization,/current DM before receipt replay/);
+
+assert.ok(api.paths["/api/campaigns/{campaignId}/attack-previews/{id}/monster-death-effect"]?.post,"A10 monster death route missing");
+
+const deathSample={expectedVersion:0,previewHash:'a'.repeat(64),treatment:'MONSTER_DIES_AT_ZERO',reviewed:true};
+for(const [schema,sample] of [[schemas.MonsterDeathReview,deathSample],[schemas.MonsterDeathConfirm,{...deathSample,requestId:id,reason:'Reviewed'}]]){
+ validate(schema,sample);for(const field of Object.keys(sample)){const missing={...sample};delete missing[field];assert.throws(()=>validate(schema,missing));assert.throws(()=>validate(schema,{...sample,[field]:null}));}
+ for(const extra of ['hp','tempHp','changes','actor','condition'])assert.throws(()=>validate(schema,{...sample,[extra]:0}));assert.throws(()=>validate(schema,{...sample,treatment:'CHARACTER'}));
+}
+const deathPlan={profile:'5R-SRD-5.2.1-MONSTER-DEATH-V1',status:'CANDIDATE',reasons:[],hp:0,tempHp:0,absorbed:1,hpLoss:1};validate(schemas.MonsterDeathEffect,deathPlan);
+validate(schemas.MonsterDeathEffect,{...deathPlan,status:'MANUAL_REQUIRED',reasons:['LETHAL_DAMAGE_REQUIRED'],hp:null,tempHp:null,absorbed:null,hpLoss:null});
+for(const bad of [{...deathPlan,hp:1},{...deathPlan,tempHp:1},{...deathPlan,status:'MANUAL_REQUIRED'},{...deathPlan,profile:'2014'}])assert.throws(()=>validate(schemas.MonsterDeathEffect,bad));
+for(const suffix of ['effect','confirmations']){const route=api.paths['/api/campaigns/{campaignId}/attack-previews/{id}/monster-death-'+suffix].post;assert.equal(route['x-read-only'],suffix==='effect');assert.equal(route['x-required-role'],'DM');for(const response of Object.values(route.responses))assert.equal(response.headers['Cache-Control'].schema.const,'no-store, private');}
+assert.ok(!schemas.AttackPreviewCommand.properties.kind.enum.includes('CONFIRM_MONSTER_DEATH'));
+
+assert.ok(api.paths["/api/campaigns/{campaignId}/attack-previews/{id}/knockout-effect"]?.post,"A11 knockout route missing");
+
+const knockoutSample={expectedVersion:0,previewHash:'a'.repeat(64),treatment:'KNOCK_OUT_MELEE',reviewed:true};
+for(const [schema,sample] of [[schemas.KnockoutReview,knockoutSample],[schemas.KnockoutConfirm,{...knockoutSample,requestId:id,reason:'Reviewed'}]]){
+ validate(schema,sample);for(const field of Object.keys(sample)){const missing={...sample};delete missing[field];assert.throws(()=>validate(schema,missing));assert.throws(()=>validate(schema,{...sample,[field]:null}));}
+ for(const extra of ['hp','tempHp','changes','actor','condition'])assert.throws(()=>validate(schema,{...sample,[extra]:0}));assert.throws(()=>validate(schema,{...sample,treatment:'CHARACTER'}));
+}
+const knockoutPlan={profile:'5R-SRD-5.2.1-KNOCKOUT-V1',status:'CANDIDATE',reasons:[],hp:1,tempHp:0,absorbed:1,hpLoss:0};validate(schemas.KnockoutEffect,knockoutPlan);
+validate(schemas.KnockoutEffect,{...knockoutPlan,status:'MANUAL_REQUIRED',reasons:['LETHAL_DAMAGE_REQUIRED'],hp:null,tempHp:null,absorbed:null,hpLoss:null});
+for(const bad of [{...knockoutPlan,hp:0},{...knockoutPlan,tempHp:1},{...knockoutPlan,status:'MANUAL_REQUIRED'},{...knockoutPlan,profile:'2014'}])assert.throws(()=>validate(schemas.KnockoutEffect,bad));
+for(const suffix of ['effect','confirmations']){const route=api.paths['/api/campaigns/{campaignId}/attack-previews/{id}/knockout-'+suffix].post;assert.equal(route['x-read-only'],suffix==='effect');assert.equal(route['x-required-role'],'DM');for(const response of Object.values(route.responses))assert.equal(response.headers['Cache-Control'].schema.const,'no-store, private');}
+assert.ok(!schemas.AttackPreviewCommand.properties.kind.enum.includes('CONFIRM_KNOCKOUT'));
+
+
+
+assert.ok(api.paths["/api/campaigns/{campaignId}/attack-previews/{id}/dagger-knockout-effect"]?.post,"A12 daggerKnockout route missing");
+
+const daggerKnockoutSample={expectedVersion:0,previewHash:'a'.repeat(64),treatment:'KNOCK_OUT_MELEE',reviewed:true};
+for(const [schema,sample] of [[schemas.DaggerKnockoutReview,daggerKnockoutSample],[schemas.DaggerKnockoutConfirm,{...daggerKnockoutSample,requestId:id,reason:'Reviewed'}]]){
+ validate(schema,sample);for(const field of Object.keys(sample)){const missing={...sample};delete missing[field];assert.throws(()=>validate(schema,missing));assert.throws(()=>validate(schema,{...sample,[field]:null}));}
+ for(const extra of ['hp','tempHp','changes','actor','condition'])assert.throws(()=>validate(schema,{...sample,[extra]:0}));assert.throws(()=>validate(schema,{...sample,treatment:'CHARACTER'}));
+}
+validate(schemas.DaggerKnockoutReview,{...daggerKnockoutSample,treatment:'THROWN'});
+assert.throws(()=>validate(schemas.KnockoutReview,{...knockoutSample,treatment:'THROWN'}));
+const daggerKnockoutPlan={profile:'5R-SRD-5.2.1-DAGGER-KNOCKOUT-V1',status:'CANDIDATE',reasons:[],hp:1,tempHp:0,absorbed:1,hpLoss:0};validate(schemas.DaggerKnockoutEffect,daggerKnockoutPlan);
+validate(schemas.DaggerKnockoutEffect,{...daggerKnockoutPlan,status:'MANUAL_REQUIRED',reasons:['LETHAL_DAMAGE_REQUIRED'],hp:null,tempHp:null,absorbed:null,hpLoss:null});
+for(const bad of [{...daggerKnockoutPlan,hp:0},{...daggerKnockoutPlan,tempHp:1},{...daggerKnockoutPlan,status:'MANUAL_REQUIRED'},{...daggerKnockoutPlan,profile:'2014'}])assert.throws(()=>validate(schemas.DaggerKnockoutEffect,bad));
+for(const suffix of ['effect','confirmations']){const route=api.paths['/api/campaigns/{campaignId}/attack-previews/{id}/dagger-knockout-'+suffix].post;assert.equal(route['x-read-only'],suffix==='effect');assert.equal(route['x-required-role'],'DM');for(const response of Object.values(route.responses))assert.equal(response.headers['Cache-Control'].schema.const,'no-store, private');}
+assert.ok(!schemas.AttackPreviewCommand.properties.kind.enum.includes('CONFIRM_DAGGER_KNOCKOUT'));
+
+
+
+// A16: independent character scope; totals and final values are server-owned.
+const stabilizationPath='/api/campaigns/{campaignId}/characters/{id}/stabilization';
+for(const [suffix,method] of [['','get'],['/history','get'],['/rolls','post'],['/preview','post'],['/applications','post']]){
+ const op=api.paths[stabilizationPath+suffix][method];assert.equal(op['x-required-role'],'DM');
+ for(const response of Object.values(op.responses))assert.equal(response.headers['Cache-Control'].schema.const,'no-store, private');
+ if(method==='post')assert.ok(op.parameters.some(p=>p.$ref==='#/components/parameters/CsrfHeader'));
+}
+const stabilizationSample={requestId:id,expectedVersion:0,targetVersion:0,helperId:id,helperVersion:0,reviewed:true,reason:'Reviewed Help'};
+validate(schemas.StabilizationRollInput,stabilizationSample);
+for(const field of ['total','dc','boundCheck','hp','actor'])assert.throws(()=>validate(schemas.StabilizationRollInput,{...stabilizationSample,[field]:20}));
+for(const field of Object.keys(stabilizationSample)){const bad={...stabilizationSample};delete bad[field];assert.throws(()=>validate(schemas.StabilizationRollInput,bad));}
+assert.throws(()=>validate(schemas.StabilizationRollInput,{...stabilizationSample,reviewed:'true'}));
+validate(schemas.StabilizationState,{id,version:0,latest:null});
+
+// A17: adjudicated healing has a separate explicit confirmation and no final values.
+const healingSample={expectedVersion:2,targetVersion:1,attemptId:id,amount:3,reviewed:true};
+validate(schemas.StabilizationHealingReview,healingSample);
+for(const amount of [0,-1,100001,1.5,'3',null])assert.throws(()=>validate(schemas.StabilizationHealingReview,{...healingSample,amount}));
+for(const field of ['hp','tempHp','removed','originVersion','boundOrigin','helperId','actor'])assert.throws(()=>validate(schemas.StabilizationHealingReview,{...healingSample,[field]:1}));
+for(const field of Object.keys(healingSample)){const bad={...healingSample};delete bad[field];assert.throws(()=>validate(schemas.StabilizationHealingReview,bad));}
+for(const [suffix,method]of [['/healing-preview','post'],['/healings','post'],['/healing-history','get']]){const op=api.paths[stabilizationPath+suffix][method];assert.equal(op['x-required-role'],'DM');for(const response of Object.values(op.responses))assert.equal(response.headers['Cache-Control'].schema.const,'no-store, private');if(method==='post')assert.ok(op.parameters.some(p=>p.$ref==='#/components/parameters/CsrfHeader'));}
+assert.ok(schemas.StabilizationAttempt.properties.status.enum.includes('HEALED'));
+
+// A18: adjudicated final damage, not a client-supplied outcome or automatic death.
+const stableDamage={expectedVersion:2,targetVersion:1,attemptId:id,amount:3,critical:true,reviewed:true};
+validate(schemas.StabilizationDamageReview,stableDamage);validate(schemas.StabilizationDamageReview,{...stableDamage,amount:0});
+for(const amount of [-1,220001,1.5,'3',null])assert.throws(()=>validate(schemas.StabilizationDamageReview,{...stableDamage,amount}));
+for(const field of ['hp','tempHp','deathFailures','removed','boundOrigin','helperId','actor'])assert.throws(()=>validate(schemas.StabilizationDamageReview,{...stableDamage,[field]:1}));
+for(const field of Object.keys(stableDamage)){const bad={...stableDamage};delete bad[field];assert.throws(()=>validate(schemas.StabilizationDamageReview,bad));}
+for(const [suffix,method]of [['/damage-preview','post'],['/damages','post'],['/damage-history','get']]){const op=api.paths[stabilizationPath+suffix][method];assert.equal(op['x-required-role'],'DM');for(const response of Object.values(op.responses))assert.equal(response.headers['Cache-Control'].schema.const,'no-store, private');if(method==='post')assert.ok(op.parameters.some(p=>p.$ref==='#/components/parameters/CsrfHeader'));}
+assert.ok(schemas.StabilizationAttempt.properties.status.enum.includes('UNSTABLE'));
+
+// A19 is a new independently versioned Help action, bound to an A18 origin.
+const restabilizationRoot=stabilizationPath+'/restabilization',restSample={requestId:id,expectedVersion:0,originVersion:3,targetVersion:2,helperId:id,helperVersion:0,reviewed:true,reason:'Reviewed new Help'};
+validate(schemas.RestabilizationRollInput,restSample);
+for(const field of ['total','dc','boundOrigin','boundCheck','hp','annotations','actor'])assert.throws(()=>validate(schemas.RestabilizationRollInput,{...restSample,[field]:20}));
+for(const field of Object.keys(restSample)){const bad={...restSample};delete bad[field];assert.throws(()=>validate(schemas.RestabilizationRollInput,bad));}
+for(const [suffix,method]of [['','get'],['/history','get'],['/rolls','post'],['/preview','post'],['/applications','post']]){const op=api.paths[restabilizationRoot+suffix][method];assert.equal(op['x-required-role'],'DM');for(const response of Object.values(op.responses))assert.equal(response.headers['Cache-Control'].schema.const,'no-store, private');if(method==='post')assert.ok(op.parameters.some(p=>p.$ref==='#/components/parameters/CsrfHeader'));}
+assert.ok(schemas.StabilizationAttempt.properties.status.enum.includes('RESTABILIZED'));validate(schemas.RestabilizationState,{id,version:0,latest:null});
+
+// A20: both source versions, no client final values, private explicit confirmation.
+const rehealing={...healingSample,originVersion:4};validate(schemas.RestabilizationHealingReview,rehealing);
+for(const amount of [0,-1,100001,1.5,'3',null])assert.throws(()=>validate(schemas.RestabilizationHealingReview,{...rehealing,amount}));
+for(const field of ['hp','removed','boundOrigin','helperId','actor'])assert.throws(()=>validate(schemas.RestabilizationHealingReview,{...rehealing,[field]:1}));
+for(const field of Object.keys(rehealing)){const bad={...rehealing};delete bad[field];assert.throws(()=>validate(schemas.RestabilizationHealingReview,bad));}
+for(const [suffix,method]of [['/healing-preview','post'],['/healings','post'],['/healing-history','get']]){const op=api.paths[restabilizationRoot+suffix][method];assert.equal(op['x-required-role'],'DM');for(const response of Object.values(op.responses))assert.equal(response.headers['Cache-Control'].schema.const,'no-store, private');if(method==='post')assert.ok(op.parameters.some(p=>p.$ref==='#/components/parameters/CsrfHeader'));}
+assert.ok(schemas.RestabilizationAttempt.properties.status.enum.includes('HEALED'));
+
+// A21: final adjudicated damage after A19, separately versioned and confirmed.
+const redamage={...rehealing,amount:3,critical:true};validate(schemas.RestabilizationDamageReview,redamage);validate(schemas.RestabilizationDamageReview,{...redamage,amount:0});
+for(const amount of [-1,220001,1.5,'3',null])assert.throws(()=>validate(schemas.RestabilizationDamageReview,{...redamage,amount}));
+for(const field of ['hp','tempHp','deathFailures','removed','boundOrigin','helperId','actor'])assert.throws(()=>validate(schemas.RestabilizationDamageReview,{...redamage,[field]:1}));
+for(const field of Object.keys(redamage)){const bad={...redamage};delete bad[field];assert.throws(()=>validate(schemas.RestabilizationDamageReview,bad));}
+for(const [suffix,method]of [['/damage-preview','post'],['/damages','post'],['/damage-history','get']]){const op=api.paths[restabilizationRoot+suffix][method];assert.equal(op['x-required-role'],'DM');for(const response of Object.values(op.responses))assert.equal(response.headers['Cache-Control'].schema.const,'no-store, private');if(method==='post')assert.ok(op.parameters.some(p=>p.$ref==='#/components/parameters/CsrfHeader'));}
+assert.ok(schemas.RestabilizationAttempt.properties.status.enum.includes('UNSTABLE'));assert.ok(schemas.StabilizationAttempt.properties.status.enum.includes('RESTABILIZATION_UNSTABLE'));
+const redamageOutcome={profile:'5R-SRD-5.2.1-RESTABILIZATION-DAMAGE-V1',status:'CANDIDATE',reasons:[],hp:0,tempHp:0,absorbed:0,deathSuccesses:0,deathFailures:1,removed:['a19-stable:'+id]};
+validate(schemas.RestabilizationDamageEffect,redamageOutcome);
+validate(schemas.RestabilizationDamageEffect,{...redamageOutcome,tempHp:1,absorbed:3,deathFailures:2});
+validate(schemas.RestabilizationDamageEffect,{...redamageOutcome,status:'MANUAL_REQUIRED',reasons:['POSITIVE_DAMAGE_REQUIRED'],hp:null,tempHp:null,absorbed:null,deathSuccesses:null,deathFailures:null,removed:[]});
+for(const bad of [{...redamageOutcome,hp:1},{...redamageOutcome,absorbed:-1},{...redamageOutcome,deathFailures:3},{...redamageOutcome,profile:'2014'}])assert.throws(()=>validate(schemas.RestabilizationDamageEffect,bad));
+
+
+// A22: source damage version is server-derived, exact single-source healing.
+const instabilityRoot=restabilizationRoot+'/instability';validate(schemas.InstabilityHealingReview,rehealing);
+for(const amount of [0,-1,100001,1.5,'3',null])assert.throws(()=>validate(schemas.InstabilityHealingReview,{...rehealing,amount}));
+for(const field of ['hp','removed','damageVersion','boundOrigin','actor','helperId'])assert.throws(()=>validate(schemas.InstabilityHealingReview,{...rehealing,[field]:1}));
+for(const field of Object.keys(rehealing)){const bad={...rehealing};delete bad[field];assert.throws(()=>validate(schemas.InstabilityHealingReview,bad));}
+for(const [suffix,method]of [['/healing-preview','post'],['/healings','post'],['/healing-history','get']]){const op=api.paths[instabilityRoot+suffix][method];assert.equal(op['x-required-role'],'DM');for(const response of Object.values(op.responses))assert.equal(response.headers['Cache-Control'].schema.const,'no-store, private');if(method==='post')assert.ok(op.parameters.some(p=>p.$ref==='#/components/parameters/CsrfHeader'));}
+const instabilityHealing={profile:'5R-SRD-5.2.1-INSTABILITY-HEALING-V1',status:'CANDIDATE',reasons:[],hp:1,tempHp:0,healed:1,deathSuccesses:0,deathFailures:0,removed:['a16-unconscious:'+id]};validate(schemas.InstabilityHealingEffect,instabilityHealing);
+validate(schemas.InstabilityHealingEffect,{...instabilityHealing,status:'MANUAL_REQUIRED',reasons:['HEALING_REVIEW_REQUIRED'],hp:null,tempHp:null,healed:null,deathSuccesses:null,deathFailures:null,removed:[]});
+for(const bad of [{...instabilityHealing,hp:0},{...instabilityHealing,healed:0},{...instabilityHealing,deathFailures:1},{...instabilityHealing,profile:'2014'}])assert.throws(()=>validate(schemas.InstabilityHealingEffect,bad));
+
+// A23: direct original A18 source, no second ledger version or trusted source input.
+const initialInstabilityRoot=stabilizationPath+'/instability';validate(schemas.InitialInstabilityHealingReview,healingSample);
+for(const amount of [0,-1,100001,1.5,'3',null])assert.throws(()=>validate(schemas.InitialInstabilityHealingReview,{...healingSample,amount}));
+for(const field of ['hp','removed','originVersion','damageVersion','boundOrigin','actor','helperId'])assert.throws(()=>validate(schemas.InitialInstabilityHealingReview,{...healingSample,[field]:1}));
+for(const field of Object.keys(healingSample)){const bad={...healingSample};delete bad[field];assert.throws(()=>validate(schemas.InitialInstabilityHealingReview,bad));}
+for(const [suffix,method]of [['/healing-preview','post'],['/healings','post'],['/healing-history','get']]){const op=api.paths[initialInstabilityRoot+suffix][method];assert.equal(op['x-required-role'],'DM');for(const response of Object.values(op.responses))assert.equal(response.headers['Cache-Control'].schema.const,'no-store, private');if(method==='post')assert.ok(op.parameters.some(p=>p.$ref==='#/components/parameters/CsrfHeader'));}
+validate(schemas.InitialInstabilityHealingEffect,{...instabilityHealing,profile:'5R-SRD-5.2.1-INITIAL-INSTABILITY-HEALING-V1'});
 console.log(`Contract checks passed: ${actualOperations.length} HTTP operations; A02 independent customizations, typed v2 templates and campaign instances. Previous operations retained; focused checker, not a general OpenAPI validator.`);

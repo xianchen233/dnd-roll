@@ -11,6 +11,13 @@ and successful CI runs do not by themselves constitute a release.
 
 ### Fixed
 
+- Return exact historical portable-binding acknowledgements after retirement
+  without reactivating operations or rewriting history. Current target-DM access
+  still precedes replay; fresh binds remain blocked and changed retries conflict.
+
+- Keep portable-binding reads, previews and authorization failures private and
+  uncached; send both binding commands through the authenticated CSRF POST client.
+
 - Recheck the authoritative scene after movement-control denial, so revoking one
   token keeps the campaign and visible uncontrollable token available while
   clearing private movement evidence. Session loss still clears access immediately.
@@ -41,6 +48,181 @@ and successful CI runs do not by themselves constitute a release.
   IDs and DM-only control. Validate recovery capacity before applying migration.
 
 ### Added
+
+- Add A24d offline review of typed A08-A23 JSON rebinding and persisted plan-hash
+  regeneration using original algorithms and historical source gates. Preserve explicit
+  aliases, separate ledger versions, canonical owners, local keys and free text;
+  keep source receipts as provenance and reject unsupported evidence or collisions.
+  Reports remain BLOCKED/non-executable; campaign writing, authority, files and
+  module graphs remain follow-up work.
+
+- A24c offline typed A08-A23 evidence graph inspection with strict shape, provenance, historical version, alias and canonical annotation checks; reports remain blocked and non-executable.
+- Adapt the October 26 UI concepts into the live React/Pixi application: portal login, obsidian/parchment materials and five local color preferences. Concept sources and existing game flows are preserved.
+
+
+- Add an offline, non-executable campaign identity proposal with 76-table scope
+  and column policies, namespace and reference checks, preserved timeline aliases,
+  source-only receipts and CREATE_NEW private reports. Audit and planning share
+  one read-only repeatable-read snapshot; JSON rebinding and a writer remain pending.
+
+- Add an offline M3 recovery audit with an explicit 76-table schema catalog,
+  complete archive row and immutable-asset checks, and CREATE_NEW private reports.
+  Campaign remapping returns BLOCKED until a typed writer is implemented.
+
+- Add independent direct healing of unchanged original A18 instability: preview
+  then explicitly restore capped real HP, reset death counts and remove only the
+  original 0HP Unconscious record, keeping temporary HP/resources/helpers/dice.
+- Add V34 private treatment history bound to the source A18 damage and resulting
+  shared history versions. Preserve pending unapplied new Help checks verbatim;
+  the healed parent version prevents their stale continuation without rerolling.
+
+- Add independent DM preview and explicit healing of the unchanged original A21
+  instability result. Cap restored real HP, reset death counts and remove only
+  the original 0HP Unconscious record while keeping temporary HP, resources,
+  helpers and historical dice. Preserve the original A20 two-record boundary.
+- Add V33 private healing history linked to the exact A21 damage source and both
+  result-history versions; close both ledgers as HEALED without replacing evidence.
+
+- Add a separate DM preview and explicit first bounded damage application for
+  the unchanged original A19 restabilized outcome. Absorb temporary HP once,
+  remove only the new Stable record, retain original 0HP Unconscious and record
+  one death failure, or two for an adjudicated critical without doubling damage.
+- Add V32 private damage history bound to both exact result-history versions.
+  Mark A19 UNSTABLE and shared lineage RESTABILIZATION_UNSTABLE while preserving
+  the original checks/completions and keeping subsequent treatment manual.
+
+- Add a separate DM preview and explicit healing confirmation for an unchanged
+  original A19 restabilized outcome. Cap real HP at its maximum and remove exactly
+  the new Stable and original 0HP Unconscious records; retain temporary HP,
+  resources, historical helpers and dice without rerolling or resource execution.
+- Add V31 private restabilization-healing history bound to both exact ledger
+  result versions; mark both lineages HEALED while preserving original evidence.
+
+- Add a new dedicated Help check for unchanged original A18 instability, with
+  failed checks retained, independent preview and explicit restabilization. Reset
+  both death-save counts while keeping 0HP, temporary HP and the original
+  Unconscious record; add a new Stable record without replacing prior evidence.
+- Add V30 independent restabilization state/history bound to the exact A18 damage
+  version. Mark shared lineage RESTABILIZED and preserve old receipts; new checks
+  cannot be supplied by generic/old dice or pre-seeded ordinary roll requests.
+
+- Add an explicit DM preview and confirmation for first bounded damage to an
+  unchanged original A16 stable target. Consume temporary HP first, remove only
+  the Stable record, retain 0HP Unconscious and record one death failure, or two
+  for an adjudicated critical without doubling the final damage amount again.
+- Add V29 immutable private damage history linked to the exact stabilization
+  history version. Preserve original evidence and receipts; mark UNSTABLE and
+  keep subsequent treatment manual. Zero or potentially fatal damage is not applied.
+
+- Add explicit DM-adjudicated healing for unchanged original A16 stabilization
+  outcomes. Preview then confirm real HP recovery capped at maximum, remove only
+  the original Stable/0HP Unconscious record pair and preserve temporary HP,
+  resources, helper and server check. Historical receipts never overwrite play.
+- Add V28 immutable private healing history linked to the exact stabilization
+  history version. Preserve original A16 evidence, record HEALED completion and
+  permit a separately reviewed new Help attempt in a later ordinary 0HP episode.
+
+- Add a DM-only ordinary 0HP stabilization flow: save a dedicated server Medicine
+  check, preview, then explicitly apply source records while retaining 0HP and
+  unconsciousness, keeping temporary HP and resetting death-save counts. Failed
+  checks persist; exact retries do not reroll or overwrite subsequent play.
+- Add V27 stabilization state, immutable history and receipts without modifying
+  earlier migrations. Bind the latest attempt to both current character snapshots
+  and rederive each application under version, authorization and transaction gates.
+
+- Add an internal 5R ordinary-zero-HP stabilization calculator and source/support
+  matrix. Successful bound-check plans keep 0 HP and temporary HP, reset death-save
+  counters and describe Stable plus Unconscious records. The dedicated DM
+  stabilization flow now uses this calculator.
+
+- Add a reviewed first-aid action for unchanged A11/A12 knockout records. A
+  dedicated server Wisdom (Medicine) check is saved, including failed attempts;
+  a bound successful result can then be previewed and explicitly applied without
+  healing. Private history retains the roll/DC/result. Exact retries cannot
+  reroll or erase later play, generic rolls cannot pre-seed the check, and
+  competing recovery requests have one effect. Action availability, contact,
+  unsupported exceptions, 0 HP stabilization and remaining Prone stay with the DM.
+
+
+- Add an explicit reviewed completion of the original A11/A12 knockout Short Rest.
+  The server checks unchanged provenance, continuous game-time duration and no
+  interruption, then atomically removes the original record without changing HP
+  or resources. Private history retains the reviewed duration. Exact retries and
+  competing healing/rest requests have one effect; rest timing, resource recovery,
+  interrupted/restarted rests, first aid and remaining Prone stay with the DM.
+
+
+- Add an independent reviewed healing workflow for unchanged A11/A12 knockout
+  records. The server caps actual HP recovery and atomically removes the original
+  annotation, preserving evidence and full character history. Full HP, temporary
+  HP, modified/recreated records and unsupported states stay manual. Exact retries
+  cannot heal twice or erase later corrections; resources, rest, first aid and
+  remaining Prone effects require separate DM handling.
+
+
+- Add a separate reviewed ordinary dagger melee knockout profile for Strength or
+  Dexterity, with explicit thrown/manual fallback, dedicated confirmation and
+  atomic HP/unconscious annotation application. Club behavior remains unchanged;
+  rest, wake-up, extra attacks and unconscious consequences remain DM-managed.
+
+- An explicit 5R ordinary-club melee knockout plan, separate DM confirmation
+  and atomic application of 1 HP plus a sourced unconscious record. Original
+  damage, ammunition and monster-death profiles keep their boundaries. Rest,
+  first aid, healing-based removal and unconscious consequences remain manual.
+
+- Add explicit DM ordinary-monster death review and separate confirmation. APPLY
+  atomically records zero HP/temp HP and a sourced death annotation with one card
+  version and complete combat history. Existing damage/ammunition zero-HP fallbacks
+  stay unchanged; knockout, resurrection and other linked effects remain manual.
+
+- Add an explicit ordinary-shortbow arrow-counter profile: a DM selects and reviews
+  one source counter, then confirms server-derived one-arrow consumption and target
+  damage before separate atomic application. Misses also spend one arrow; insufficient
+  ammunition and unsupported effects fall back to manual adjudication. Other resources,
+  inventory, recovery, old confirmation profiles and private/public boundaries retain
+  their existing meaning.
+
+- Add a current-DM server damage plan for ordinary SRD 5.2.1 weapon previews,
+  consuming temporary HP before HP while leaving positive HP. Explicit damage
+  confirmation and separate atomic application preserve resources, conditions,
+  private dice, linked corrections and original receipts; unsupported zero-HP,
+  condition and death-save cases require manual adjudication.
+
+- Add read-only 5R range hints for two currently visible single-cell tokens on a
+  reviewed 5-foot grid. Chinese controls compare declared reach or normal/long
+  range without rolling dice or applying attacks. Current visibility and scene/
+  token versions are rechecked; hidden endpoints stay private and unsupported
+  calibration/context requires a manual decision.
+
+- Add explicit per-node KEEP/INCOMING/RETIRE migration review for portable
+  operations. Preserve local edits, retired identities, execution histories and
+  immutable before-images; source adoption requires a separate current binding.
+  Create independent recovery campaigns with fresh unbound operation and target
+  mappings. Chinese controls preserve exact uncertain requests and require every
+  impact confirmation. The original text/structural gates keep their blockers.
+
+- Reserve independent unbound operation identities for each new portable v3
+  campaign. Let the current target DM preview actual mapped target versions and
+  explicitly save a binding with an immutable before-image and atomic receipt.
+  Binding never reveals, publishes, rolls, confirms initiative or starts combat;
+  ordinary impact review and execution remain separate. Pending identities reserve
+  capacity, local edits are visible, and exact retries cannot overwrite them.
+- Add V26 binding/history/receipt tables, authenticated Chinese binding controls,
+  strict HTTP contracts and restart/full-restore evidence for pending bindings.
+  Later selective source updates, retirement and independent recovery mappings
+  remain pending behind the existing live migration gates.
+
+- Add module format v3 for inert portable manual combinations with strict stable
+  trigger, unit, placement and material references. Existing v1/v2 archives remain
+  unchanged; customization edits, save-as, selective comparison and recovery ZIPs
+  retain the versioned definitions. Nonempty portable definitions explicitly block
+  campaign launch and live migration until per-instance binding is implemented.
+
+- Add explicit DM publication of a private module material with all ordered images
+  into independent TEAM note/image copies. Reviews validate actual image bytes;
+  combination transactions retain original private sources and clean only new
+  public files on rollback. Exact retries publish once, with current DM access
+  checked before historical receipts. Existing text-only steps keep their scope.
 
 - Declared 5R movement paths with per-cell modes/terrain, authoritative budget
   previews, character-owned spent distance across placements, advisory overage
@@ -289,6 +471,47 @@ and successful CI runs do not by themselves constitute a release.
   when the outcome cannot be established so a committed receipt stays usable.
 
 ### Security
+
+- Rebuild original A16/A18 provenance and verify the saved A18 plan hash for direct
+  instability healing. Bind its full journal to new plans, authorize before old
+  receipts, keep private declarations out of player history and roll back all
+  treatment writes together; A17/A20/A22 source gates remain explicit.
+
+- Verify the complete A16/A18/A19/A21 lineage and original A21 plan hash before
+  instability healing, bind its full private journal to new plans and authorize
+  before receipt replay. Roll back the card, both ledgers, histories, journal and
+  receipt together; private declarations stay out of player character history.
+
+- Reconstruct and bind A16/A18/A19 provenance, full target and three versions
+  before restabilization damage. Authorize historical receipt replay, keep damage
+  declarations private and roll back both ledgers/card/histories/journal/receipt
+  together; old Help and healing entries cannot consume this new instability.
+
+- Bind restabilization healing to the reconstructed A16/A18/A19 lineage, full
+  target and all three current versions. Authorize before historical receipt
+  replay, keep private healing declarations out of player history and roll back
+  both ledgers, card, histories, journal and receipt together on failure.
+
+- Reconstruct the full original A16/A18 outcome and bind each new Help to the
+  current target/helper snapshots, versions and authoritative server check.
+  Check current DM access before receipts, keep private check/review/reasons in
+  DM history and use safe character-history descriptions. Roll and apply failures
+  roll back dice, card, both ledgers and receipts together.
+
+- Bind stabilization damage to the complete original applied card, authoritative
+  check, current versions and rederived plan. Keep reason and reviewed damage
+  inputs private, use safe character-history descriptions and check current DM
+  access before receipts. Immediate and deferred failures roll back all writes.
+
+- Bind stabilization healing to the full original applied card, authoritative
+  saved check, current versions and rederived plan. Check current DM access before
+  receipts; keep requested healing amount, review and reason in DM-only history,
+  using a safe result description in player-readable character history.
+
+- Keep stabilization checks, reviews and operation reasons in DM-only evidence.
+  Player-readable character history contains only a safe outcome description;
+  authorization precedes receipt replay, and generic dice cannot pre-seed the
+  dedicated stabilization request namespace.
 
 - Replace covered map samples with opaque black on the server and freshly encode
   player PNGs without source metadata or transparent hidden RGB values. Keep

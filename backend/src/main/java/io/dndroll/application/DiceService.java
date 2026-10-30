@@ -83,5 +83,41 @@ public final class DiceService {
             store.save(c,roll);store.receipt(c,actor,request,new Receipt(fp,roll.id()));events.changed(c,true);return roll;
         }));
     }
+    /** A19-only fingerprint also binds the original A18 version. */
+    Roll plannedRestabilization(UUID c,String actor,UUID request,CharacterService.Card helper,UUID target,long targetVersion,long originVersion,long stateVersion){
+        return cards.actorLocked(actor,()->cards.locked(c,()->{
+            require(member(c,actor)==Role.DM);var current=cards.card(c,helper.id());if(current==null)throw missing();AccountPolicy.version(current.version(),helper.version());
+            var calculation=helper.sheet().calculate().get("skill:medicine");if(calculation==null)throw CharacterSheet.invalid();
+            var fp=fingerprint(json,List.of("A19_RESTABILIZATION",c,target,targetVersion,originVersion,stateVersion,helper.id(),helper.version(),calculation));var prior=store.receipt(actor,request);
+            if(prior!=null){if(!prior.fingerprint().equals(fp))throw new DomainException("IDEMPOTENCY_CONFLICT",409,"Request ID already used");return store.roll(c,prior.id());}
+            int modifier=calculation.value();String expression="1d20"+(modifier<0?"":"+")+modifier;
+            var roll=new Roll(UUID.randomUUID(),helper.id().toString(),helper.version(),actor,helper.sheet().name(),clock.instant(),"DM","skill:medicine",calculation,List.of(),List.of(),Dice.roll(expression,List.of(),List.of(),entropy));
+            store.save(c,roll);store.receipt(c,actor,request,new Receipt(fp,roll.id()));events.changed(c,true);return roll;
+        }));
+    }
+    /** A16-only fingerprint binds both cards and the independent attempt version. */
+    Roll plannedStabilization(UUID c,String actor,UUID request,CharacterService.Card helper,UUID target,long targetVersion,long stateVersion){
+        return cards.actorLocked(actor,()->cards.locked(c,()->{
+            require(member(c,actor)==Role.DM);var current=cards.card(c,helper.id());if(current==null)throw missing();AccountPolicy.version(current.version(),helper.version());
+            var calculation=helper.sheet().calculate().get("skill:medicine");if(calculation==null)throw CharacterSheet.invalid();
+            var fp=fingerprint(json,List.of("A16_STABILIZATION",c,target,targetVersion,stateVersion,helper.id(),helper.version(),calculation));var prior=store.receipt(actor,request);
+            if(prior!=null){if(!prior.fingerprint().equals(fp))throw new DomainException("IDEMPOTENCY_CONFLICT",409,"Request ID already used");return store.roll(c,prior.id());}
+            int modifier=calculation.value();String expression="1d20"+(modifier<0?"":"+")+modifier;
+            var roll=new Roll(UUID.randomUUID(),helper.id().toString(),helper.version(),actor,helper.sheet().name(),clock.instant(),"DM","skill:medicine",calculation,List.of(),List.of(),Dice.roll(expression,List.of(),List.of(),entropy));
+            store.save(c,roll);store.receipt(c,actor,request,new Receipt(fp,roll.id()));events.changed(c,true);return roll;
+        }));
+    }
+    /** A15-only namespace: ordinary HTTP rolls cannot pre-seed a bound action check. */
+    Roll plannedFirstAid(UUID c,String actor,UUID request,CharacterService.Card helper,UUID preview,long previewVersion){
+        return cards.actorLocked(actor,()->cards.locked(c,()->{
+            require(member(c,actor)==Role.DM);var current=cards.card(c,helper.id());if(current==null)throw missing();AccountPolicy.version(current.version(),helper.version());
+            var calculation=helper.sheet().calculate().get("skill:medicine");if(calculation==null)throw CharacterSheet.invalid();
+            var fp=fingerprint(json,List.of("A15_FIRST_AID",c,preview,previewVersion,helper.id(),helper.version(),calculation));var prior=store.receipt(actor,request);
+            if(prior!=null){if(!prior.fingerprint().equals(fp))throw new DomainException("IDEMPOTENCY_CONFLICT",409,"Request ID already used");return store.roll(c,prior.id());}
+            int modifier=calculation.value();String expression="1d20"+(modifier<0?"":"+")+modifier;
+            var roll=new Roll(UUID.randomUUID(),helper.id().toString(),helper.version(),actor,helper.sheet().name(),clock.instant(),"DM","skill:medicine",calculation,List.of(),List.of(),Dice.roll(expression,List.of(),List.of(),entropy));
+            store.save(c,roll);store.receipt(c,actor,request,new Receipt(fp,roll.id()));events.changed(c,true);return roll;
+        }));
+    }
     public static String fingerprint(JsonMapper json,Object data){try{return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(json.writeValueAsString(data).getBytes(StandardCharsets.UTF_8)));}catch(java.security.NoSuchAlgorithmException e){throw new IllegalStateException(e);}}
 }

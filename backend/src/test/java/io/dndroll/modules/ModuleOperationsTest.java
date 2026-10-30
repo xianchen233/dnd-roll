@@ -8,6 +8,13 @@ import tools.jackson.databind.json.JsonMapper;
 
 class ModuleOperationsTest {
     final JsonMapper json=JsonMapper.builder().build();
+    @Test void materialPublicationIsExplicitStrictAndSharesDuplicateIdentityWithText(){
+        var note=UUID.randomUUID();var material=Map.of("kind","PUBLISH_MATERIAL","noteId",note,"expectedVersion",0);
+        assertEquals(1,ModuleOperations.parseSave(save(List.of(material))).steps().size());
+        assertThrows(RuntimeException.class,()->ModuleOperations.parseSave(save(List.of(material,Map.of("kind","PUBLISH_TEXT","noteId",note,"expectedVersion",0)))));
+        for(String field:material.keySet()){var bad=new HashMap<String,Object>(material);bad.remove(field);assertThrows(RuntimeException.class,()->ModuleOperations.parseSave(save(List.of(bad))));bad.put(field,null);assertThrows(RuntimeException.class,()->ModuleOperations.parseSave(save(List.of(bad))));}
+        var extra=new HashMap<String,Object>(material);extra.put("attachments",List.of());assertThrows(RuntimeException.class,()->ModuleOperations.parseSave(save(List.of(extra))));
+    }
     Map<String,Object> token(){return Map.of("kind","REVEAL_TOKEN","sceneId",UUID.randomUUID(),"tokenId",UUID.randomUUID(),"expectedVersion",0);}
     JsonNode save(List<?> steps){return json.valueToTree(Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"name","中文组合","steps",steps));}
     @Test void twentyDistinctTypedStepsFitButZeroTwentyOneDuplicatesAndUnknownCodeDoNot(){

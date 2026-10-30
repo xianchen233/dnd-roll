@@ -19,7 +19,11 @@ Neither path automatically adopts future source versions or rewrites play.
 
 The live-operation editor uses five existing discriminated step shapes, named
 current-campaign targets and explicit ordering. Token and card hiding are separate.
-Only unattached DM prose can be copied into a TEAM note. Preparation configures
+The original PUBLISH_TEXT copies only unattached DM prose. The additive explicit
+PUBLISH_MATERIAL choice copies the current title/text and ordered images into
+independent TEAM identities under [the illustrated-publication contract](module-materials.md).
+Its editor shows the image count and explains that downloaded public material cannot
+be retracted. Preparation configures
 individual participants, kinds, groups, surprise and reasoned advantage/disadvantage
 sources; it leaves a DRAFT candidate. START binds the exact confirmed initiative
 and idle combat versions. One encounter step per combination, no duplicate target,
@@ -44,7 +48,8 @@ Old-domain success/denial cannot restore or revoke a newly selected domain.
 Recovered ZIPs use authenticated no-store reads and revoke URLs on invalidation.
 Player views do not mount these controls or fetch their private endpoints.
 
-Wire contracts, old routes and migrations remain unchanged. Actual TDD and
+Existing step shapes, routes and migrations remain unchanged; the material step
+is an additive discriminated shape. Actual TDD and
 acceptance evidence are recorded in `docs/a03e-tdd.md`; pending checks are not
 passing. Cloud, physical cross-host recovery and real phones remain deferred.
 Continue the existing branch and draft PR #1 without merging or publishing.

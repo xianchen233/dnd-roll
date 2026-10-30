@@ -34,7 +34,7 @@ public final class ModuleArchive {
                 }
                 JsonNode m=readJson(zip,"manifest.json");
                 object(m,"format","formatVersion","moduleId","moduleVersion","name","rules","rights","dependencies","content","assets");
-                if(!text(m.get("format"),1,40).equals("dnd-roll.module")||number(m.get("formatVersion"),1,2)<1)throw invalid();
+                if(!text(m.get("format"),1,40).equals("dnd-roll.module")||number(m.get("formatVersion"),1,3)<1)throw invalid();
                 id(m.get("moduleId"));String version=text(m.get("moduleVersion"),5,20);
                 if(!version.matches("(0|[1-9][0-9]{0,5})\\.(0|[1-9][0-9]{0,5})\\.(0|[1-9][0-9]{0,5})"))throw invalid();
                 text(m.get("name"),1,100);rules(m.get("rules"));text(m.get("rights"),1,1000);
@@ -70,7 +70,7 @@ public final class ModuleArchive {
     }
     public byte[] export(Manifest source,ModuleBlueprint.Document document,Map<String,byte[]> images,String moduleId,String version,String name){
         ModuleBlueprint.validate(document,source);byte[] content=json.writeValueAsBytes(document);
-        var m=new Manifest(source.format(),2,moduleId,version,name,source.rules(),source.rights(),source.dependencies(),new Content(content.length,hash(content)),source.assets());
+        var m=new Manifest(source.format(),document.operations()==null?2:3,moduleId,version,name,source.rules(),source.rights(),source.dependencies(),new Content(content.length,hash(content)),source.assets());
         try{var out=new ByteArrayOutputStream();try(var zip=new ZipOutputStream(out)){
             var files=new LinkedHashMap<String,byte[]>();files.put("manifest.json",json.writeValueAsBytes(m));files.put("content.json",content);source.assets().forEach(a->files.put("assets/"+a.id(),images.get(a.id())));
             for(var e:files.entrySet()){var entry=new ZipEntry(e.getKey());entry.setTime(0);zip.putNextEntry(entry);zip.write(e.getValue());zip.closeEntry();}

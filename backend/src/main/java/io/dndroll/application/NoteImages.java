@@ -8,8 +8,10 @@ import tools.jackson.databind.json.JsonMapper;
 /** Durable note images are separate from maps and RP, and never change visibility. */
 public final class NoteImages {
     public record Image(AssetService.Asset metadata,String actor,String visibility,String storageKey,String sha256) {}
+    public record PublicationImage(AssetService.Asset metadata,String sha256) {}
     public interface Store {
         Image image(UUID c,UUID id);void saveImage(UUID c,Image image);
+        void copyImage(UUID c,Image image,byte[] bytes);
         boolean readableImage(UUID c,UUID id,String actor,boolean dm);boolean referencedBy(UUID c,UUID image,UUID note);
         NotesService.Receipt uploadReceipt(String actor,UUID id);void uploadReceipt(UUID c,String actor,UUID id,NotesService.Receipt receipt);
     }
@@ -18,6 +20,21 @@ public final class NoteImages {
     private Role member(UUID c,String actor){var role=campaigns.role(c,actor);if(role==null)throw new DomainException("FORBIDDEN",403,"Membership required");return role;}
     private Image readable(UUID c,UUID id,String actor,Role role){var image=store.image(c,id);if(image==null||image.visibility().equals("DM")&&role!=Role.DM||!store.readableImage(c,id,actor,role==Role.DM))throw DiceService.missing();return image;}
     public AssetService.Asset metadata(UUID c,UUID id){var image=store.image(c,id);if(image==null)throw DiceService.missing();return image.metadata();}
+    private byte[] publicationBytes(Image image){
+        try{var m=image.metadata();var bytes=files.read(image.storageKey());var decoded=AssetImage.validate(bytes,m.mediaType());
+            if(!decoded.sha256().equals(image.sha256())||!decoded.mediaType().equals(m.mediaType())||bytes.length!=m.byteSize()||decoded.width()!=m.width()||decoded.height()!=m.height())throw unavailable();return bytes;
+        }catch(DomainException failure){throw unavailable();}
+    }
+    private static DomainException unavailable(){return new DomainException("ASSET_UNAVAILABLE",503,"Material image is unavailable");}
+    public List<PublicationImage> reviewPublication(UUID c,List<UUID> ids,String actor){
+        var role=member(c,actor);AccountPolicy.dm(role);return ids.stream().map(id->{var image=readable(c,id,actor,role);if(!image.visibility().equals("DM"))throw CharacterSheet.invalid();publicationBytes(image);return new PublicationImage(image.metadata(),image.sha256());}).toList();
+    }
+    public List<UUID> copyForPublication(UUID c,List<UUID> ids,String actor){
+        var role=member(c,actor);AccountPolicy.dm(role);var result=new ArrayList<UUID>();
+        for(UUID id:ids){var source=readable(c,id,actor,role);if(!source.visibility().equals("DM"))throw CharacterSheet.invalid();byte[] bytes=publicationBytes(source);var m=source.metadata();var metadata=new AssetService.Asset(UUID.randomUUID(),m.mediaType(),m.byteSize(),m.width(),m.height());
+            var copy=new Image(metadata,actor,"TEAM",UUID.randomUUID().toString(),source.sha256());store.copyImage(c,copy,bytes);result.add(metadata.id());}
+        return List.copyOf(result);
+    }
     public void attach(UUID c,UUID note,List<UUID> ids,String visibility,String actor){var role=member(c,actor);for(var id:ids){var image=readable(c,id,actor,role);if(!image.visibility().equals(visibility))throw CharacterSheet.invalid();if(!image.actor().equals(actor)&&(note==null||!store.referencedBy(c,id,note)))throw new DomainException("FORBIDDEN",403,"Image belongs to another note author");}}
     public AssetService.Content content(UUID c,UUID id,String actor){return campaigns.locked(c,()->{var image=readable(c,id,actor,member(c,actor));return new AssetService.Content(image.metadata().mediaType(),files.read(image.storageKey()));});}
     public AssetService.Asset upload(UUID c,String actor,UUID request,long version,String visibility,byte[] bytes,String mediaType){

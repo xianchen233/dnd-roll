@@ -1,5 +1,9 @@
 # A01: module package identity and import validation
 
+[A03g format v3](module-portable-operations.md) adds an inert operations envelope
+with strict stable references. V1/v2 retain their exact original archive shapes;
+all ZIP/image/hash/security bounds and current-DM authorization below still apply.
+
 Status: completed (2026-10-22), code 2a9bb2a; local and exact-SHA push/PR CI passed.
 A02 customization/campaign creation, A03 updates/triggers
 and automation are separate work packages. Packages are inert DM preparation;

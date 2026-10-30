@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {readFile,writeFile} from 'node:fs/promises';
+import {Session,required,hash} from './acceptance-support.mjs';
+import {preparePortable,finishPortable,verifyPortable} from './portable-evidence.mjs';
+const [mode,file]=process.argv.slice(2);assert.ok(['seed','verify','resume'].includes(mode)&&file);
+const dm=await new Session().login(required('E2E_DM_USERNAME'),required('E2E_DM_PASSWORD')),player=await new Session().login(required('E2E_PLAYER_USERNAME'),required('E2E_PLAYER_PASSWORD'));
+if(mode==='seed'){
+ const e=await preparePortable(dm,player),edit={requestId:randomUUID(),expectedVersion:0,name:'便携定义副本 A03g',document:e.document},ack=await dm.post(e.path,edit),save={requestId:randomUUID(),expectedVersion:1,moduleId:randomUUID(),moduleVersion:'1.0.0',name:'便携模板 A03g'},template=await dm.post(e.path+'/templates',save);await finishPortable(dm,player,e,edit,ack,save,template);await writeFile(file,JSON.stringify({entries:[e]},null,2),{flag:'wx'});await verifyPortable(dm,player,e);
+}else{const {entries}=JSON.parse(await readFile(file,'utf8'));for(const e of entries){await verifyPortable(dm,player,e);if(mode==='resume'){
+ const document=structuredClone(e.document);document.operations.definitions.at(-1).steps[0].reason='恢复后明确编辑，仍须实例绑定';const edit={requestId:randomUUID(),expectedVersion:e.ack.version,name:'恢复后的便携定制',document},ack=await dm.post(e.path,edit);assert.deepEqual(await dm.post(e.path,edit),ack);
+ const save={requestId:randomUUID(),expectedVersion:ack.version,moduleId:e.save.moduleId,moduleVersion:'2.0.0',name:'恢复后的便携模板'},template=await dm.post(e.path+'/templates',save);assert.deepEqual(await dm.post(e.path+'/templates',save),template);assert.deepEqual(await dm.post(e.path,e.edit),e.ack);assert.deepEqual(await dm.post(e.path+'/templates',e.save),e.template);assert.deepEqual((await dm.get(e.path)).document,document);assert.deepEqual((await dm.get(e.path)).baseline,e.baseline);
+ const response=await dm.call(e.root+'/module-packages/'+template.id+'/content'),bytes=Buffer.from(await response.arrayBuffer()),form=new FormData();form.append('file',new Blob([bytes],{type:'application/zip'}),'restored-portable.zip');const preview=await(await dm.call(e.root+'/module-packages/preview',{method:'POST',multipart:form})).json();assert.equal(preview.manifest.formatVersion,3);assert.deepEqual(preview.document,document);
+ const detail=await dm.get(e.path);assert.equal(detail.version,e.ack.version+1);assert.deepEqual(detail.document.operations.definitions.map(x=>x.nodeId),e.document.operations.definitions.map(x=>x.nodeId));assert.deepEqual((await dm.get(e.liveRoot+'/module-instance')),e.beforeRuntime.instance);assert.deepEqual(await dm.get(e.liveRoot+'/initiative'),e.beforeRuntime.initiative);assert.deepEqual(await dm.get(e.liveRoot+'/combat'),e.beforeRuntime.combat);
+ await writeFile(file+'.resumed.json',JSON.stringify({edit,ack,save,template,sha256:hash(bytes),detail},null,2),{flag:'wx'});console.log('PORTABLE RESUMED VERIFIED: restored current-version authoring/save-as commits once, preserves stable references and immutable baseline; old receipts do not overwrite the new edit or execute steps');
+}}}

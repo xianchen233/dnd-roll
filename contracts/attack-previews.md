@@ -1,4 +1,13 @@
+A12 adds independent [dagger melee knockout](dagger-knockout-effects.md) without changing the club profile.
+
 # A05 durable weapon previews, confirmation and correction
+
+[A09 ammunition effects](ammunition-effects.md) define an additional opt-in shortbow
+arrow-counter profile and dedicated confirmation route before existing APPLY.
+
+[A08 damage effects](damage-effects.md) additionally support server-derived ordinary
+damage that leaves positive HP, through explicit CONFIRM_DAMAGE and separate APPLY. The manual
+CONFIRM/final-value semantics below remain available; unsupported effects remain manual.
 
 The A04 matrix remains the calculation boundary. This adapter supports only the
 bundled SRD 5.2.1 ATTACK entries with unchanged identity, source/licensing, name,

@@ -10,6 +10,21 @@ async function click(name:string){const b=await screen.findByRole('button',{name
 async function open(){await click('编辑组合 揭露与线索');}
 async function review(){await open();await click('预览组合影响');}
 describe('Chinese bounded manual combinations',()=>{
+ it('explicitly selects illustrated publication, explains the copy and sends the saved note version',async()=>{
+  const v=setup({notes:vi.fn().mockResolvedValue({notes:[{id:'illustrated',title:'秘密附图',visibility:'DM',version:7,attachments:[{id:'private-image'}]}],next:''})});
+  await click('新建操作组合');await click('添加公开资料及附图');
+  fireEvent.change(screen.getByLabelText('步骤 1 资料'),{target:{value:'illustrated'}});
+  expect(screen.getByText(/独立的团队笔记和公开图片副本/)).toBeInTheDocument();
+  expect(screen.getByRole('option',{name:/秘密附图.*1 张图/})).toBeEnabled();
+  await click('保存操作组合');expect(v.api.saveModuleOperation.mock.calls[0][2].steps).toEqual([{kind:'PUBLISH_MATERIAL',noteId:'illustrated',expectedVersion:7}]);
+ });
+ it('rejects publishing a note twice through text and material steps',async()=>{setup();await open();await click('添加公开资料及附图');fireEvent.change(screen.getByLabelText('步骤 4 资料'),{target:{value:'note'}});expect(screen.getByRole('button',{name:'保存操作组合'})).toBeDisabled();});
+ it('retries an illustrated publication with its exact body and clears it on API lifetime change',async()=>{
+  const material={...operation,steps:[{kind:'PUBLISH_MATERIAL',noteId:'note',expectedVersion:3}]};const reviewed={...impact,definition:material};
+  const v=setup({moduleOperations:vi.fn().mockResolvedValue([material]),moduleOperationImpact:vi.fn().mockResolvedValue(reviewed),executeModuleOperation:vi.fn().mockRejectedValueOnce(Error('lost')).mockResolvedValue({id:'published',actor:'dm',impact:reviewed,results:[]})});
+  await review();await click('确认触发组合');expect(screen.getByRole('button',{name:'添加公开资料及附图'})).toBeDisabled();await click('刷新操作组合与目标');await click('重试同一组合请求');expect(v.api.executeModuleOperation.mock.calls[0]).toEqual(v.api.executeModuleOperation.mock.calls[1]);
+  v.rerender(<ModuleOperationsWorkspace {...v.props} api={{...v.api} as unknown as Api}/>);expect(screen.queryByText(/published/)).not.toBeInTheDocument();expect(screen.queryByLabelText('组合名称')).not.toBeInTheDocument();
+ });
  it('reviews saved targets without executing and sends exactly the reviewed versions/hash on trigger',async()=>{const v=setup();await review();expect(v.api.moduleOperationImpact).toHaveBeenCalledWith('c','op',{expectedVersion:2,campaignVersion:8});expect(v.api.executeModuleOperation).not.toHaveBeenCalled();expect(screen.getByText('影响校验 op-hash')).toBeInTheDocument();await click('确认触发组合');expect(v.api.executeModuleOperation).toHaveBeenCalledWith('c','op',expect.objectContaining({expectedVersion:2,campaignVersion:8,impactHash:'op-hash'}));expect(screen.getByText(/触发回执.*actual-dm/)).toBeInTheDocument();});
  it('edits, orders and saves typed steps with original target versions, never triggering on save',async()=>{const v=setup();await open();fireEvent.change(screen.getByLabelText('组合名称'),{target:{value:'新组合名'}});await click('上移步骤 2');await click('保存操作组合');expect(v.api.saveModuleOperation).toHaveBeenCalledWith('c','op',expect.objectContaining({expectedVersion:2,name:'新组合名',steps:[operation.steps[1],operation.steps[0],operation.steps[2]]}));expect(v.api.executeModuleOperation).not.toHaveBeenCalled();});
  it('requires saving changes and invalidates a reviewed impact when editing',async()=>{const v=setup();await review();fireEvent.change(screen.getByLabelText('组合名称'),{target:{value:'私密草稿'}});expect(screen.queryByRole('button',{name:'确认触发组合'})).not.toBeInTheDocument();expect(screen.getByRole('button',{name:'预览组合影响'})).toBeDisabled();v.rerender(<ModuleOperationsWorkspace {...v.props} revision={1}/>);expect(screen.getByLabelText('组合名称')).toHaveValue('私密草稿');});

@@ -19,6 +19,8 @@ import tools.jackson.databind.json.JsonMapper;
 @org.springframework.test.annotation.DirtiesContext(classMode=org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_CLASS)
 class ModuleOperationsIT {
     @LocalServerPort int port; @Autowired JdbcTemplate jdbc; @Autowired PasswordEncoder passwords;
+    @Autowired io.dndroll.application.AssetService.Files imageFiles;
+    @org.springframework.beans.factory.annotation.Value("${assets.storage-root}") String imageRoot;
     final JsonMapper json=JsonMapper.builder().build();
     static final String schema="a03d_http_"+UUID.randomUUID().toString().replace("-","");
     static final org.springframework.jdbc.datasource.DriverManagerDataSource admin=new org.springframework.jdbc.datasource.DriverManagerDataSource(FirstSliceIT.required("TEST_DATABASE_URL"),FirstSliceIT.required("TEST_DATABASE_USERNAME"),FirstSliceIT.required("TEST_DATABASE_PASSWORD"));
@@ -81,7 +83,7 @@ class ModuleOperationsIT {
         UUID other=campaign(dm);tree(dm.post(path,save(1,List.of(reveal(scene(dm,other),t,0)))),200);tree(dm.post(path+"/impact",Map.of("expectedVersion",2,"campaignVersion",0)),404);assertTrue(dm.read(path+"/executions").isEmpty());
         assertEquals("no-store, private",player.get(ops(c)).headers().firstValue("Cache-Control").orElse(""));
     }
-    Map<String,Object> state(UUID c){var out=new LinkedHashMap<String,Object>();for(String table:List.of("token","scene","campaign_note","note_history","token_command_receipt","note_command_receipt","module_operation_execution","module_operation_receipt","character_card","character_controller","character_command_receipt","character_history","campaign_initiative","initiative_history","initiative_command_receipt","campaign_combat","combat_turn_history","combat_command_receipt")){
+    Map<String,Object> state(UUID c){var out=new LinkedHashMap<String,Object>();for(String table:List.of("token","scene","campaign_note","note_history","note_attachment","note_attachment_reference","token_command_receipt","note_command_receipt","module_operation_execution","module_operation_receipt","character_card","character_controller","character_command_receipt","character_history","campaign_initiative","initiative_history","initiative_command_receipt","campaign_combat","combat_turn_history","combat_command_receipt")){
         // Every row in these synthetic isolated schemas is stable while a command runs.
         out.put(table,jdbc.queryForList("select to_jsonb(t)::text value from "+table+" t order by to_jsonb(t)::text"));
     }return out;}
@@ -96,11 +98,11 @@ class ModuleOperationsIT {
         UUID start=UUID.randomUUID();tree(dm.post(ops(next)+"/"+start,save(0,List.of(Map.of("kind","REVEAL_CHARACTER","characterId",card,"expectedVersion",1),Map.of("kind","START_ENCOUNTER","expectedVersion",0,"initiativeVersion",2,"reason","Atomic start")))),200);var begin=execute(dm,next,start,1);failAtReceipt(dm,next,start,begin);tree(dm.post(ops(next)+"/"+start+"/executions",begin),200);
     }
     void failAtReceipt(Browser dm,UUID c,UUID id,Map<String,Object> command)throws Exception{
-        var before=state(c);
+        var before=state(c);var beforeFiles=diskFiles();
         for(boolean deferred:List.of(false,true)){
             String suffix=UUID.randomUUID().toString().replace("-","");jdbc.execute("create function a03d_fail_"+suffix+"() returns trigger language plpgsql as $$ begin raise exception 'injected combination failure'; end $$");
             jdbc.execute("create "+(deferred?"constraint ":"")+"trigger a03d_fail_"+suffix+" after insert on module_operation_receipt "+(deferred?"deferrable initially deferred ":"")+"for each row execute function a03d_fail_"+suffix+"()");
-            try{tree(dm.post(ops(c)+"/"+id+"/executions",command),500);assertEquals(before,state(c));}finally{jdbc.execute("drop trigger a03d_fail_"+suffix+" on module_operation_receipt");jdbc.execute("drop function a03d_fail_"+suffix+"()");}
+            try{tree(dm.post(ops(c)+"/"+id+"/executions",command),500);assertEquals(before,state(c));assertEquals(beforeFiles,diskFiles());}finally{jdbc.execute("drop trigger a03d_fail_"+suffix+" on module_operation_receipt");jdbc.execute("drop function a03d_fail_"+suffix+"()");}
         }
     }
     @Test void concurrentRetriesHaveOneEffectAndFreshStaleCompetitorsCannotOverride()throws Exception{
@@ -114,6 +116,46 @@ class ModuleOperationsIT {
     }
     UUID card(Browser dm,UUID c)throws Exception{return UUID.fromString(tree(dm.post(base(c)+"/characters",Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"sheet",io.dndroll.domain.CharacterSheet.empty("Secret creature"))),200).get("id").asString());}
     Map<String,Object> participant(UUID card,long version){return Map.of("characterId",card,"expectedVersion",version,"kind","MONSTER","group","","surprised",false,"advantage",List.of(),"disadvantage",List.of());}
+    byte[] png(int width)throws Exception{var out=new java.io.ByteArrayOutputStream();javax.imageio.ImageIO.write(new java.awt.image.BufferedImage(width,2,java.awt.image.BufferedImage.TYPE_INT_RGB),"png",out);return out.toByteArray();}
+    UUID uploadImage(Browser dm,UUID c,byte[] bytes)throws Exception{
+        String boundary="a03fMultipart";var out=new java.io.ByteArrayOutputStream();var cmd=Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"visibility","DM");
+        out.write(("--"+boundary+"\r\nContent-Disposition: form-data; name=\"command\"\r\nContent-Type: application/json\r\n\r\n"+json.writeValueAsString(cmd)+"\r\n--"+boundary+"\r\nContent-Disposition: form-data; name=\"file\"; filename=\"synthetic.png\"\r\nContent-Type: image/png\r\n\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));out.write(bytes);out.write(("\r\n--"+boundary+"--\r\n").getBytes());
+        var response=dm.client.send(HttpRequest.newBuilder(URI.create("http://localhost:"+port+base(c)+"/note-attachments")).header("X-CSRF-TOKEN",dm.csrf).header("Content-Type","multipart/form-data; boundary="+boundary).POST(HttpRequest.BodyPublishers.ofByteArray(out.toByteArray())).build(),HttpResponse.BodyHandlers.ofString());return UUID.fromString(tree(response,200).get("id").asString());
+    }
+    UUID illustrated(Browser dm,UUID c,List<UUID> images)throws Exception{return UUID.fromString(tree(dm.post(base(c)+"/notes",Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"visibility","DM","title","私密附图 <literal>","text","Only this current text","attachments",images)),200).get("id").asString());}
+    Map<String,Object> material(UUID note,long version){return Map.of("kind","PUBLISH_MATERIAL","noteId",note,"expectedVersion",version);}
+    Set<String> diskFiles()throws Exception{var root=java.nio.file.Path.of(imageRoot);if(!java.nio.file.Files.exists(root))return Set.of();try(var paths=java.nio.file.Files.list(root)){return paths.map(p->p.getFileName().toString()).collect(java.util.stream.Collectors.toSet());}}
+    byte[] download(Browser actor,UUID c,String id,int status)throws Exception{var r=actor.client.send(HttpRequest.newBuilder(URI.create("http://localhost:"+port+base(c)+"/note-attachments/"+id+"/content")).GET().build(),HttpResponse.BodyHandlers.ofByteArray());assertEquals(status,r.statusCode());return r.body();}
+    @Test void illustratedPublicationCopiesFourOrderedImagesAndRetainsPrivateSourcesAcrossExactRetryAndRevocation()throws Exception{
+        var dm=dm();UUID c=campaign(dm),s=scene(dm,c),t=token(dm,c,s),id=UUID.randomUUID();var originals=new ArrayList<UUID>();for(int n=2;n<6;n++)originals.add(uploadImage(dm,c,png(n)));
+        UUID note=illustrated(dm,c,originals);var source=dm.read(base(c)+"/notes/"+note);var author=member(c,"DM");var player=member(c,"PLAYER");
+        tree(author.post(ops(c)+"/"+id,save(0,List.of(reveal(s,t,0),material(note,0)))),200);var command=execute(author,c,id,1);var before=state(c);var files=diskFiles();
+        assertTrue(player.read(base(c)+"/notes").get("notes").isEmpty());for(UUID image:originals)download(player,c,image.toString(),404);
+        var result=tree(author.post(ops(c)+"/"+id+"/executions",command),200);assertEquals(author.username,result.get("actor").asString());
+        var visible=player.read(base(c)+"/notes").get("notes");assertEquals(1,visible.size());var published=visible.get(0);assertEquals(source.get("title"),published.get("title"));assertEquals(source.get("text"),published.get("text"));assertEquals(4,published.get("attachments").size());
+        for(int n=0;n<4;n++){String image=published.get("attachments").get(n).get("id").asString();assertFalse(originals.contains(UUID.fromString(image)));assertArrayEquals(png(n+2),download(player,c,image,200));download(player,c,originals.get(n).toString(),404);}
+        assertEquals(source,dm.read(base(c)+"/notes/"+note));assertEquals(files.size()+4,diskFiles().size());assertNotEquals(before,state(c));
+        tree(dm.post(base(c)+"/notes/"+note,Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"title","Later private title","text","Later secret text","attachments",List.of(),"reason","Private reason must stay private")),200);
+        var later=state(c);var laterFiles=diskFiles();assertEquals(result,tree(author.post(ops(c)+"/"+id+"/executions",command),200));assertEquals(later,state(c));assertEquals(laterFiles,diskFiles());assertEquals(visible,player.read(base(c)+"/notes").get("notes"));
+        assertFalse(player.read(base(c)+"/notes/export?format=json").toString().contains("Later secret"));tree(player.get(ops(c)+"/"+id+"/executions"),403);
+        jdbc.update("delete from campaign_member where campaign_id=? and username=?",c,player.username);download(player,c,published.get("attachments").get(0).get("id").asString(),403);
+        jdbc.update("update campaign_member set role='PLAYER' where campaign_id=? and username=?",c,author.username);tree(author.post(ops(c)+"/"+id+"/executions",command),403);assertEquals(later,state(c));
+    }
+    @Test void illustratedPublicationRollsBackNewFilesAndAllStepsOnImmediateOrDeferredFailureThenConcurrentRetryPublishesOnce()throws Exception{
+        var dm=dm();UUID c=campaign(dm),s=scene(dm,c),t=token(dm,c,s),id=UUID.randomUUID();UUID image=uploadImage(dm,c,png(3)),note=illustrated(dm,c,List.of(image));
+        tree(dm.post(ops(c)+"/"+id,save(0,List.of(reveal(s,t,0),material(note,0)))),200);var command=execute(dm,c,id,1);failAtReceipt(dm,c,id,command);var files=diskFiles();
+        var pool=Executors.newFixedThreadPool(2);try{var a=pool.submit(()->dm.post(ops(c)+"/"+id+"/executions",command));var b=pool.submit(()->dm.post(ops(c)+"/"+id+"/executions",command));assertEquals(tree(a.get(),200),tree(b.get(),200));}finally{pool.shutdownNow();}
+        assertEquals(files.size()+1,diskFiles().size());assertEquals(1,jdbc.queryForObject("select count(*) from campaign_note where campaign_id=? and visibility='TEAM'",Integer.class,c));assertArrayEquals(png(3),download(dm,c,image.toString(),200));
+    }
+    @Test void missingCorruptOrChangedImageAndStaleSourceBlockWholeMaterialCombinationBeforeReveal()throws Exception{
+        var dm=dm();UUID c=campaign(dm),s=scene(dm,c),t=token(dm,c,s),id=UUID.randomUUID();UUID image=uploadImage(dm,c,png(3)),note=illustrated(dm,c,List.of(image));
+        tree(dm.post(ops(c)+"/"+id,save(0,List.of(reveal(s,t,0),material(note,0)))),200);var command=execute(dm,c,id,1);var before=state(c);String key=jdbc.queryForObject("select storage_key::text from note_attachment where id=?",String.class,image);
+        imageFiles.discard(key);tree(dm.post(ops(c)+"/"+id+"/impact",Map.of("expectedVersion",1,"campaignVersion",0)),503);tree(dm.post(ops(c)+"/"+id+"/executions",command),503);assertEquals(before,state(c));
+        for(byte[] bad:List.of(new byte[]{1,2,3},png(4))){imageFiles.publish(key,bad);tree(dm.post(ops(c)+"/"+id+"/executions",command),503);assertEquals(before,state(c));}
+        imageFiles.publish(key,png(3));tree(dm.post(base(c)+"/notes/"+note,Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"title","New private material","text","Not reviewed","attachments",List.of(image),"reason","Changed after preview")),200);before=state(c);
+        tree(dm.post(ops(c)+"/"+id+"/executions",command),409);assertEquals(before,state(c));assertTrue(dm.read(ops(c)+"/"+id+"/executions").isEmpty());
+        UUID other=campaign(dm);UUID foreign=UUID.randomUUID();tree(dm.post(ops(other)+"/"+foreign,save(0,List.of(material(note,1)))),200);tree(dm.post(ops(other)+"/"+foreign+"/impact",Map.of("expectedVersion",1,"campaignVersion",0)),404);
+    }
     @Test void attachedPrivateMaterialIsExplicitlyBlockedWithoutStrippingImagesOrRevealingEarlierTargets()throws Exception{
         var dm=dm();UUID c=campaign(dm),s=scene(dm,c),t=token(dm,c,s),id=UUID.randomUUID();var image=new java.io.ByteArrayOutputStream();javax.imageio.ImageIO.write(new java.awt.image.BufferedImage(3,2,java.awt.image.BufferedImage.TYPE_INT_RGB),"png",image);
         String boundary="a03dMultipart";var out=new java.io.ByteArrayOutputStream();var cmd=Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"visibility","DM");

@@ -72,6 +72,49 @@ class AttackPreviewsIT {
     Map<String,Object> command(JsonNode p,String kind,List<?> changes,String correction,String summary){return Map.of("requestId",UUID.randomUUID(),"expectedVersion",p.get("version").asLong(),"kind",kind,"previewHash",p.get("hash").asString(),"changes",changes,"correctionOf",correction,"reason","Private DM reason","summary",summary);}
     JsonNode preview(Browser dm,UUID c,Map<String,Object> body)throws Exception{String id=tree(dm.post(previews(c),body),200).get("id").asString();return dm.read(previews(c)+"/"+id);}
     JsonNode send(Browser dm,UUID c,JsonNode p,String kind,List<?> changes,String correction,String summary)throws Exception{tree(dm.post(previews(c)+"/"+p.get("id").asString()+"/events",command(p,kind,changes,correction,summary)),200);return dm.read(previews(c)+"/"+p.get("id").asString());}
+    @Test void damageEffectIsReadOnlyThenConfirmedAndAppliedExactlyOnce()throws Exception{
+        var dm=dm();var c=campaign(dm);var player=player(c);String a=catalogCard(dm,c,0,"Hero"),b=attackCard(dm,c,1,"Target");var p=preview(dm,c,previewBody(dm,c,a,b));
+        String root=previews(c)+"/"+p.get("id").asString(),path=root+"/events";var before=snapshot(c);
+        var plan=tree(dm.get(root+"/damage-effect"),200);assertEquals("CANDIDATE",plan.get("status").asString());assertEquals(20,plan.get("hp").asInt());assertEquals(1,plan.get("tempHp").asInt());assertEquals(4,plan.get("absorbed").asInt());assertEquals(before,snapshot(c));
+        var response=player.get(root+"/damage-effect");tree(response,403);assertEquals("no-store, private",response.headers().firstValue("Cache-Control").orElseThrow());tree(new Browser().get(root+"/damage-effect"),401);
+        var bad=new HashMap<>(command(p,"CONFIRM_DAMAGE",List.of(change(b,0,1,0)),"",""));tree(dm.post(path,bad),400);assertEquals(before,snapshot(c));
+        var confirm=command(p,"CONFIRM_DAMAGE",List.of(),"","");var confirmAck=tree(dm.post(path,confirm),200);p=dm.read(root);var event=p.get("events").get(0);assertEquals("CONFIRM_DAMAGE",event.get("kind").asString());assertEquals(20,event.get("changes").get(0).get("hp").asInt());assertEquals(1,event.get("changes").get(0).get("tempHp").asInt());assertEquals(0,event.get("changes").get(0).get("resources").size());assertEquals(5,dm.read(base(c)+"/characters/"+b).get("sheet").get("combat").get("tempHp").asInt());
+        var apply=command(p,"APPLY",List.of(),"","");var applyAck=tree(dm.post(path,apply),200);assertEquals(1,dm.read(base(c)+"/characters/"+b).get("sheet").get("combat").get("tempHp").asInt());var applied=snapshot(c);
+        assertEquals(confirmAck,tree(dm.post(path,confirm),200));assertEquals(applyAck,tree(dm.post(path,apply),200));assertEquals(applied,snapshot(c));assertEquals(0,player.read(base(c)+"/attack-results").size());
+        tree(dm.get(root+"/damage-effect"),409);jdbc.update("update campaign_member set role='PLAYER' where campaign_id=? and username=?",c,dm.username);tree(dm.post(path,confirm),403);tree(dm.post(path,apply),403);
+    }
+    @Test void damageEffectCrossesTempBufferAndRejectsLethalOrStalePlansWithoutWrites()throws Exception{
+        var dm=dm();var c=campaign(dm);String a=catalogCard(dm,c,0,"Hero"),b=attackCard(dm,c,1,"Target");
+        tree(dm.post(base(c)+"/characters/"+b+"/resources",Map.of("requestId",UUID.randomUUID(),"expectedVersion",0,"resourceId","tempHp","delta",-3,"reason","Buffer")),200);
+        var p=preview(dm,c,previewBody(dm,c,a,b));String root=previews(c)+"/"+p.get("id").asString();var plan=dm.read(root+"/damage-effect");assertEquals(18,plan.get("hp").asInt());assertEquals(0,plan.get("tempHp").asInt());assertEquals(2,plan.get("hpLoss").asInt());
+        tree(dm.post(base(c)+"/characters/"+b+"/resources",Map.of("requestId",UUID.randomUUID(),"expectedVersion",1,"resourceId","hp","delta",-19,"reason","Later play")),200);
+        var before=snapshot(c);tree(dm.get(root+"/damage-effect"),409);tree(dm.post(root+"/events",command(p,"CONFIRM_DAMAGE",List.of(),"","")),409);assertEquals(before,snapshot(c));
+        p=preview(dm,c,previewBody(dm,c,a,b));root=previews(c)+"/"+p.get("id").asString();before=snapshot(c);plan=dm.read(root+"/damage-effect");assertEquals("MANUAL_REQUIRED",plan.get("status").asString());for(String field:List.of("hp","tempHp","absorbed","hpLoss"))assertTrue(plan.get(field).isNull());tree(dm.post(root+"/events",command(p,"CONFIRM_DAMAGE",List.of(),"","")),409);assertEquals(before,snapshot(c));
+    }
+    @Test void automaticDamageConfirmationAndApplyKeepRacesAndCommitFailuresAtomic()throws Exception{
+        var dm=dm();var c=campaign(dm);String a=catalogCard(dm,c,0,"Hero"),b=attackCard(dm,c,1,"Target");var p=preview(dm,c,previewBody(dm,c,a,b));String root=previews(c)+"/"+p.get("id").asString(),path=root+"/events";
+        for(String kind:List.of("CONFIRM_DAMAGE","APPLY")){
+            var body=command(p,kind,List.of(),"","");
+            for(boolean deferred:List.of(false,true)){
+                var before=snapshot(c);String fn="a08_fail_"+UUID.randomUUID().toString().replace("-","");jdbc.execute("create function "+fn+"() returns trigger language plpgsql as $$ begin raise exception 'automatic damage atomic failure'; end $$");jdbc.execute("create "+(deferred?"constraint ":"")+"trigger "+fn+" after insert on attack_preview_receipt "+(deferred?"deferrable initially deferred ":"")+"for each row execute function "+fn+"()");
+                try{tree(dm.post(path,body),500);assertEquals(before,snapshot(c));}finally{jdbc.execute("drop trigger "+fn+" on attack_preview_receipt");jdbc.execute("drop function "+fn+"()");}
+            }
+            var pool=Executors.newFixedThreadPool(2);try{var one=pool.submit(()->dm.post(path,body));var two=pool.submit(()->dm.post(path,body));assertEquals(tree(one.get(),200),tree(two.get(),200));}finally{pool.shutdownNow();}
+            var before=snapshot(c);var different=new HashMap<>(body);different.put("reason","Changed review");tree(dm.post(path,different),409);assertEquals(before,snapshot(c));p=dm.read(root);
+        }
+        assertEquals(1,dm.read(base(c)+"/characters/"+b).get("version").asLong());assertEquals(1,dm.read(base(c)+"/characters/"+b).get("sheet").get("combat").get("tempHp").asInt());
+    }
+    @Test void automaticEffectsRejectExistingConditionsDeathRecordsAndIndependentActionDecisions()throws Exception{
+        var dm=dm();var c=campaign(dm);String a=catalogCard(dm,c,0,"Hero"),b=attackCard(dm,c,1,"Target");
+        for(String mode:List.of("condition","death","action","source")){
+            var target=dm.read(base(c)+"/characters/"+b);var sheet=(tools.jackson.databind.node.ObjectNode)target.get("sheet").deepCopy();sheet.set("conditions",json.valueToTree(mode.equals("condition")?List.of(new CharacterSheet.Condition("expired","Reviewed","","",CharacterSheet.manual(),0,null)):List.of()));((tools.jackson.databind.node.ObjectNode)sheet.get("combat")).put("deathFailures",mode.equals("death")?1:0);
+            tree(dm.post(base(c)+"/characters/"+b,Map.of("requestId",UUID.randomUUID(),"expectedVersion",target.get("version").asLong(),"sheet",sheet,"reason","Explicit test condition")),200);
+            var p=preview(dm,c,previewBody(dm,c,a,b));String root=previews(c)+"/"+p.get("id").asString();
+            if(mode.equals("action")){String actionPath=base(c)+"/actions/"+p.get("evidence").get("actionId").asString();tree(dm.post(actionPath+"/events",event(2,"VERDICT","","MISS",List.of(),"","Independent verdict")),200);}
+            if(mode.equals("source")){var source=dm.read(base(c)+"/characters/"+a);tree(dm.post(base(c)+"/characters/"+a+"/resources",Map.of("requestId",UUID.randomUUID(),"expectedVersion",source.get("version").asLong(),"resourceId","hp","delta",-1,"reason","Source changed")),200);}
+            var before=snapshot(c);if(Set.of("action","source").contains(mode))tree(dm.get(root+"/damage-effect"),409);else assertEquals("MANUAL_REQUIRED",dm.read(root+"/damage-effect").get("status").asString());tree(dm.post(root+"/events",command(p,"CONFIRM_DAMAGE",List.of(),"","")),409);assertEquals(before,snapshot(c));
+        }
+    }
     @Test void durablePreviewConfirmAtomicApplyCorrectionAndSeparateSafePublication()throws Exception{
         var dm=dm();var c=campaign(dm);var player=player(c);String a=catalogCard(dm,c,0,"Hero"),b=attackCard(dm,c,1,"Enemy");var body=previewBody(dm,c,a,b);var p=preview(dm,c,body);String path=previews(c)+"/"+p.get("id").asString()+"/events";
         assertEquals("PREVIEW",p.get("status").asString());assertEquals(20,dm.read(base(c)+"/characters/"+b).get("sheet").get("combat").get("hp").asInt());assertEquals(0,player.read(base(c)+"/attack-results").size());

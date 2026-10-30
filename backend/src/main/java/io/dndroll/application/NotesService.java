@@ -15,6 +15,7 @@ public final class NotesService {
     public record Revision(View note,String reason) {}
     public record Ack(UUID id,long version) {}
     public record Receipt(String fingerprint,Ack result) {}
+    public record Material(View note,List<NoteImages.PublicationImage> images) {}
     public record Listing(long campaignVersion,List<View> notes,String next) {}
     public record History(UUID noteId,List<Revision> revisions) {}
     public record Export(String format,int formatVersion,List<View> notes,List<History> histories,List<AssetService.Asset> attachments) {}
@@ -56,6 +57,15 @@ public final class NotesService {
     private View view(UUID c,Note n){return new View(n.id(),n.version(),n.visibility(),n.title(),n.text(),n.attachments().stream().map(id->images.metadata(c,id)).toList(),n.actor(),n.at(),n.editedAt());}
     private List<Revision> revisions(UUID c,UUID id){return store.history(id).stream().map(n->new Revision(view(c,n),n.reason())).toList();}
     public View detail(UUID c,UUID id,String actor){return campaigns.locked(c,()->view(c,target(c,id,member(c,actor))));}
+    public Material reviewPublication(UUID c,UUID id,String actor,long version){return campaigns.locked(c,()->{
+        var role=member(c,actor);AccountPolicy.dm(role);var note=target(c,id,role);AccountPolicy.version(note.version(),version);
+        if(!note.visibility().equals("DM"))throw new DomainException("MODULE_OPERATION_UNSUPPORTED",409,"Select private DM material");
+        return new Material(view(c,note),images.reviewPublication(c,note.attachments(),actor));
+    });}
+    public Ack publishMaterial(UUID c,UUID id,String actor,UUID request,long version,long campaignVersion){return campaigns.actorLocked(actor,()->campaigns.locked(c,()->{
+        var material=reviewPublication(c,id,actor,version);var copies=images.copyForPublication(c,material.note().attachments().stream().map(AssetService.Asset::id).toList(),actor);
+        return create(c,actor,new Create(request,campaignVersion,"TEAM",material.note().title(),material.note().text(),copies));
+    }));}
     public List<Revision> history(UUID c,UUID id,String actor){return campaigns.locked(c,()->{target(c,id,member(c,actor));return revisions(c,id);});}
     public Listing list(UUID c,String actor,UUID before,Filter filter){return campaigns.locked(c,()->{
         var role=member(c,actor);if(before!=null)target(c,before,role);var rows=store.list(c,role==Role.DM,before,filter,51);var page=rows.subList(0,Math.min(50,rows.size()));return new Listing(campaigns.campaignVersion(c),page.stream().map(n->view(c,n)).toList(),rows.size()>50?page.getLast().id().toString():"");

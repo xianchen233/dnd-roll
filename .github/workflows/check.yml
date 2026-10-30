@@ -102,7 +102,7 @@ jobs:
           docker compose -f deploy/compose.yaml config --quiet
           docker compose -f deploy/compose.yaml up --build -d
           curl --fail --retry 40 --retry-delay 3 --retry-all-errors --max-time 5 --retry-max-time 120 http://localhost:8080/api/auth/csrf > /dev/null
-      - run: E2E_A03E_CAPTURE_FILE="$RUNNER_TEMP/a03e-controls.json" E2E_A05_CAPTURE_FILE="$RUNNER_TEMP/a05-browser.json" E2E_A06_CAPTURE_FILE="$RUNNER_TEMP/a06-browser.json" npm run test:e2e
+      - run: E2E_A03HS_CAPTURE_FILE="$RUNNER_TEMP/a03hs-browser.json" E2E_A03E_CAPTURE_FILE="$RUNNER_TEMP/a03e-controls.json" E2E_A03F_CAPTURE_FILE="$RUNNER_TEMP/a03f-browser.json" E2E_A03G_CAPTURE_FILE="$RUNNER_TEMP/a03g-browser.json" E2E_A03H_CAPTURE_FILE="$RUNNER_TEMP/a03h-browser.json" E2E_A05_CAPTURE_FILE="$RUNNER_TEMP/a05-browser.json" E2E_A06_CAPTURE_FILE="$RUNNER_TEMP/a06-browser.json" npm run test:e2e
         working-directory: frontend
       - name: Verify persistence and browser-created controls across backend and PostgreSQL restart
         run: |
@@ -122,6 +122,10 @@ jobs:
           node scripts/check-operations-restart.mjs seed "$RUNNER_TEMP/operations-restart.json"
           node scripts/check-attack-previews-restart.mjs seed "$RUNNER_TEMP/attack-previews-restart.json"
           node scripts/check-movement-restart.mjs seed "$RUNNER_TEMP/movement-restart.json"
+          node scripts/check-materials-restart.mjs seed "$RUNNER_TEMP/materials-restart.json"
+          node scripts/check-portable-restart.mjs seed "$RUNNER_TEMP/portable-restart.json"
+          node scripts/check-bindings-restart.mjs seed "$RUNNER_TEMP/bindings-restart.json"
+          node scripts/check-operation-migrations-restart.mjs seed "$RUNNER_TEMP/operation-migrations-restart.json"
           docker compose -f deploy/compose.yaml restart db
           docker compose -f deploy/compose.yaml up -d --wait db
           docker compose -f deploy/compose.yaml restart backend
@@ -144,11 +148,19 @@ jobs:
           node scripts/check-controls-restart.mjs "$RUNNER_TEMP/a03e-controls.json"
           node scripts/check-attack-previews-restart.mjs verify "$RUNNER_TEMP/a05-browser.json"
           node scripts/check-movement-restart.mjs verify "$RUNNER_TEMP/a06-browser.json"
+          node scripts/check-materials-restart.mjs verify "$RUNNER_TEMP/materials-restart.json"
+          node scripts/check-materials-restart.mjs verify "$RUNNER_TEMP/a03f-browser.json"
+          node scripts/check-portable-restart.mjs verify "$RUNNER_TEMP/portable-restart.json"
+          node scripts/check-portable-restart.mjs verify "$RUNNER_TEMP/a03g-browser.json"
+          node scripts/check-bindings-restart.mjs verify "$RUNNER_TEMP/bindings-restart.json"
+          node scripts/check-bindings-restart.mjs verify "$RUNNER_TEMP/a03h-browser.json"
+          node scripts/check-operation-migrations-restart.mjs verify "$RUNNER_TEMP/operation-migrations-restart.json"
+          node scripts/check-operation-migrations-restart.mjs verify "$RUNNER_TEMP/a03hs-browser.json"
           node scripts/check-campaign-restart.mjs verify "$RUNNER_TEMP/p10-campaign-restart.json"
       - name: Restore a complete migration archive into a separate Compose project
         run: |
           node scripts/check-campaign-restart.mjs capture "$RUNNER_TEMP/p10-campaign-restore.json"
-          for group in asset token map p02 character content dice combat timeline notes module lifecycle operations attack-previews movement; do
+          for group in asset token map p02 character content dice combat timeline notes module lifecycle operations attack-previews movement materials portable bindings operation-migrations; do
             node "scripts/check-$group-restart.mjs" seed "$RUNNER_TEMP/restore-$group.json"
           done
           node scripts/check-pending-backup.mjs capture "$RUNNER_TEMP/restore-pending.json"
@@ -168,15 +180,23 @@ jobs:
           export E2E_BASE_URL=http://localhost:8081
           node scripts/check-pending-backup.mjs verify "$RUNNER_TEMP/restore-pending.json"
           node scripts/check-campaign-restart.mjs verify "$RUNNER_TEMP/p10-campaign-restore.json"
-          for group in asset token map p02 character content dice combat timeline notes module lifecycle operations attack-previews movement; do
+          for group in asset token map p02 character content dice combat timeline notes module lifecycle operations attack-previews movement materials portable bindings operation-migrations; do
             node "scripts/check-$group-restart.mjs" verify "$RUNNER_TEMP/restore-$group.json"
           done
           node scripts/check-controls-restart.mjs "$RUNNER_TEMP/a03e-controls.json"
           node scripts/check-attack-previews-restart.mjs verify "$RUNNER_TEMP/a05-browser.json"
           node scripts/check-movement-restart.mjs verify "$RUNNER_TEMP/a06-browser.json"
+          node scripts/check-materials-restart.mjs verify "$RUNNER_TEMP/a03f-browser.json"
+          node scripts/check-portable-restart.mjs verify "$RUNNER_TEMP/a03g-browser.json"
+          node scripts/check-bindings-restart.mjs verify "$RUNNER_TEMP/a03h-browser.json"
+          node scripts/check-operation-migrations-restart.mjs verify "$RUNNER_TEMP/a03hs-browser.json"
           npm --prefix frontend run test:e2e -- p10-campaign.spec.ts mobile.spec.ts
           node scripts/check-attack-previews-restart.mjs resume "$RUNNER_TEMP/restore-attack-previews.json"
           node scripts/check-movement-restart.mjs resume "$RUNNER_TEMP/restore-movement.json"
+          node scripts/check-materials-restart.mjs resume "$RUNNER_TEMP/restore-materials.json"
+          node scripts/check-portable-restart.mjs resume "$RUNNER_TEMP/restore-portable.json"
+          node scripts/check-bindings-restart.mjs resume "$RUNNER_TEMP/restore-bindings.json"
+          node scripts/check-operation-migrations-restart.mjs resume "$RUNNER_TEMP/restore-operation-migrations.json"
           node scripts/check-capacity.mjs "$RUNNER_TEMP/p10-capacity.json" &
           capacity_pid=$!
           while kill -0 "$capacity_pid" 2>/dev/null; do

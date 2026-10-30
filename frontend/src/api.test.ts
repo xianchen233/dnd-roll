@@ -2,6 +2,17 @@ import { describe, expect, it, vi } from 'vitest';
 import { Api, ApiError } from './api';
 
 describe('session HTTP client', () => {
+  it('sends selected migration reviews and confirmation through CSRF POST with exact versions',async()=>{
+    const request=vi.fn().mockImplementation((path:string)=>Promise.resolve(Response.json(path==='/api/auth/csrf'?{token:'csrf',headerName:'X-CSRF-TOKEN'}:{}))),api=new Api(request),options={expectedVersion:4,customizationVersion:6},review={...options,campaignVersion:7,selections:[{nodeId:'node',choice:'RETIRE' as const,bindingVersion:2,operationVersion:3}]},command={...review,requestId:'request',impactHash:'hash',confirmations:['explicit']};
+    await api.moduleOperationOptions('c/x',options);await api.moduleOperationMigrationImpact('c/x',review);await api.migrateModuleOperations('c/x',command);
+    expect(request.mock.calls.map(c=>c[0])).toEqual(['/api/auth/csrf','/api/campaigns/c%2Fx/module-instance/operation-options','/api/campaigns/c%2Fx/module-instance/operation-migration-impact','/api/campaigns/c%2Fx/module-instance/operation-migrations']);for(const [index,body]of [[1,options],[2,review],[3,command]] as const)expect((request.mock.calls as any)[index][1]).toMatchObject({method:'POST',credentials:'include',headers:{'X-CSRF-TOKEN':'csrf'},body:JSON.stringify(body)});
+  });
+  it('uses actual CSRF POST transport for portable preview and binding, encoding stable identifiers',async()=>{
+    const request=vi.fn().mockImplementation((path:string)=>Promise.resolve(Response.json(path==='/api/auth/csrf'?{token:'csrf',headerName:'X-CSRF-TOKEN'}:{}))),api=new Api(request),review={expectedVersion:1,operationVersion:0,instanceVersion:2,campaignVersion:3},body={...review,requestId:'request',impactHash:'hash',reason:'Explicit'};
+    await api.moduleBindings('c/x');await api.previewModuleBinding('c/x','node/x',review);await api.bindModuleOperation('c/x','node/x',body);await api.moduleBindingHistory('c/x','node/x');
+    expect(request.mock.calls.map(c=>c[0])).toEqual(['/api/campaigns/c%2Fx/module-operation-bindings','/api/auth/csrf','/api/campaigns/c%2Fx/module-operation-bindings/node%2Fx/preview','/api/campaigns/c%2Fx/module-operation-bindings/node%2Fx/bind','/api/campaigns/c%2Fx/module-operation-bindings/node%2Fx/history']);
+    for(const [index,value]of [[2,review],[3,body]] as const)expect((request.mock.calls as any)[index][1]).toMatchObject({method:'POST',credentials:'include',headers:{'X-CSRF-TOKEN':'csrf'},body:JSON.stringify(value)});
+  });
   it('uses the three DM token endpoints with complete versioned bodies and CSRF', async () => {
     const request = vi.fn().mockResolvedValueOnce(Response.json({ sceneId: 's/x', sceneVersion: 8, tokens: [] }))
       .mockResolvedValueOnce(Response.json({ token: 'csrf', headerName: 'X-CSRF-TOKEN' }))

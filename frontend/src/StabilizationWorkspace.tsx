@@ -1,0 +1,35 @@
+import React,{useEffect,useRef,useState} from 'react';
+import {ApiError,type Api} from './api';
+import type {CharacterAck,CharacterDetail} from './characters';
+import type {StabilizationState,StabilizationPlan,StabilizationReview} from './stabilization';
+export type StabilizationProps={api:Api;campaignId:string;targetId:string;revision:number;onChanged():void;onDenied():void};
+export function StabilizationWorkspace(props:StabilizationProps){return <Body key={`${props.campaignId}/${props.targetId}`} {...props}/>;}
+export function StabilizationLauncher(props:StabilizationProps){const [open,setOpen]=useState(false);return <div><button onClick={()=>setOpen(v=>!v)}>DM：0HP稳定伤势</button>{open&&<StabilizationWorkspace {...props}/>}</div>;}
+function Body({api,campaignId,targetId,revision,onChanged,onDenied}:StabilizationProps){
+ const [state,setState]=useState<StabilizationState>(),[target,setTarget]=useState<CharacterDetail>(),[helpers,setHelpers]=useState<{id:string;name:string}[]>([]),[helper,setHelper]=useState(''),[reviewed,setReviewed]=useState(false),[reason,setReason]=useState(''),[plan,setPlan]=useState<{body:StabilizationReview;result:StabilizationPlan}>(),[busy,setBusy]=useState(false),[retry,setRetry]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState('');
+ const alive=useRef(true),reads=useRef(0),firstRevision=useRef(true),writing=useRef(false),preparing=useRef(false),pending=useRef<(()=>Promise<CharacterAck>)|undefined>(undefined);
+ function deny(e:unknown){if(e instanceof ApiError&&[401,403,404].includes(e.status)){alive.current=false;reads.current++;pending.current=undefined;setState(undefined);setTarget(undefined);setHelpers([]);setPlan(undefined);setError('稳定资料已不可用');onDenied();return true;}return false;}
+ async function load(){const seq=++reads.current;setPlan(undefined);try{const [s,t,list]=await Promise.all([api.stabilization(campaignId,targetId),api.character(campaignId,targetId),api.characters(campaignId)]);if(!alive.current||seq!==reads.current)return;setState(s);setTarget(t);setHelpers(list.characters.filter(c=>c.id!==targetId));setHelper(v=>v||s.latest?.helper.id||'');}catch(e){if(!alive.current||deny(e))return;if(seq===reads.current)setError(String(e));}}
+ useEffect(()=>{alive.current=true;void load();return()=>{alive.current=false;reads.current++;pending.current=undefined;};},[api,campaignId,targetId]);
+ useEffect(()=>{if(firstRevision.current){firstRevision.current=false;return;}setPlan(undefined);if(!pending.current)void load();},[revision]);
+ function invalidate(){reads.current++;setPlan(undefined);setMessage('');}
+ async function run(send?:()=>Promise<CharacterAck>){if(!alive.current||writing.current)return;if(send)pending.current=send;if(!pending.current)return;writing.current=true;setBusy(true);setRetry(false);setError('');setMessage('');
+  try{await pending.current();if(!alive.current)return;pending.current=undefined;setPlan(undefined);setMessage('操作已确认；正在读取已保存结果。');await load();if(alive.current)onChanged();}
+  catch(e){if(!alive.current||deny(e))return;if(e instanceof ApiError&&e.status<500){pending.current=undefined;if(e.status===409){setReviewed(false);await load();}}setRetry(!!pending.current);setError(`${e instanceof Error?e.message:'稳定操作失败'}${pending.current?'；结果未知，请重试同一操作。':''}`);}
+  finally{writing.current=false;if(alive.current)setBusy(false);}
+ }
+ async function review():Promise<StabilizationReview>{if(!state||!helper)throw new Error('请先选择施救者');const [t,h]=await Promise.all([api.character(campaignId,targetId),api.character(campaignId,helper)]);return {expectedVersion:state.version,targetVersion:t.version,helperId:helper,helperVersion:h.version,rollId:state.latest?.id??'',reviewed};}
+ async function roll(){if(preparing.current||writing.current)return;preparing.current=true;setBusy(true);const seq=reads.current;setError('');try{const r=await review();if(!alive.current||seq!==reads.current)return;const {rollId:_roll,...base}=r;const body={...base,requestId:crypto.randomUUID(),reason};await run(()=>api.rollStabilization(campaignId,targetId,body));}catch(e){if(alive.current&&!deny(e))setError(String(e));}finally{preparing.current=false;if(alive.current)setBusy(false);}}
+ async function preview(){if(busy||retry)return;setBusy(true);setError('');const seq=reads.current;try{const body=await review();const result=await api.previewStabilization(campaignId,targetId,body);if(alive.current&&seq===reads.current)setPlan({body,result});}catch(e){if(alive.current&&!deny(e)){setPlan(undefined);setError(String(e));if(e instanceof ApiError&&e.status===409)await load();}}finally{if(alive.current)setBusy(false);}}
+ const locked=busy||retry,rolled=state?.latest?.status==='ROLLED',applied=state?.latest?.status==='APPLIED';
+ return <section aria-label="0HP稳定伤势"><h3>普通角色0HP稳定伤势</h3><p>稳定仍为0HP且昏迷，死豁计数归零；后续伤害、治疗、1d4小时恢复与完整状态效果由DM处理。</p>{error&&<p role="alert">{error}</p>}{message&&<p role="status">{message}</p>}{retry&&<button disabled={busy} onClick={()=>void run()}>重试同一稳定操作</button>}
+ <button disabled={locked} onClick={()=>{setReviewed(false);void load();}}>刷新稳定资料</button><p>目标：{target?.sheet.name??'读取中'}</p>
+ <label>稳定施救者<select disabled={locked} value={helper} onChange={e=>{invalidate();setReviewed(false);setHelper(e.target.value);}}><option value="">请选择</option>{helpers.map(h=><option key={h.id} value={h.id}>{h.name}</option>)}</select></label>
+ <label><input type="checkbox" checked={reviewed} disabled={locked} onChange={e=>{invalidate();setReviewed(e.target.checked);}}/>我已确认目标为仍存活且未稳定的普通0HP角色，本次Help动作与接触合法，无未处理例外</label>
+ <label>稳定操作理由<input maxLength={1000} value={reason} disabled={locked} onChange={e=>{setPlan(undefined);setReason(e.target.value);}}/></label>
+ {!applied&&state?.latest?.status!=='UNSTABLE'&&state?.latest?.status!=='RESTABILIZED'&&state?.latest?.status!=='RESTABILIZATION_UNSTABLE'&&(state?.latest?.status!=='HEALED'||target?.sheet.combat.hp===0)&&<button disabled={locked||!state||!helper||!reviewed||!reason.trim()} onClick={()=>void roll()}>进行Help医药检定</button>}
+ {state?.latest&&<p>已保存医药检定：{state.latest.roll.result.total} / DC10 · {state.latest.helper.sheet.name}</p>}
+ {rolled&&<button disabled={locked||!helper||!reviewed} onClick={()=>void preview()}>预览稳定方案</button>}
+ {plan&&<div>{plan.result.effect.status==='CANDIDATE'?<><p>方案：稳定，仍0HP且昏迷；死豁归零，临时生命保持</p><button disabled={locked||!reason.trim()} onClick={()=>{const body={...plan.body,requestId:crypto.randomUUID(),planHash:plan.result.hash,reason};void run(()=>api.applyStabilization(campaignId,targetId,body));}}>确认应用稳定记录</button></>:<p>转人工：{plan.result.effect.reasons.join('、')}</p>}</div>}
+ {applied&&<p role="status">已应用稳定记录；仍0HP且昏迷，后续由DM处理。</p>}{state?.latest?.status==='HEALED'&&<p role="status">原稳定记录已通过治疗解除；原检定作为历史保留。</p>}{state?.latest?.status==='UNSTABLE'&&<p role="status">原稳定记录已因受伤失效；后续死豁、治疗及再次稳定由DM处理。</p>}{state?.latest?.status==='RESTABILIZATION_UNSTABLE'&&<p role="status">再次稳定记录已因受伤失效；原检定保留，后续由DM处理。</p>}{state?.latest?.status==='RESTABILIZED'&&<p role="status">原失稳记录已再次稳定；原检定作为历史保留。</p>}</section>;
+}

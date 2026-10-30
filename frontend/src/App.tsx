@@ -5,6 +5,7 @@ import { LoginForm } from './LoginForm';
 import { clearInviteFragment, InvitationPage, readInviteToken } from './InvitationPage';
 import { Tabletop } from './Tabletop';
 import { BackupWorkspace } from './BackupWorkspace';
+import { Appearance } from './Appearance';
 const defaultApi = new Api();
 export function App({ api = defaultApi }: { api?: Api }) {
   const [backupsOpen,setBackupsOpen]=useState(false);
@@ -31,9 +32,9 @@ export function App({ api = defaultApi }: { api?: Api }) {
     setBusy(true); setError('');
     try { await api.logout(); setIdentity(undefined); setCampaigns([]); setCampaignId(''); setBackupsOpen(false); } catch { setError('退出失败，请重试'); } finally { setBusy(false); }
   }
-  return <div className="app-shell"><header className="topbar"><a className="brand" href="/">D<span className="brand-die">20</span>ND <b>ROLL</b></a><span className="edition">2024 · 5R</span><div className="topbar-right">{identity ? <><strong>{identity.username}</strong><button className="quiet" onClick={()=>setBackupsOpen(v=>!v)}>{backupsOpen?'收起部署备份管理':'打开部署备份管理'}</button><button className="quiet" disabled={busy} onClick={() => void logout()}>退出</button></> : <span className="muted">每一场冒险，都值得留下</span>}</div></header>
+  return <div className="app-shell"><header className="topbar"><a className="brand" href="/">D<span className="brand-die">20</span>ND <b>ROLL</b></a><span className="edition">2024 · 5R</span><div className="topbar-right"><Appearance />{identity ? <><strong>{identity.username}</strong><button className="quiet" onClick={()=>setBackupsOpen(v=>!v)}>{backupsOpen?'收起部署备份管理':'打开部署备份管理'}</button><button className="quiet" disabled={busy} onClick={() => void logout()}>退出</button></> : <span className="muted">每一场冒险，都值得留下</span>}</div></header>
     {identity&&backupsOpen&&<BackupWorkspace key={identity.username} api={api}/>}
     {error && <p className="global-error" role="alert">{error}</p>}
-    {checking ? <main className="session-check" role="status">检查会话…</main> : invite !== null ? <InvitationPage key={invite} api={api} token={invite} identity={identity} onIdentity={setIdentity} onJoined={joined} onCancel={() => { clearInviteFragment(); setInvite(null); }} /> : !identity ? <main className="login-layout"><div className="intro"><p className="eyebrow">YOUR NEXT CHAPTER</p><h1>故事在这里<br /><em>继续。</em></h1><p>与伙伴回到同一张桌面。<br />让每一步探索，都成为共同的冒险。</p><div className="intro-footer">DND ROLL <span>◇</span> 冒险桌面</div></div><LoginForm api={api} onLogin={setIdentity} /></main> : <Tabletop api={api} identity={identity} campaigns={campaigns} campaignId={campaignId} onCampaign={setCampaignId} onRefresh={refreshCampaigns} />}
+    {checking ? <main className="session-check" role="status">检查会话…</main> : invite !== null ? <InvitationPage key={invite} api={api} token={invite} identity={identity} onIdentity={setIdentity} onJoined={joined} onCancel={() => { clearInviteFragment(); setInvite(null); }} /> : !identity ? <main className="login-layout"><div className="intro"><div className="portal-caption"><p className="eyebrow">冒险的下一章</p><h1>跨过门扉<br /><em>续写冒险</em></h1><p>与伙伴回到同一张桌面</p></div></div><LoginForm api={api} onLogin={setIdentity} /></main> : <Tabletop api={api} identity={identity} campaigns={campaigns} campaignId={campaignId} onCampaign={setCampaignId} onRefresh={refreshCampaigns} />}
   </div>;
 }

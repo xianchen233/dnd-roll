@@ -9,7 +9,9 @@ import tools.jackson.databind.json.JsonMapper;
 
 /** Typed exchange definitions. No runtime identity, authorization or history fields. */
 public final class ModuleBlueprint {
-    public record Document(List<ModuleArchive.Node> nodes,Play play) {}
+    public record Document(List<ModuleArchive.Node> nodes,Play play,@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) ModulePortable.Block operations) {
+        public Document(List<ModuleArchive.Node> nodes,Play play){this(nodes,play,null);}
+    }
     public record Play(List<Scene> scenes,List<Unit> units,List<Placement> placements,String admissionMode,List<String> approvedDependencyIds) {}
     public record Scene(String nodeId,int width,int height,int gridSize,MapImage map) {}
     public record MapImage(String assetId,int gridSize,int offsetX,int offsetY,double distancePerCell) {}
@@ -24,7 +26,10 @@ public final class ModuleBlueprint {
                 if(!content.isObject()||content.size()!=1||!content.has("nodes"))throw invalid();
                 shape(content.get("nodes"),Document.class.getRecordComponents()[0].getGenericType());
                 document=new Document(Arrays.asList(JSON.treeToValue(content.get("nodes"),ModuleArchive.Node[].class)),empty());
-            }else{shape(content,Document.class);document=JSON.treeToValue(content,Document.class);}
+            }else{
+                if(manifest.formatVersion()!=2&&manifest.formatVersion()!=3||content.has("operations")!=(manifest.formatVersion()==3))throw invalid();
+                shape(content,Document.class);document=JSON.treeToValue(content,Document.class);
+            }
             validate(document,manifest,manifest.formatVersion()==1);return document;
         }catch(RuntimeException e){throw invalid();}
     }
@@ -52,6 +57,7 @@ public final class ModuleBlueprint {
         }
         for(var u:p.units()){kind(nodes,u.nodeId(),"UNIT");if(!units.add(u.nodeId())||u.sheet()==null)throw invalid();u.sheet().validate();}
         for(var v:p.placements()){id(v.id());if(nodes.containsKey(v.id())||!placements.add(v.id())||!scenes.containsKey(v.sceneId())||!units.contains(v.unitId()))throw invalid();var s=scenes.get(v.sceneId());range(v.x(),0,s.width()-1);range(v.y(),0,s.height()-1);}
+        ModulePortable.validate(d.operations(),d);
     }
     private static void kind(Map<String,ModuleArchive.Node> nodes,String id,String kind){if(!nodes.containsKey(id)||!nodes.get(id).kind().equals(kind))throw invalid();}
     private static void refs(List<String> refs,Set<String> known){if(refs==null||refs.size()>500||new HashSet<>(refs).size()!=refs.size()||!known.containsAll(refs))throw invalid();}
@@ -62,9 +68,12 @@ public final class ModuleBlueprint {
         if(n==null||n.isNull())throw invalid();
         if(type instanceof ParameterizedType p){var args=p.getActualTypeArguments();if(p.getRawType()==List.class){if(!n.isArray()||n.size()>500)throw invalid();n.forEach(v->shape(v,args[0]));}else if(p.getRawType()==Map.class){if(!n.isObject()||n.size()>500)throw invalid();n.properties().forEach(e->shape(e.getValue(),args[1]));}return;}
         Class<?> c=(Class<?>)type;
+        if(c==ModulePortable.Step.class){ModulePortable.shape(n);return;}
         if(c.isRecord()){
-            if(!n.isObject()||n.size()!=c.getRecordComponents().length)throw invalid();
+            boolean oldDocument=c==Document.class&&!n.has("operations");
+            if(!n.isObject()||n.size()!=c.getRecordComponents().length-(oldDocument?1:0))throw invalid();
             for(var f:c.getRecordComponents()){
+                if(oldDocument&&f.getName().equals("operations"))continue;
                 var value=n.get(f.getName());if(value==null)throw invalid();
                 if(value.isNull()&&((c==Scene.class&&f.getName().equals("map"))||(c==CharacterSheet.Condition.class&&Set.of("remainingRounds","expiresAt").contains(f.getName()))))continue;
                 shape(value,f.getGenericType());

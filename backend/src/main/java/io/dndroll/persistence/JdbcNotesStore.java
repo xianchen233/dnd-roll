@@ -6,12 +6,21 @@ import io.dndroll.application.AssetService;
 import java.util.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.support.*;
 import tools.jackson.databind.json.JsonMapper;
 
 @Repository
 public class JdbcNotesStore implements Store,NoteImages.Store {
-    private final JdbcTemplate jdbc;private final JsonMapper json;
-    public JdbcNotesStore(JdbcTemplate jdbc,JsonMapper json){this.jdbc=jdbc;this.json=json;}
+    private final JdbcTemplate jdbc;private final JsonMapper json;private final AssetService.Files files;private final TransactionTemplate reconcile;
+    public JdbcNotesStore(JdbcTemplate jdbc,JsonMapper json,AssetService.Files files,org.springframework.transaction.PlatformTransactionManager transactions){this.jdbc=jdbc;this.json=json;this.files=files;reconcile=new TransactionTemplate(transactions);reconcile.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);}
+    public void copyImage(UUID c,NoteImages.Image image,byte[] bytes){
+        if(!TransactionSynchronizationManager.isActualTransactionActive())throw new IllegalStateException("Image publication requires the note transaction");
+        String key=image.storageKey();TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization(){@Override public void afterCompletion(int status){
+            if(status==STATUS_ROLLED_BACK)files.discard(key);
+            else if(status==STATUS_UNKNOWN)try{reconcile.execute(ignored->{jdbc.query("select id from campaign where id=? for update",(r,n)->r.getObject(1,UUID.class),c);boolean saved=Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from note_attachment where campaign_id=? and id=? and storage_key=?::uuid)",Boolean.class,c,image.metadata().id(),key));if(!saved)files.discard(key);return null;});}catch(RuntimeException unknown){/* Preserve opaque files when the commit outcome remains unknown. */}
+        }});
+        files.publish(key,bytes);saveImage(c,image);
+    }
     public Note note(UUID c,UUID id){var rows=jdbc.query("select data from campaign_note where campaign_id=? and id=?",(rs,n)->json.readValue(rs.getString(1),Note.class),c,id);return rows.isEmpty()?null:rows.getFirst();}
     public void save(UUID c,Note note,boolean create){
         var data=json.writeValueAsString(note);

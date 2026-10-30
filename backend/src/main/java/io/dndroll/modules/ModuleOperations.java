@@ -13,11 +13,12 @@ import tools.jackson.databind.json.JsonMapper;
 /** Explicit DM combinations orchestrate existing services in the campaign transaction. */
 public final class ModuleOperations {
     @JsonTypeInfo(use=JsonTypeInfo.Id.NAME,property="kind")
-    @JsonSubTypes({@JsonSubTypes.Type(value=RevealToken.class,name="REVEAL_TOKEN"),@JsonSubTypes.Type(value=RevealCharacter.class,name="REVEAL_CHARACTER"),@JsonSubTypes.Type(value=PublishText.class,name="PUBLISH_TEXT"),@JsonSubTypes.Type(value=PrepareEncounter.class,name="PREPARE_ENCOUNTER"),@JsonSubTypes.Type(value=StartEncounter.class,name="START_ENCOUNTER")})
-    public sealed interface Step permits RevealToken,RevealCharacter,PublishText,PrepareEncounter,StartEncounter {}
+    @JsonSubTypes({@JsonSubTypes.Type(value=RevealToken.class,name="REVEAL_TOKEN"),@JsonSubTypes.Type(value=RevealCharacter.class,name="REVEAL_CHARACTER"),@JsonSubTypes.Type(value=PublishText.class,name="PUBLISH_TEXT"),@JsonSubTypes.Type(value=PublishMaterial.class,name="PUBLISH_MATERIAL"),@JsonSubTypes.Type(value=PrepareEncounter.class,name="PREPARE_ENCOUNTER"),@JsonSubTypes.Type(value=StartEncounter.class,name="START_ENCOUNTER")})
+    public sealed interface Step permits RevealToken,RevealCharacter,PublishText,PublishMaterial,PrepareEncounter,StartEncounter {}
     public record RevealToken(UUID sceneId,UUID tokenId,long expectedVersion) implements Step {}
     public record RevealCharacter(UUID characterId,long expectedVersion) implements Step {}
     public record PublishText(UUID noteId,long expectedVersion) implements Step {}
+    public record PublishMaterial(UUID noteId,long expectedVersion) implements Step {}
     public record PrepareEncounter(long expectedVersion,List<InitiativeService.Participant> participants,String reason) implements Step {}
     public record StartEncounter(long expectedVersion,long initiativeVersion,String reason) implements Step {}
     public record Definition(UUID id,long version,String name,List<Step> steps) {}
@@ -32,6 +33,8 @@ public final class ModuleOperations {
         List<Definition> list(UUID c);Definition definition(UUID c,UUID id);void save(UUID c,Definition value,boolean create);
         Receipt receipt(String actor,UUID request);void receipt(UUID c,String actor,UUID request,Receipt value);
         List<Execution> executions(UUID c,UUID id);void execution(UUID c,UUID id,Execution value);
+        int slots(UUID c);boolean reserved(UUID c,UUID id);
+        default String bindingStatus(UUID c,UUID id){return "";}
     }
     private final Store store;private final CharacterService.Store campaigns;private final ModuleLifecycle lifecycle;
     private final TokenService tokens;private final CharacterService characters;private final NotesService notes;
@@ -48,6 +51,7 @@ public final class ModuleOperations {
                 case "REVEAL_TOKEN" -> RevealToken.class;
                 case "REVEAL_CHARACTER" -> RevealCharacter.class;
                 case "PUBLISH_TEXT" -> PublishText.class;
+                case "PUBLISH_MATERIAL" -> PublishMaterial.class;
                 case "PREPARE_ENCOUNTER" -> PrepareEncounter.class;
                 case "START_ENCOUNTER" -> StartEncounter.class;
                 default -> throw ModuleBlueprint.invalid();
@@ -66,6 +70,7 @@ public final class ModuleOperations {
                 case RevealToken s -> {if(s.sceneId()==null||s.tokenId()==null)throw ModuleBlueprint.invalid();key="token:"+s.tokenId();version=s.expectedVersion();}
                 case RevealCharacter s -> {if(s.characterId()==null)throw ModuleBlueprint.invalid();key="card:"+s.characterId();version=s.expectedVersion();}
                 case PublishText s -> {if(s.noteId()==null)throw ModuleBlueprint.invalid();key="note:"+s.noteId();version=s.expectedVersion();}
+                case PublishMaterial s -> {if(s.noteId()==null)throw ModuleBlueprint.invalid();key="note:"+s.noteId();version=s.expectedVersion();}
                 case PrepareEncounter s -> {InitiativeService.validateGenerate(new InitiativeService.Generate(r.requestId(),s.expectedVersion(),s.participants(),s.reason()));key="encounter";version=s.expectedVersion();}
                 case StartEncounter s -> {if(s.initiativeVersion()<0)throw ModuleBlueprint.invalid();CharacterSheet.text(s.reason(),1000,true);key="encounter";version=s.expectedVersion();}
             }
@@ -77,20 +82,32 @@ public final class ModuleOperations {
     private Definition target(UUID c,UUID id){var v=store.definition(c,id);if(v==null)throw missing();return v;}
     private String fp(Object... fields){return DiceService.fingerprint(json,Arrays.asList(fields));}
     private Receipt replay(String actor,UUID request,String hash){var old=store.receipt(actor,request);if(old!=null&&!old.fingerprint().equals(hash))throw new DomainException("IDEMPOTENCY_CONFLICT",409,"Request ID already used");return old;}
-    public List<Definition> list(UUID c,String actor){return read(c,actor,()->store.list(c));}
+    private void ready(UUID c,UUID id){String status=store.bindingStatus(c,id);if(status.equals("RETIRED")||status.equals("UNBOUND"))throw new DomainException("MODULE_BINDING_REQUIRED",409,"Operation requires an active current portable binding");}
+    public List<Definition> list(UUID c,String actor){return read(c,actor,()->store.list(c).stream().filter(d->!Set.of("RETIRED","UNBOUND").contains(store.bindingStatus(c,d.id()))).toList());}
     public Definition save(UUID c,UUID id,String actor,Save r){
+        return save(c,id,actor,r,false);
+    }
+    public Definition saveBound(UUID c,UUID id,String actor,Save r){return save(c,id,actor,r,true);}
+    private Definition save(UUID c,UUID id,String actor,Save r,boolean binding){
         validate(r);return command(c,actor,()->{
-            String hash=fp("SAVE",c,id,r);var old=replay(actor,r.requestId(),hash);if(old!=null)return json.treeToValue(old.result(),Definition.class);
+            String hash=fp(binding?"SAVE_BOUND":"SAVE",c,id,r);var old=replay(actor,r.requestId(),hash);if(old!=null)return json.treeToValue(old.result(),Definition.class);
             var before=store.definition(c,id);AccountPolicy.version(before==null?0:before.version(),r.expectedVersion());
-            if(before==null&&store.list(c).size()>=100)throw ModuleBlueprint.invalid();
+            if(!binding&&before!=null)ready(c,id);
+            boolean reserved=store.reserved(c,id);if(binding&&!reserved||!binding&&reserved&&before==null)throw new DomainException("MODULE_BINDING_REQUIRED",409,"Use explicit portable binding before creating this definition");
+            if(before==null&&!reserved&&store.slots(c)>=100)throw ModuleBlueprint.invalid();
             var value=new Definition(id,r.expectedVersion()+1,r.name(),List.copyOf(r.steps()));store.save(c,value,before==null);
             store.receipt(c,actor,r.requestId(),new Receipt(hash,json.valueToTree(value)));return value;
         });
     }
     public Impact impact(UUID c,UUID id,String actor,Review r){return read(c,actor,()->plan(c,id,actor,r));}
     private Impact plan(UUID c,UUID id,String actor,Review r){
+        ready(c,id);
         if(r.expectedVersion()<0||r.campaignVersion()<0)throw ModuleBlueprint.invalid();var d=target(c,id);
         AccountPolicy.version(d.version(),r.expectedVersion());AccountPolicy.version(campaigns.campaignVersion(c),r.campaignVersion());
+        return inspect(c,actor,d,r.campaignVersion());
+    }
+    public Impact reviewCandidate(UUID c,UUID id,String actor,Save candidate,long campaignVersion){return read(c,actor,()->{validate(candidate);AccountPolicy.version(campaigns.campaignVersion(c),campaignVersion);return inspect(c,actor,new Definition(id,candidate.expectedVersion()+1,candidate.name(),candidate.steps()),campaignVersion);});}
+    private Impact inspect(UUID c,String actor,Definition d,long campaignVersion){
         var instance=lifecycle.readInstance(c,actor);var entries=content.list(c,actor,"","","","","").entries();
         for(var dep:instance.source().manifest().dependencies()){
             UUID local=instance.mapping().getOrDefault("dependencies",Map.of()).get(dep.id());
@@ -102,12 +119,13 @@ public final class ModuleOperations {
                 case RevealToken s -> {var token=token(c,actor,s);AccountPolicy.version(token.version(),s.expectedVersion());yield token;}
                 case RevealCharacter s -> {var access=characters.access(c,s.characterId(),actor);AccountPolicy.version(access.version(),s.expectedVersion());if(access.importReview())throw unsupported();yield List.of(access,characters.detail(c,s.characterId(),actor));}
                 case PublishText s -> {var note=notes.detail(c,s.noteId(),actor);AccountPolicy.version(note.version(),s.expectedVersion());if(!note.visibility().equals("DM")||!note.attachments().isEmpty())throw unsupported();yield note;}
+                case PublishMaterial s -> notes.reviewPublication(c,s.noteId(),actor,s.expectedVersion());
                 case PrepareEncounter s -> {var g=new InitiativeService.Generate(UUID.randomUUID(),s.expectedVersion(),s.participants(),s.reason());yield initiative.reviewGenerate(c,actor,g);}
                 case StartEncounter s -> {var state=(InitiativeService.State)initiative.view(c,actor);AccountPolicy.version(state.version(),s.initiativeVersion());var combat=turns.reviewStart(c,actor,s.expectedVersion());var roster=state.entries().stream().map(e->List.of(characters.access(c,e.characterId(),actor),characters.detail(c,e.characterId(),actor))).toList();yield List.of(state,combat,roster);}
             };
             targets.add(json.valueToTree(snapshot));
         }
-        return new Impact(id,d.version(),r.campaignVersion(),fp(c,d,r.campaignVersion(),instance,targets),d,List.copyOf(targets));
+        return new Impact(d.id(),d.version(),campaignVersion,fp(c,d,campaignVersion,instance,targets),d,List.copyOf(targets));
     }
     private TokenService.Token token(UUID c,String actor,RevealToken s){return tokens.list(c,s.sceneId(),actor).tokens().stream().filter(t->t.id().equals(s.tokenId())).findFirst().orElseThrow(ModuleOperations::missing);}
     private static DomainException missing(){return new DomainException("NOT_FOUND",404,"Operation target not found");}
@@ -126,6 +144,7 @@ public final class ModuleOperations {
                     case RevealToken s -> {var t=token(c,actor,s);yield tokens.update(c,s.sceneId(),s.tokenId(),actor,new TokenService.Command(child,s.expectedVersion(),t.name(),t.x(),t.y(),false,t.controllers()));}
                     case RevealCharacter s -> {var access=characters.access(c,s.characterId(),actor);var ack=characters.access(c,s.characterId(),actor,child,s.expectedVersion(),access.controllers(),false,access.shareFull(),false,"模组手动揭露："+impact.definition().name());revealed.add(s.characterId());yield ack;}
                     case PublishText s -> {var n=notes.detail(c,s.noteId(),actor);yield notes.create(c,actor,new NotesService.Create(child,r.campaignVersion(),"TEAM",n.title(),n.text(),List.of()));}
+                    case PublishMaterial s -> notes.publishMaterial(c,s.noteId(),actor,child,s.expectedVersion(),r.campaignVersion());
                     case PrepareEncounter s -> {var participants=s.participants().stream().map(p->new InitiativeService.Participant(p.characterId(),p.expectedVersion()+(revealed.contains(p.characterId())?1:0),p.kind(),p.group(),p.surprised(),p.advantage(),p.disadvantage())).toList();yield initiative.generate(c,actor,new InitiativeService.Generate(child,s.expectedVersion(),participants,s.reason()));}
                     case StartEncounter s -> turns.command(c,actor,new TurnService.Command(child,s.expectedVersion(),"START","",List.of(),s.reason()));
                 };results.add(json.valueToTree(result));

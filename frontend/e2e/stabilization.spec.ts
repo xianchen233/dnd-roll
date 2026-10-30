@@ -1,0 +1,36 @@
+import {randomUUID} from 'node:crypto';
+import {writeFile} from 'node:fs/promises';
+import {test,expect,type APIRequestContext} from '@playwright/test';
+import {emptySheet} from '../src/characters';
+const required=(n:string)=>{const v=process.env[n];if(!v)throw Error('Missing '+n);return v;};
+async function get(r:APIRequestContext,path:string){const response=await r.get(path);expect(response.status()).toBe(200);return response.json();}
+async function post(r:APIRequestContext,path:string,data:unknown,status=200){const csrf=await get(r,'/api/auth/csrf'),response=await r.post(path,{headers:{[csrf.headerName]:csrf.token},data});expect(response.status()).toBe(status);return response.json();}
+test('ordinary zero HP Help saves checks and applies once across real lost responses',async({browser,baseURL},info)=>{
+ const dc=await browser.newContext({baseURL}),pc=await browser.newContext({baseURL}),page=await dc.newPage(),errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+ try{
+  await post(dc.request,'/api/auth/login',{username:required('E2E_DM_USERNAME'),password:required('E2E_DM_PASSWORD')});await post(pc.request,'/api/auth/login',{username:required('E2E_PLAYER_USERNAME'),password:required('E2E_PLAYER_PASSWORD')});
+  const campaign=await post(dc.request,'/api/campaigns',{requestId:randomUUID(),name:'ZZZ A16 '+randomUUID().slice(0,8)},201),root='/api/campaigns/'+campaign.id;
+  const invitation=await post(dc.request,root+'/invitations',{requestId:randomUUID(),expectedVersion:0},201);await post(pc.request,'/api/invitations/accept',{token:invitation.token});
+  const ids:string[]=[],names=['A16 Target','A16 Pending','A16 Helper'];
+  for(let n=0;n<3;n++){const sheet=emptySheet(names[n]);if(n<2)Object.assign(sheet.combat,{maxHp:12,hp:0,tempHp:7,deathSuccesses:1,deathFailures:2});else sheet.skills.find(s=>s.id==='medicine')!.bonus=-100;
+   ids.push((await post(dc.request,root+'/characters',{requestId:randomUUID(),expectedVersion:(await get(dc.request,root+'/characters')).campaignVersion,sheet})).id);
+  }
+  const path=root+'/characters/'+ids[0]+'/stabilization',pendingPath=root+'/characters/'+ids[1]+'/stabilization';
+  const posts:{path:string;body:unknown;ack:unknown}[]=[];
+  const rollBody=async(target:string)=>{const state=await get(dc.request,root+'/characters/'+target+'/stabilization');return {requestId:randomUUID(),expectedVersion:state.version,targetVersion:(await get(dc.request,root+'/characters/'+target)).version,helperId:ids[2],helperVersion:(await get(dc.request,root+'/characters/'+ids[2])).version,reviewed:true,reason:'PRIVATE reviewed ordinary living not-stable target and legal Help action/contact'};};
+  const review=async(target:string)=>{const state=await get(dc.request,root+'/characters/'+target+'/stabilization'),{requestId:_r,reason:_reason,...body}=await rollBody(target);return {...body,rollId:state.latest.id};};
+  const failedBody=await rollBody(ids[0]);posts.push({path:path.slice(4)+'/rolls',body:failedBody,ack:await post(dc.request,path+'/rolls',failedBody)});const failedPlan=await post(dc.request,path+'/preview',await review(ids[0]));expect(failedPlan.effect.status).toBe('MANUAL_REQUIRED');
+  const helper=await get(dc.request,root+'/characters/'+ids[2]);helper.sheet.skills.find((s:any)=>s.id==='medicine').bonus=100;await post(dc.request,root+'/characters/'+ids[2],{requestId:randomUUID(),expectedVersion:helper.version,sheet:helper.sheet,reason:'Saved ordinary flat Medicine bonus'});const helperBefore=await get(dc.request,root+'/characters/'+ids[2]);
+  await page.goto('/');await expect(page.getByRole('combobox',{name:'选择战役'})).not.toHaveValue('');await page.getByRole('combobox',{name:'选择战役'}).selectOption(campaign.id);await expect(page.locator('.connection')).toHaveText('● 实时连接');await page.getByRole('button',{name:'打开角色卡工作区',exact:true}).click();await page.getByRole('button',{name:'打开角色 '+names[0],exact:true}).click();await page.getByRole('button',{name:'DM：0HP稳定伤势',exact:true}).click();const area=page.getByRole('region',{name:'0HP稳定伤势'});
+  let lostRoll=false,lostApply=false;
+  for(const suffix of ['rolls','applications'])await page.route('**/characters/*/stabilization/'+suffix,async route=>{if(suffix==='rolls'?!lostRoll:!lostApply){if(suffix==='rolls')lostRoll=true;else lostApply=true;const committed=await route.fetch();expect(committed.status()).toBe(200);posts.push({path:new URL(route.request().url()).pathname.slice(4),body:route.request().postDataJSON(),ack:await committed.json()});await route.abort('connectionfailed');}else await route.continue();});
+  const label='我已确认目标为仍存活且未稳定的普通0HP角色，本次Help动作与接触合法，无未处理例外';await area.getByLabel('稳定施救者').selectOption(ids[2]);await area.getByLabel(label).check();await area.getByLabel('稳定操作理由').fill('Confirm ordinary stabilization');await area.getByRole('button',{name:'进行Help医药检定'}).click();await area.getByRole('button',{name:'重试同一稳定操作'}).click();await expect(area.getByRole('button',{name:'预览稳定方案'})).toBeEnabled();
+  await area.getByRole('button',{name:'预览稳定方案'}).click();await expect(area.getByText('方案：稳定，仍0HP且昏迷；死豁归零，临时生命保持')).toBeVisible();await area.getByRole('button',{name:'确认应用稳定记录'}).click();await area.getByRole('button',{name:'重试同一稳定操作'}).click();await expect(area.getByText('已应用稳定记录；仍0HP且昏迷，后续由DM处理。')).toBeVisible();
+  expect(lostRoll&&lostApply).toBe(true);const after=await get(dc.request,root+'/characters/'+ids[0]);expect(after.version).toBe(1);expect(after.sheet.combat).toMatchObject({hp:0,tempHp:7,deathSuccesses:0,deathFailures:0});expect(after.sheet.conditions).toHaveLength(2);expect(await get(dc.request,root+'/characters/'+ids[2])).toEqual(helperBefore);expect((await get(dc.request,root+'/rolls')).rolls).toHaveLength(2);
+  expect((await pc.request.get(path)).status()).toBe(403);expect((await get(pc.request,root+'/rolls')).rolls).toEqual([]);expect((await get(dc.request,path+'/history')).length).toBe(3);
+  await page.screenshot({path:info.outputPath('stabilization-desktop.png'),fullPage:true});await page.setViewportSize({width:390,height:844});await page.getByRole('tab',{name:'角色卡',exact:true}).click();await expect(area).toBeVisible();await page.screenshot({path:info.outputPath('stabilization-mobile.png'),fullPage:true});
+  const body=await rollBody(ids[1]);posts.push({path:pendingPath.slice(4)+'/rolls',body,ack:await post(dc.request,pendingPath+'/rolls',body)});const savedReview=await review(ids[1]),savedPlan=await post(dc.request,pendingPath+'/preview',savedReview);expect(savedPlan.effect.status).toBe('CANDIDATE');
+  async function snapshot(){return {cards:await Promise.all(ids.map(id=>get(dc.request,root+'/characters/'+id))),histories:await Promise.all(ids.map(id=>get(dc.request,root+'/characters/'+id+'/history'))),states:await Promise.all(ids.slice(0,2).map(id=>get(dc.request,root+'/characters/'+id+'/stabilization'))),history:await Promise.all(ids.slice(0,2).map(id=>get(dc.request,root+'/characters/'+id+'/stabilization/history'))),rolls:await get(dc.request,root+'/rolls')};}
+  expect(errors).toEqual([]);if(process.env.E2E_A16_CAPTURE_FILE)await writeFile(process.env.E2E_A16_CAPTURE_FILE,JSON.stringify({root:root.slice(4),ids,posts,review:savedReview,plan:savedPlan,snapshot:await snapshot()},null,2),{flag:'wx'});
+ }finally{await dc.close();await pc.close();}
+});

@@ -12,8 +12,8 @@ import org.springframework.transaction.support.*;
 /** Persists a validated definition into the existing play model in the caller's transaction. */
 @Component
 public class ModuleCampaignProvisioner implements ModuleLifecycle.Provisioner {
-    private final JdbcTemplate jdbc;private final CharacterService.Store cards;private final AssetService.Store assets;private final AssetService.Files files;private final NotesService.Store notes;private final NoteImages.Store images;private final ContentService.Store content;private final Clock clock;private final TransactionTemplate reconcile;
-    public ModuleCampaignProvisioner(JdbcTemplate jdbc,CharacterService.Store cards,AssetService.Store assets,AssetService.Files files,NotesService.Store notes,NoteImages.Store images,ContentService.Store content,Clock clock,org.springframework.transaction.PlatformTransactionManager transactions){this.jdbc=jdbc;this.cards=cards;this.assets=assets;this.files=files;this.notes=notes;this.images=images;this.content=content;this.clock=clock;reconcile=new TransactionTemplate(transactions);reconcile.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);}
+    private final JdbcTemplate jdbc;private final CharacterService.Store cards;private final AssetService.Store assets;private final AssetService.Files files;private final NotesService.Store notes;private final NoteImages.Store images;private final ContentService.Store content;private final Clock clock;private final TransactionTemplate reconcile;private final ModuleBindings.Store bindings;
+    public ModuleCampaignProvisioner(JdbcTemplate jdbc,CharacterService.Store cards,AssetService.Store assets,AssetService.Files files,NotesService.Store notes,NoteImages.Store images,ContentService.Store content,Clock clock,org.springframework.transaction.PlatformTransactionManager transactions,ModuleBindings.Store bindings){this.jdbc=jdbc;this.cards=cards;this.assets=assets;this.files=files;this.notes=notes;this.images=images;this.content=content;this.clock=clock;this.bindings=bindings;reconcile=new TransactionTemplate(transactions);reconcile.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);}
     private String publish(UUID source,byte[] bytes){
         if(!TransactionSynchronizationManager.isActualTransactionActive())throw new IllegalStateException("Module creation requires a transaction");String key=UUID.randomUUID().toString();
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization(){@Override public void afterCompletion(int status){
@@ -63,13 +63,19 @@ public class ModuleCampaignProvisioner implements ModuleLifecycle.Provisioner {
             }
             UUID id=UUID.randomUUID();mapping.get("documents").put(n.id(),id);var now=clock.instant();notes.save(c,new NotesService.Note(id,0,visibility,n.name(),n.text(),List.copyOf(attachments),actor,now,now,"从定制副本创建资料"),true);
         }
+        if(ModulePortable.requiresBinding(document)){var operations=new LinkedHashMap<String,UUID>();for(var definition:document.operations().definitions())operations.put(definition.nodeId(),UUID.randomUUID());mapping.put("operations",operations);}
         return mapping;
+    }
+    public void initializeOperations(UUID c,String actor,ModuleBlueprint.Document document,Map<String,Map<String,UUID>> mapping){
+        if(!ModulePortable.requiresBinding(document))return;for(var source:document.operations().definitions()){
+            String name=document.nodes().stream().filter(n->n.id().equals(source.nodeId())).findFirst().orElseThrow().name();var binding=new ModuleBindings.Binding(UUID.fromString(source.nodeId()),mapping.get("operations").get(source.nodeId()),1,name,source,0);bindings.put(c,binding,true);bindings.history(c,binding.nodeId(),new ModuleBindings.Evidence(1,actor,clock.instant(),"从便携定义创建未绑定身份",null,binding,null,null));
+        }
     }
 
     /** Ordered JSON rows bind even edits which do not advance the instance version. */
     public Object runtime(UUID c){
         var snapshot=new LinkedHashMap<String,Object>();
-        for(String table:List.of("campaign","scene","scene_map","scene_revealed_cell","campaign_asset","token","token_controller","character_card","character_controller","campaign_combat","campaign_initiative")){
+        for(String table:List.of("campaign","scene","scene_map","scene_revealed_cell","campaign_asset","token","token_controller","character_card","character_controller","campaign_combat","campaign_initiative","campaign_note","note_attachment","module_operation","module_operation_execution","module_operation_binding","module_operation_binding_history")){
             String where=table.equals("campaign")?"id":"campaign_id";
             snapshot.put(table,jdbc.queryForList("select row_to_json(r)::text from (select * from "+table+" where "+where+"=? order by to_jsonb("+table+")::text) r",String.class,c));
         }
@@ -164,7 +170,7 @@ public class ModuleCampaignProvisioner implements ModuleLifecycle.Provisioner {
             tokens.add(new ModuleLifecycle.RecoveryToken(id,scene,(String)row.get("name"),x,y,hidden,unit==null));
         }
         if(tokens.size()>500)throw ModuleBlueprint.invalid();
-        var play=before.document().play();var document=new ModuleBlueprint.Document(new ArrayList<>(nodes.values()),new ModuleBlueprint.Play(scenes,units,placements,play.admissionMode(),play.approvedDependencyIds()));var s=source.manifest();
+        var play=before.document().play();var document=new ModuleBlueprint.Document(new ArrayList<>(nodes.values()),new ModuleBlueprint.Play(scenes,units,placements,play.admissionMode(),play.approvedDependencyIds()),before.document().operations());var s=source.manifest();
         var manifest=new ModuleArchive.Manifest(s.format(),2,s.moduleId(),s.moduleVersion(),s.name(),s.rules(),s.rights(),s.dependencies(),s.content(),new ArrayList<>(recoveredAssets.values()));
         var archive=new ModuleArchive();var verified=archive.verify(archive.export(manifest,document,recoveredImages,s.moduleId(),s.moduleVersion(),s.name()));
         UUID current=jdbc.queryForObject("select current_scene_id from campaign where id=?",UUID.class,c);String currentScene=sceneIds.get(current);if(currentScene==null)throw ModuleBlueprint.invalid();
@@ -181,6 +187,28 @@ public class ModuleCampaignProvisioner implements ModuleLifecycle.Provisioner {
     }
     private CharacterSheet preservePlay(CharacterSheet incoming,CharacterSheet live){
         return new CharacterSheet(incoming.name(),incoming.avatar(),incoming.species(),incoming.background(),incoming.classes(),incoming.abilities(),incoming.skills(),incoming.saves(),live.combat(),incoming.attacks(),incoming.casting(),incoming.spells(),incoming.features(),live.resources(),live.equipment(),live.money(),live.conditions(),incoming.modifiers(),live.overrides(),incoming.notes());
+    }
+    public List<ModuleOperationSelection.Option> operationOptions(UUID c,ModuleLifecycle.Instance before,ModuleBlueprint.Document next){
+        var existing=new TreeMap<String,ModuleBindings.Binding>();bindings.list(c).forEach(b->existing.put(b.nodeId().toString(),b));
+        var incoming=new TreeMap<String,ModulePortable.Definition>();ModuleOperationSelection.definitions(next).forEach(d->incoming.put(d.nodeId(),d));var ids=new TreeSet<>(existing.keySet());ids.addAll(incoming.keySet());
+        return ids.stream().map(id->{var b=existing.get(id);var op=b==null?null:operation(c,b.operationId());String name=next.nodes().stream().filter(n->n.id().equals(id)).map(ModuleArchive.Node::name).findFirst().orElse("");return new ModuleOperationSelection.Option(id,b,op,incoming.get(id),name,b!=null&&!before.mapping().getOrDefault("operations",Map.of()).containsKey(id));}).toList();
+    }
+    private ModuleOperations.Definition operation(UUID c,UUID id){var json=tools.jackson.databind.json.JsonMapper.builder().build();var values=jdbc.query("select definition::text from module_operation where campaign_id=? and id=?",(r,n)->json.readValue(r.getString(1),ModuleOperations.Definition.class),c,id);return values.isEmpty()?null:values.getFirst();}
+    public List<String> operationBlockers(UUID c,ModuleBlueprint.Document next){
+        long count=jdbc.queryForObject("select count(*) from (select id from module_operation where campaign_id=? union select operation_id from module_operation_binding where campaign_id=?) t",Long.class,c,c);
+        var known=bindings.list(c).stream().map(b->b.nodeId().toString()).toList();count+=ModuleOperationSelection.definitions(next).stream().filter(d->!known.contains(d.nodeId())).count();return count>100?List.of("/operation-capacity"):List.of();
+    }
+    public void migrateOperations(UUID c,String actor,ModuleLifecycle.Instance before,ModuleBlueprint.Document next,Map<String,Map<String,UUID>> mapping,List<ModuleOperationSelection.Choice> choices){
+        var active=mapping.computeIfAbsent("operations",k->new LinkedHashMap<>());var retired=mapping.computeIfAbsent("retiredOperations",k->new LinkedHashMap<>());
+        var incoming=new LinkedHashMap<String,ModulePortable.Definition>();ModuleOperationSelection.definitions(next).forEach(d->incoming.put(d.nodeId(),d));
+        for(var b:bindings.list(c)){
+            String id=b.nodeId().toString();var definition=incoming.remove(id);boolean wasActive=before.mapping().getOrDefault("operations",Map.of()).containsKey(id);
+            if(definition==null){active.remove(id);retired.put(id,b.operationId());if(wasActive){var after=new ModuleBindings.Binding(b.nodeId(),b.operationId(),b.version()+1,b.name(),b.source(),b.boundVersion());bindings.put(c,after,false);bindings.history(c,b.nodeId(),new ModuleBindings.Evidence(after.version(),actor,clock.instant(),"明确退役；原身份、定义与执行历史保留",b,after,operation(c,b.operationId()),null));}continue;}
+            String name=next.nodes().stream().filter(n->n.id().equals(id)).findFirst().orElseThrow().name();active.put(id,b.operationId());retired.remove(id);
+            var current=operation(c,b.operationId());boolean replaceLocal=current!=null&&current.version()!=b.boundVersion()&&choices.stream().anyMatch(choice->choice.nodeId().equals(id)&&choice.choice().equals("INCOMING"));
+            if(!wasActive||!definition.equals(b.source())||!name.equals(b.name())||replaceLocal){var after=new ModuleBindings.Binding(b.nodeId(),b.operationId(),b.version()+1,name,definition,0);bindings.put(c,after,false);bindings.history(c,b.nodeId(),new ModuleBindings.Evidence(after.version(),actor,clock.instant(),"明确采用来源；保留前像，须另行绑定当前目标",b,after,current,null));}
+        }
+        for(var definition:incoming.values()){String id=definition.nodeId();UUID operation=UUID.randomUUID();active.put(id,operation);String name=next.nodes().stream().filter(n->n.id().equals(id)).findFirst().orElseThrow().name();var binding=new ModuleBindings.Binding(UUID.fromString(id),operation,1,name,definition,0);bindings.put(c,binding,true);bindings.history(c,binding.nodeId(),new ModuleBindings.Evidence(1,actor,clock.instant(),"明确采用新增来源；未绑定",null,binding,null,null));}
     }
     public Map<String,Map<String,UUID>> migrate(UUID c,String actor,ModuleLifecycle.Instance before,ModuleBlueprint.Document next){
         var m=mapping(before);var nodes=new HashMap<String,ModuleArchive.Node>();next.nodes().forEach(n->nodes.put(n.id(),n));
