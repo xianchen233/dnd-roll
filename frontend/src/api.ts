@@ -1,16 +1,190 @@
-import type { Campaign, Csrf, Identity, Move, Scene, Token } from './types';
+import type { Asset, Assets, Campaign, CreatedInvitation, Csrf, Identity, Invitations, InvitePreview, MapConfiguration, Members, Move, Scene, SceneMap, Scenes, SceneReceipt, Token, VersionedCommand } from './types';
+import type { AuthoredTokens, TokenCommand, TokenReceipt, MapView, Fog, FogCommand } from './types';
+import type { CharacterList, CharacterDetail, CharacterAck, CharacterAccess, CharacterHistory, CharacterDocument, Sheet } from './characters';
+import type { Catalog,ContentData,ContentFilters,ContentChoice,ContentPreview,ContentFill } from './content';
+import type {DiceCommand,DiceTextCommand,Roll,RollList,Initiative,InitiativeGenerate,InitiativeConfirm,InitiativeHistory} from './dice';
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
 export class Api {
+  previewInitialInstabilityHealing(c:string,id:string,body:import('./initial-instability-healing').InitialInstabilityHealingReview):Promise<import('./initial-instability-healing').InitialInstabilityHealingPlan>{return this.post(`${this.characterPath(c,id)}/stabilization/instability/healing-preview`,body);}
+  healInitialInstability(c:string,id:string,body:import('./initial-instability-healing').InitialInstabilityHealingApply):Promise<CharacterAck>{return this.post(`${this.characterPath(c,id)}/stabilization/instability/healings`,body);}
+  initialInstabilityHealingHistory(c:string,id:string):Promise<import('./initial-instability-healing').InitialInstabilityHealingEntry[]>{return this.call(`${this.characterPath(c,id)}/stabilization/instability/healing-history`);}
+  previewInstabilityHealing(c:string,id:string,body:import('./instability-healing').InstabilityHealingReview):Promise<import('./instability-healing').InstabilityHealingPlan>{return this.post(`${this.characterPath(c,id)}/stabilization/restabilization/instability/healing-preview`,body);}
+  healInstability(c:string,id:string,body:import('./instability-healing').InstabilityHealingApply):Promise<CharacterAck>{return this.post(`${this.characterPath(c,id)}/stabilization/restabilization/instability/healings`,body);}
+  instabilityHealingHistory(c:string,id:string):Promise<import('./instability-healing').InstabilityHealingEntry[]>{return this.call(`${this.characterPath(c,id)}/stabilization/restabilization/instability/healing-history`);}
+  previewRestabilizationDamage(c:string,id:string,body:import('./restabilization-damage').RestabilizationDamageReview):Promise<import('./restabilization-damage').RestabilizationDamagePlan>{return this.post(`${this.characterPath(c,id)}/stabilization/restabilization/damage-preview`,body);}
+  damageRestabilization(c:string,id:string,body:import('./restabilization-damage').RestabilizationDamageApply):Promise<CharacterAck>{return this.post(`${this.characterPath(c,id)}/stabilization/restabilization/damages`,body);}
+  restabilizationDamageHistory(c:string,id:string):Promise<import('./restabilization-damage').RestabilizationDamageEntry[]>{return this.call(`${this.characterPath(c,id)}/stabilization/restabilization/damage-history`);}
+  previewRestabilizationHealing(c:string,id:string,body:import('./restabilization-healing').RestabilizationHealingReview):Promise<import('./restabilization-healing').RestabilizationHealingPlan>{return this.post(`${this.characterPath(c,id)}/stabilization/restabilization/healing-preview`,body);}
+  healRestabilization(c:string,id:string,body:import('./restabilization-healing').RestabilizationHealingApply):Promise<CharacterAck>{return this.post(`${this.characterPath(c,id)}/stabilization/restabilization/healings`,body);}
+  restabilizationHealingHistory(c:string,id:string):Promise<import('./restabilization-healing').RestabilizationHealingEntry[]>{return this.call(`${this.characterPath(c,id)}/stabilization/restabilization/healing-history`);}
+  restabilization(c:string,id:string):Promise<import('./restabilization').RestabilizationState>{return this.call(`${this.characterPath(c,id)}/stabilization/restabilization`);}
+  restabilizationHistory(c:string,id:string):Promise<import('./restabilization').RestabilizationState[]>{return this.call(`${this.characterPath(c,id)}/stabilization/restabilization/history`);}
+  rollRestabilization(c:string,id:string,body:import('./restabilization').RestabilizationRollInput):Promise<CharacterAck>{return this.post(`${this.characterPath(c,id)}/stabilization/restabilization/rolls`,body);}
+  previewRestabilization(c:string,id:string,body:import('./restabilization').RestabilizationReview):Promise<import('./restabilization').RestabilizationPlan>{return this.post(`${this.characterPath(c,id)}/stabilization/restabilization/preview`,body);}
+  applyRestabilization(c:string,id:string,body:import('./restabilization').RestabilizationApply):Promise<CharacterAck>{return this.post(`${this.characterPath(c,id)}/stabilization/restabilization/applications`,body);}
+  previewStabilizationDamage(c:string,id:string,body:import('./stabilization-damage').StabilizationDamageReview):Promise<import('./stabilization-damage').StabilizationDamagePlan>{return this.post(`${this.characterPath(c,id)}/stabilization/damage-preview`,body);}
+  damageStabilization(c:string,id:string,body:import('./stabilization-damage').StabilizationDamageApply):Promise<CharacterAck>{return this.post(`${this.characterPath(c,id)}/stabilization/damages`,body);}
+  stabilizationDamageHistory(c:string,id:string):Promise<import('./stabilization-damage').StabilizationDamageEntry[]>{return this.call(`${this.characterPath(c,id)}/stabilization/damage-history`);}
+  previewStabilizationHealing(c:string,id:string,body:import('./stabilization-healing').StabilizationHealingReview):Promise<import('./stabilization-healing').StabilizationHealingPlan>{return this.post(`${this.characterPath(c,id)}/stabilization/healing-preview`,body);}
+  healStabilization(c:string,id:string,body:import('./stabilization-healing').StabilizationHealingApply):Promise<CharacterAck>{return this.post(`${this.characterPath(c,id)}/stabilization/healings`,body);}
+  stabilizationHealingHistory(c:string,id:string):Promise<import('./stabilization-healing').StabilizationHealingEntry[]>{return this.call(`${this.characterPath(c,id)}/stabilization/healing-history`);}
+  stabilization(c:string,id:string):Promise<import('./stabilization').StabilizationState>{return this.call(`${this.characterPath(c,id)}/stabilization`);}
+  stabilizationHistory(c:string,id:string):Promise<import('./stabilization').StabilizationState[]>{return this.call(`${this.characterPath(c,id)}/stabilization/history`);}
+  rollStabilization(c:string,id:string,body:import('./stabilization').StabilizationRollInput):Promise<CharacterAck>{return this.post(`${this.characterPath(c,id)}/stabilization/rolls`,body);}
+  previewStabilization(c:string,id:string,body:import('./stabilization').StabilizationReview):Promise<import('./stabilization').StabilizationPlan>{return this.post(`${this.characterPath(c,id)}/stabilization/preview`,body);}
+  applyStabilization(c:string,id:string,body:import('./stabilization').StabilizationApply):Promise<CharacterAck>{return this.post(`${this.characterPath(c,id)}/stabilization/applications`,body);}
+  previewRange(c:string,body:import('./range-hints').RangeHintRequest):Promise<import('./range-hints').RangeHint>{return this.post(`/campaigns/${encodeURIComponent(c)}/range-hints/preview`,body);}
+  movement(c:string,t:string):Promise<import('./movement').MovementRead>{return this.call(this.movementRoute(c,t));}
+  previewMovement(c:string,t:string,body:import('./movement').MovementPath):Promise<import('./movement').MovementPreview>{return this.post(this.movementRoute(c,t)+'/preview',body);}
+  movePath(c:string,t:string,body:import('./movement').MovementPath):Promise<import('./movement').MovementResult>{return this.post(this.movementRoute(c,t)+'/paths',body);}
+  adjustMovement(c:string,t:string,body:import('./movement').MovementAdjustment):Promise<import('./movement').MovementResult>{return this.post(this.movementRoute(c,t)+'/adjustments',body);}
+  private movementRoute(c:string,t:string){return `/campaigns/${encodeURIComponent(c)}/tokens/${encodeURIComponent(t)}/movement`;}
+  attackPreviews(c:string):Promise<import('./attack-previews').AttackPreview[]>{return this.call(`/campaigns/${encodeURIComponent(c)}/attack-previews`);}
+  attackPreview(c:string,id:string):Promise<import('./attack-previews').AttackPreview>{return this.call(`/campaigns/${encodeURIComponent(c)}/attack-previews/${encodeURIComponent(id)}`);}
+  attackDamageEffect(c:string,id:string):Promise<import('./attack-previews').DamageEffect>{return this.call(`/campaigns/${encodeURIComponent(c)}/attack-previews/${encodeURIComponent(id)}/damage-effect`);}
+  previewMonsterDeathEffect(c:string,id:string,body:import('./attack-previews').MonsterDeathReview):Promise<import('./attack-previews').MonsterDeathEffect>{return this.post(`/campaigns/${encodeURIComponent(c)}/attack-previews/${encodeURIComponent(id)}/monster-death-effect`,body);}
+  confirmMonsterDeathEffect(c:string,id:string,body:import('./attack-previews').MonsterDeathConfirmation):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/attack-previews/${encodeURIComponent(id)}/monster-death-confirmations`,body);}
+  rollKnockoutFirstAid(c:string,id:string,body:import('./attack-previews').FirstAidAttempt):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/attack-previews/${encodeURIComponent(id)}/knockout-first-aid-rolls`,body);}
+  previewKnockoutFirstAid(c:string,id:string,body:import('./attack-previews').FirstAidReview):Promise<import('./attack-previews').FirstAidPlan>{return this.post(`/campaigns/${encodeURIComponent(c)}/attack-previews/${encodeURIComponent(id)}/knockout-first-aid-effect`,body);}
+  completeKnockoutFirstAid(c:string,id:string,body:import('./attack-previews').FirstAidComplete):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/attack-previews/${encodeURIComponent(id)}/knockout-first-aid-completions`,body);}
+  previewKnockoutRest(c:string,id:string,body:import('./attack-previews').KnockoutRestReview):Promise<import('./attack-previews').KnockoutRestPlan>{return this.post(`/campaigns/${encodeURIComponent(c)}/attack-previews/${encodeURIComponent(id)}/knockout-rest-effect`,body);}
+  completeKnockoutRest(c:string,id:string,body:import('./attack-previews').KnockoutRestComplete):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/attack-previews/${encodeURIComponent(id)}/knockout-rest-completions`,body);}
+  previewKnockoutHealing(c:string,id:string,body:import('./attack-previews').KnockoutHealingReview):Promise<import('./attack-previews').KnockoutHealingPlan>{return this.post(`/campaigns/${encodeURIComponent(c)}/attack-previews/${encodeURIComponent(id)}/knockout-healing-effect`,body);}
+  applyKnockoutHealing(c:string,id:string,body:import('./attack-previews').KnockoutHealingApply):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/attack-previews/${encodeURIComponent(id)}/knockout-healings`,body);}
+  previewDaggerKnockoutEffect(c:string,id:string,body:import('./attack-previews').DaggerKnockoutReview):Promise<import('./attack-previews').DaggerKnockoutEffect>{return this.post(`/campaigns/${encodeURIComponent(c)}/attack-previews/${encodeURIComponent(id)}/dagger-knockout-effect`,body);}
+  confirmDaggerKnockoutEffect(c:string,id:string,body:import('./attack-previews').DaggerKnockoutConfirmation):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/attack-previews/${encodeURIComponent(id)}/dagger-knockout-confirmations`,body);}
+  previewKnockoutEffect(c:string,id:string,body:import('./attack-previews').KnockoutReview):Promise<import('./attack-previews').KnockoutEffect>{return this.post(`/campaigns/${encodeURIComponent(c)}/attack-previews/${encodeURIComponent(id)}/knockout-effect`,body);}
+  confirmKnockoutEffect(c:string,id:string,body:import('./attack-previews').KnockoutConfirmation):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/attack-previews/${encodeURIComponent(id)}/knockout-confirmations`,body);}
+  previewAmmunitionEffect(c:string,id:string,body:import('./attack-previews').AmmunitionReview):Promise<import('./attack-previews').AmmunitionEffect>{return this.post(`/campaigns/${encodeURIComponent(c)}/attack-previews/${encodeURIComponent(id)}/ammunition-effect`,body);}
+  confirmAmmunitionEffect(c:string,id:string,body:import('./attack-previews').AmmunitionConfirmation):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/attack-previews/${encodeURIComponent(id)}/ammunition-confirmations`,body);}
+  createAttackPreview(c:string,body:import('./attack-previews').AttackPreviewCreate):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/attack-previews`,body);}
+  attackPreviewCommand(c:string,id:string,body:import('./attack-previews').AttackPreviewCommand):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/attack-previews/${encodeURIComponent(id)}/events`,body);}
+  attackResults(c:string):Promise<import('./attack-previews').AttackPublicResult[]>{return this.call(`/campaigns/${encodeURIComponent(c)}/attack-results`);}
+  moduleOperations(c:string):Promise<import('./modules').ModuleOperation[]>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-operations`);}
+  moduleBindings(c:string):Promise<import('./modules').ModuleBindingListing>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-operation-bindings`);}
+  previewModuleBinding(c:string,node:string,body:import('./modules').ModuleBindingReview):Promise<import('./modules').ModuleBindingPreview>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-operation-bindings/${encodeURIComponent(node)}/preview`,body);}
+  bindModuleOperation(c:string,node:string,body:import('./modules').ModuleBind):Promise<import('./modules').ModuleBindingAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-operation-bindings/${encodeURIComponent(node)}/bind`,body);}
+  moduleBindingHistory(c:string,node:string):Promise<unknown[]>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-operation-bindings/${encodeURIComponent(node)}/history`);}
+  saveModuleOperation(c:string,id:string,body:import('./modules').ModuleOperationSave):Promise<import('./modules').ModuleOperation>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-operations/${encodeURIComponent(id)}`,body);}
+  moduleOperationImpact(c:string,id:string,body:import('./modules').ModuleOperationReview):Promise<import('./modules').ModuleOperationImpact>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-operations/${encodeURIComponent(id)}/impact`,body);}
+  executeModuleOperation(c:string,id:string,body:import('./modules').ModuleOperationExecute):Promise<import('./modules').ModuleOperationExecution>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-operations/${encodeURIComponent(id)}/executions`,body);}
+  moduleOperationExecutions(c:string,id:string):Promise<import('./modules').ModuleOperationExecution[]>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-operations/${encodeURIComponent(id)}/executions`);}
+  liveModuleImpact(c:string,body:import('./modules').ModuleLiveReview):Promise<import('./modules').ModuleLiveImpact>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-instance/update-impact`,body);}
+  moduleMigrationImpact(c:string,body:import('./modules').ModuleLiveReview):Promise<import('./modules').ModuleMigrationImpact>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-instance/migration-impact`,body);}
+  migrateModule(c:string,body:import('./modules').ModuleMigrationApply):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-instance/migrations`,body);}
+  moduleMigrations(c:string):Promise<import('./modules').ModuleMigrationEvidence[]>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-instance/migrations`);}
+  moduleOperationOptions(c:string,body:import('./modules').ModuleLiveReview):Promise<import('./modules').ModuleOperationOptions>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-instance/operation-options`,body);}
+  moduleOperationMigrationImpact(c:string,body:import('./modules').ModuleOperationMigrationReview):Promise<import('./modules').ModuleOperationMigrationImpact>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-instance/operation-migration-impact`,body);}
+  migrateModuleOperations(c:string,body:import('./modules').ModuleOperationMigrationApply):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-instance/operation-migrations`,body);}
+  applyLiveModule(c:string,body:import('./modules').ModuleLiveApply):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-instance/updates`,body);}
+  liveModuleUpdates(c:string):Promise<import('./modules').ModuleLiveEvidence[]>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-instance/updates`);}
+
+  moduleUpdateOptions(c:string,id:string,body:{expectedVersion:number;packageId:string}):Promise<import('./modules').ModuleUpdatePreviewResult>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/update-options`,body);}
+  moduleUpdateImpact(c:string,id:string,body:import('./modules').ModuleUpdateImpactRequest):Promise<import('./modules').ModuleUpdateImpact>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/update-impact`,body);}
+  applyModuleUpdate(c:string,id:string,body:import('./modules').ModuleUpdateApply):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/updates`,body);}
+  moduleUpdates(c:string,id:string):Promise<import('./modules').ModuleUpdateEvidence[]>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/updates`);}
+  moduleUpdateRecoveryUrl(c:string,id:string,version:number):string{return `/api/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/updates/${encodeURIComponent(version)}/content`;}
+  async moduleUpdateRecovery(c:string,id:string,version:number):Promise<Blob>{const response=await this.request(this.moduleUpdateRecoveryUrl(c,id,version),{credentials:'include',cache:'no-store'});await this.check(response);return response.blob();}
+  moduleCustomizations(c:string):Promise<import('./modules').CustomizationListing>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-customizations`);}
+  moduleCustomization(c:string,id:string):Promise<import('./modules').Customization>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}`);}
+  previewModuleUpdate(c:string,id:string,body:{expectedVersion:number;packageId:string}):Promise<import('./modules').ModuleUpdatePreviewResult>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/update-preview`,body);}
+  createModuleCustomization(c:string,body:import('./modules').LifecycleCommand&{packageId:string;name:string}):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations`,body);}
+  editModuleCustomization(c:string,id:string,body:import('./modules').LifecycleCommand&{name:string;document:import('./modules').ModuleDefinition}):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}`,body);}
+  saveModuleTemplate(c:string,id:string,body:import('./modules').LifecycleCommand&{moduleId:string;moduleVersion:string;name:string}):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/templates`,body);}
+  launchModuleCampaign(c:string,id:string,body:import('./modules').LifecycleCommand&{name:string}):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-customizations/${encodeURIComponent(id)}/campaigns`,body);}
+  moduleInstance(c:string):Promise<import('./modules').ModuleInstance>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-instance`);}
+  saveModuleProgress(c:string,body:import('./modules').LifecycleCommand&{progress:Record<string,string>}):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/module-instance`,body);}
+  modulePackages(c:string):Promise<import('./modules').ModuleListing>{return this.call(`/campaigns/${encodeURIComponent(c)}/module-packages`);}
+  async previewModule(c:string,file:File):Promise<import('./modules').ModulePreview>{return this.moduleUpload(c,file);}
+  async importModule(c:string,command:import('./modules').ModuleCommand,file:File):Promise<{id:string;version:number}>{return this.moduleUpload(c,file,command);}
+  private async moduleUpload<T>(c:string,file:File,command?:import('./modules').ModuleCommand):Promise<T>{
+    if(!this.csrf)await this.getCsrf();const body=new FormData();if(command)body.append('command',new Blob([JSON.stringify(command)],{type:'application/json'}));body.append('file',file);
+    const response=await this.request(`/api/campaigns/${encodeURIComponent(c)}/module-packages${command?'':'/preview'}`,{method:'POST',credentials:'include',headers:{[this.csrf!.headerName]:this.csrf!.token},body});await this.check(response);return response.json();
+  }
+  async moduleDownload(c:string,id:string):Promise<Blob>{const response=await this.request(`/api/campaigns/${encodeURIComponent(c)}/module-packages/${encodeURIComponent(id)}/content`,{credentials:'include',cache:'no-store'});await this.check(response);return response.blob();}
+  backups():Promise<import('./backups').BackupStatus>{return this.call('/admin/backups');}
+  createBackup(body:VersionedCommand,migration=false):Promise<{id:string;version:number}>{return this.post(`/admin/backups${migration?'/migration':''}`,body);}
+  notes(c:string,filters:import('./notes').NoteFilters,before=''):Promise<import('./notes').NoteListing>{return this.call(`/campaigns/${encodeURIComponent(c)}/notes?${new URLSearchParams({...filters,...(before?{before}:{})})}`);}
+  note(c:string,id:string):Promise<import('./notes').Note>{return this.call(`/campaigns/${encodeURIComponent(c)}/notes/${encodeURIComponent(id)}`);}
+  createNote(c:string,body:import('./notes').NoteCreate):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/notes`,body);}
+  editNote(c:string,id:string,body:import('./notes').NoteEdit):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/notes/${encodeURIComponent(id)}`,body);}
+  noteHistory(c:string,id:string):Promise<import('./notes').NoteRevision[]>{return this.call(`/campaigns/${encodeURIComponent(c)}/notes/${encodeURIComponent(id)}/history`);}
+  async uploadNoteAttachment(c:string,command:VersionedCommand&{visibility:import('./notes').NoteVisibility},file:File):Promise<Asset>{if(!this.csrf)await this.getCsrf();const body=new FormData();body.append('command',new Blob([JSON.stringify(command)],{type:'application/json'}));body.append('file',file);const response=await this.request(`/api/campaigns/${encodeURIComponent(c)}/note-attachments`,{method:'POST',credentials:'include',headers:{[this.csrf!.headerName]:this.csrf!.token},body});await this.check(response);return response.json();}
+  async noteAttachmentContent(c:string,id:string):Promise<Blob>{const response=await this.request(`/api/campaigns/${encodeURIComponent(c)}/note-attachments/${encodeURIComponent(id)}/content`,{credentials:'include',cache:'no-store'});await this.check(response);return response.blob();}
+  async exportNotes(c:string,filters:import('./notes').NoteFilters,format:'markdown'|'json'):Promise<Blob>{const response=await this.request(`/api/campaigns/${encodeURIComponent(c)}/notes/export?${new URLSearchParams({...filters,format})}`,{credentials:'include',cache:'no-store'});await this.check(response);return response.blob();}
+  timeline(c:string,filters:import('./timeline').TimelineFilters,before=''):Promise<import('./timeline').TimelineListing>{return this.call(`/campaigns/${encodeURIComponent(c)}/timeline?${new URLSearchParams({...filters,...(before?{before}:{})})}`);}
+  timelineEntry(c:string,id:string):Promise<import('./timeline').TimelineEntry>{return this.call(`/campaigns/${encodeURIComponent(c)}/timeline/${encodeURIComponent(id)}`);}
+  sendMessage(c:string,body:import('./timeline').TimelineSend):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/messages`,body);}
+  editMessage(c:string,id:string,body:import('./timeline').TimelineEdit):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/messages/${encodeURIComponent(id)}`,body);}
+  messageHistory(c:string,id:string):Promise<import('./timeline').TimelineRevision[]>{return this.call(`/campaigns/${encodeURIComponent(c)}/messages/${encodeURIComponent(id)}/history`);}
+  timelineSessions(c:string):Promise<import('./timeline').TimelineSessions>{return this.call(`/campaigns/${encodeURIComponent(c)}/timeline/sessions`);}
+  timelineSession(c:string,body:VersionedCommand&{kind:string;name:string}):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/timeline/sessions`,body);}
+  async uploadAttachment(c:string,command:VersionedCommand,file:File):Promise<Asset>{
+    if(!this.csrf)await this.getCsrf();const body=new FormData();body.append('command',new Blob([JSON.stringify(command)],{type:'application/json'}));body.append('file',file);
+    const response=await this.request(`/api/campaigns/${encodeURIComponent(c)}/attachments`,{method:'POST',credentials:'include',headers:{[this.csrf!.headerName]:this.csrf!.token},body});await this.check(response);return response.json();
+  }
+  async attachmentContent(c:string,id:string):Promise<Blob>{const response=await this.request(`/api/campaigns/${encodeURIComponent(c)}/attachments/${encodeURIComponent(id)}/content`,{credentials:'include',cache:'no-store'});await this.check(response);return response.blob();}
+  async exportTimeline(c:string,filters:import('./timeline').TimelineFilters,format:'markdown'|'json'):Promise<Blob>{const response=await this.request(`/api/campaigns/${encodeURIComponent(c)}/timeline/export?${new URLSearchParams({...filters,format})}`,{credentials:'include',cache:'no-store'});await this.check(response);return response.blob();}
+  actions(c:string,before=''):Promise<{actions:import('./combat').CombatAction[];next:string}>{return this.call(`/campaigns/${encodeURIComponent(c)}/actions${before?`?before=${encodeURIComponent(before)}`:''}`);}
+  action(c:string,id:string):Promise<import('./combat').CombatAction>{return this.call(`/campaigns/${encodeURIComponent(c)}/actions/${encodeURIComponent(id)}`);}
+  declareAction(c:string,body:import('./combat').CombatDeclaration):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/actions`,body);}
+  actionEvent(c:string,id:string,body:import('./combat').CombatCommand):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/actions/${encodeURIComponent(id)}/events`,body);}
+  combat(c:string):Promise<import('./combat').CombatState>{return this.call(`/campaigns/${encodeURIComponent(c)}/combat`);}
+  combatCommand(c:string,body:import('./combat').TurnCommand):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(c)}/combat`,body);}
+  combatHistory(c:string):Promise<import('./combat').TurnHistory[]>{return this.call(`/campaigns/${encodeURIComponent(c)}/combat/history`);}
+  rolls(id:string,before=''):Promise<RollList>{return this.call(`/campaigns/${encodeURIComponent(id)}/rolls${before?`?before=${encodeURIComponent(before)}`:''}`);}
+  roll(id:string,body:DiceCommand):Promise<Roll>{return this.post(`/campaigns/${encodeURIComponent(id)}/rolls`,body);}
+  rollCommand(id:string,body:DiceTextCommand):Promise<Roll>{return this.post(`/campaigns/${encodeURIComponent(id)}/roll-commands`,body);}
+  initiative(id:string):Promise<Initiative>{return this.call(`/campaigns/${encodeURIComponent(id)}/initiative`);}
+  generateInitiative(id:string,body:InitiativeGenerate):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(id)}/initiative`,body);}
+  confirmInitiative(id:string,body:InitiativeConfirm):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(id)}/initiative/confirm`,body);}
+  initiativeHistory(id:string):Promise<InitiativeHistory[]>{return this.call(`/campaigns/${encodeURIComponent(id)}/initiative/history`);}
+  content(id:string,filters:ContentFilters):Promise<Catalog>{return this.call(`/campaigns/${encodeURIComponent(id)}/content?${new URLSearchParams(filters)}`);}
+  publishContent(id:string,body:VersionedCommand & {entry:ContentData}):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(id)}/content/custom`,body);}
+  contentSettings(id:string,body:VersionedCommand & {mode:string;approvedIds:string[]}):Promise<CharacterAck>{return this.post(`/campaigns/${encodeURIComponent(id)}/content/settings`,body);}
+  previewContent(id:string,characterId:string,body:ContentChoice):Promise<ContentPreview>{return this.post(`${this.characterPath(id,characterId)}/content-preview`,body);}
+  fillContent(id:string,characterId:string,body:ContentFill):Promise<CharacterAck>{return this.post(`${this.characterPath(id,characterId)}/content`,body);}
+  characters(id: string): Promise<CharacterList> { return this.call(`/campaigns/${encodeURIComponent(id)}/characters`); }
+  character(id: string, characterId: string): Promise<CharacterDetail> { return this.call(this.characterPath(id, characterId)); }
+  createCharacter(id: string, body: VersionedCommand & { sheet: Sheet }): Promise<CharacterAck> { return this.post(`/campaigns/${encodeURIComponent(id)}/characters`, body); }
+  updateCharacter(id: string, characterId: string, body: VersionedCommand & { sheet: Sheet; reason: string }): Promise<CharacterAck> { return this.post(this.characterPath(id, characterId), body); }
+  characterHistory(id: string, characterId: string): Promise<CharacterHistory[]> { return this.call(`${this.characterPath(id, characterId)}/history`); }
+  characterAccess(id: string, characterId: string): Promise<CharacterAccess> { return this.call(`${this.characterPath(id, characterId)}/access`); }
+  saveCharacterAccess(id: string, characterId: string, body: VersionedCommand & { controllers: string[]; hidden: boolean; shareFull: boolean; approveImport: boolean; reason: string }): Promise<CharacterAck> { return this.post(`${this.characterPath(id, characterId)}/access`, body); }
+  characterResource(id: string, characterId: string, body: VersionedCommand & { resourceId: string; delta: number; reason: string }): Promise<CharacterAck> { return this.post(`${this.characterPath(id, characterId)}/resources`, body); }
+  characterCondition(id: string, characterId: string, body: VersionedCommand & { action: string; conditionId: string | null; reason: string }): Promise<CharacterAck> { return this.post(`${this.characterPath(id, characterId)}/conditions`, body); }
+  copyCharacter(id: string, characterId: string, body: VersionedCommand & { name: string }): Promise<CharacterAck> { return this.post(`${this.characterPath(id, characterId)}/copy`, body); }
+  exportCharacter(id: string, characterId: string): Promise<CharacterDocument> { return this.call(`${this.characterPath(id, characterId)}/export`); }
+  importCharacter(id: string, body: VersionedCommand & { document: CharacterDocument }): Promise<CharacterAck> { return this.post(`/campaigns/${encodeURIComponent(id)}/characters/import`, body); }
+  characterPlacements(id: string, characterId: string): Promise<{ tokenId: string; sceneId: string; tokenVersion: number }[]> { return this.call(`${this.characterPath(id, characterId)}/placements`); }
+  linkCharacter(id: string, characterId: string, body: VersionedCommand & { tokenId: string; tokenVersion: number; reason: string }): Promise<CharacterAck> { return this.post(`${this.characterPath(id, characterId)}/placements`, body); }
+  private characterPath(id: string, characterId: string) { return `/campaigns/${encodeURIComponent(id)}/characters/${encodeURIComponent(characterId)}`; }
+  async mapView(id: string): Promise<MapView> {
+    const response = await this.request(`/api/campaigns/${encodeURIComponent(id)}/scene/map-view`, { credentials: 'include', cache: 'no-store' });
+    await this.check(response); return response.json();
+  }
+  async mapImage(id: string, sceneId: string, version: number): Promise<Blob> {
+    const response = await this.request(`/api/campaigns/${encodeURIComponent(id)}/scene/map-image?sceneId=${encodeURIComponent(sceneId)}&version=${version}`, { credentials: 'include', cache: 'no-store' });
+    await this.check(response); return response.blob();
+  }
+  async fog(id: string, sceneId: string): Promise<Fog> {
+    const response = await this.request(`/api/campaigns/${encodeURIComponent(id)}/scenes/${encodeURIComponent(sceneId)}/fog`, { credentials: 'include', cache: 'no-store' });
+    await this.check(response); return response.json();
+  }
+  saveFog(id: string, sceneId: string, body: FogCommand): Promise<Fog> { return this.post(`/campaigns/${encodeURIComponent(id)}/scenes/${encodeURIComponent(sceneId)}/fog`, body); }
   private csrf?: Csrf;
   constructor(private request: typeof fetch = globalThis.fetch.bind(globalThis)) {}
   private async call<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
     const response = await this.request(`/api${path}`, { method, credentials: 'include', headers: { ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(method === 'POST' && this.csrf ? { [this.csrf.headerName]: this.csrf.token } : {}) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+    await this.check(response);
+    return response.status === 204 ? undefined as T : response.json();
+  }
+  private async check(response: Response): Promise<void> {
     if (!response.ok) {
       let message = `请求失败 (${response.status})`;
       try { const data = await response.json(); if (typeof data.message === 'string') message = data.message; } catch { /* Proxies may return HTML. */ }
       throw new ApiError(response.status, message);
     }
-    return response.status === 204 ? undefined as T : response.json();
   }
   async getCsrf(): Promise<Csrf> { this.csrf = await this.call<Csrf>('/auth/csrf'); return this.csrf; }
   async login(username: string, password: string): Promise<Identity> {
@@ -23,9 +197,41 @@ export class Api {
   me(): Promise<Identity> { return this.call('/auth/me'); }
   async logout(): Promise<void> { await this.getCsrf(); await this.call('/auth/logout', 'POST'); this.csrf = undefined; await this.getCsrf(); }
   campaigns(): Promise<Campaign[]> { return this.call('/campaigns'); }
+  private async post<T>(path: string, body: unknown): Promise<T> {
+    if (!this.csrf) await this.getCsrf();
+    return this.call(path, 'POST', body);
+  }
+  createCampaign(body: { requestId: string; name: string }): Promise<Campaign> { return this.post('/campaigns', body); }
+  members(id: string): Promise<Members> { return this.call(`/campaigns/${encodeURIComponent(id)}/members`); }
+  invitations(id: string): Promise<Invitations> { return this.call(`/campaigns/${encodeURIComponent(id)}/invitations`); }
+  createInvitation(id: string, body: VersionedCommand): Promise<CreatedInvitation> { return this.post(`/campaigns/${encodeURIComponent(id)}/invitations`, body); }
+  revokeInvitation(id: string, invitationId: string, body: VersionedCommand): Promise<void> { return this.post(`/campaigns/${encodeURIComponent(id)}/invitations/${encodeURIComponent(invitationId)}/revoke`, body); }
+  removeMember(id: string, username: string, body: VersionedCommand): Promise<void> { return this.post(`/campaigns/${encodeURIComponent(id)}/members/${encodeURIComponent(username)}/remove`, body); }
+  previewInvitation(token: string): Promise<InvitePreview> { return this.post('/invitations/preview', { token }); }
+  acceptInvitation(token: string): Promise<{ campaignId: string }> { return this.post('/invitations/accept', { token }); }
+  registerInvitation(token: string, username: string, password: string): Promise<{ username: string; campaignId: string }> { return this.post('/invitations/register', { token, username, password }); }
   scene(campaignId: string): Promise<Scene> { return this.call(`/campaigns/${encodeURIComponent(campaignId)}/scene`); }
+  scenes(id: string): Promise<Scenes> { return this.call(`/campaigns/${encodeURIComponent(id)}/scenes`); }
+  createScene(id: string, body: VersionedCommand & { name: string }): Promise<SceneReceipt> { return this.post(`/campaigns/${encodeURIComponent(id)}/scenes`, body); }
+  activateScene(id: string, sceneId: string, body: VersionedCommand): Promise<SceneReceipt> { return this.post(`/campaigns/${encodeURIComponent(id)}/scenes/${encodeURIComponent(sceneId)}/activate`, body); }
+  assets(id: string): Promise<Assets> { return this.call(`/campaigns/${encodeURIComponent(id)}/assets`); }
+  async uploadAsset(id: string, command: VersionedCommand, file: File): Promise<{ asset: Asset; campaignVersion: number }> {
+    if (!this.csrf) await this.getCsrf();
+    const body = new FormData(); body.append('command', new Blob([JSON.stringify(command)], { type: 'application/json' })); body.append('file', file);
+    const response = await this.request(`/api/campaigns/${encodeURIComponent(id)}/assets`, { method: 'POST', credentials: 'include', headers: { [this.csrf!.headerName]: this.csrf!.token }, body });
+    await this.check(response); return response.json();
+  }
+  async assetContent(id: string, assetId: string): Promise<Blob> {
+    const response = await this.request(`/api/campaigns/${encodeURIComponent(id)}/assets/${encodeURIComponent(assetId)}/content`, { credentials: 'include', cache: 'no-store' });
+    await this.check(response); return response.blob();
+  }
+  sceneMap(id: string, sceneId: string): Promise<SceneMap> { return this.call(`/campaigns/${encodeURIComponent(id)}/scenes/${encodeURIComponent(sceneId)}/map`); }
+  saveSceneMap(id: string, sceneId: string, body: VersionedCommand & { map: MapConfiguration | null }): Promise<SceneMap> { return this.post(`/campaigns/${encodeURIComponent(id)}/scenes/${encodeURIComponent(sceneId)}/map`, body); }
   async move(campaignId: string, tokenId: string, move: Move): Promise<Token> {
     if (!this.csrf) await this.getCsrf();
     return this.call(`/campaigns/${encodeURIComponent(campaignId)}/tokens/${encodeURIComponent(tokenId)}/moves`, 'POST', move);
   }
+  tokens(id: string, sceneId: string): Promise<AuthoredTokens> { return this.call(`/campaigns/${encodeURIComponent(id)}/scenes/${encodeURIComponent(sceneId)}/tokens`); }
+  createToken(id: string, sceneId: string, body: TokenCommand): Promise<TokenReceipt> { return this.post(`/campaigns/${encodeURIComponent(id)}/scenes/${encodeURIComponent(sceneId)}/tokens`, body); }
+  updateToken(id: string, sceneId: string, tokenId: string, body: TokenCommand): Promise<TokenReceipt> { return this.post(`/campaigns/${encodeURIComponent(id)}/scenes/${encodeURIComponent(sceneId)}/tokens/${encodeURIComponent(tokenId)}`, body); }
 }

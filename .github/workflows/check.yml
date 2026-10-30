@@ -41,6 +41,8 @@ jobs:
       TEST_DATABASE_URL: jdbc:postgresql://localhost:5432/dnd_roll_test
       TEST_DATABASE_USERNAME: dnd_test
       TEST_DATABASE_PASSWORD: ci-database-only
+      BACKUP_PG_DUMP: /usr/lib/postgresql/18/bin/pg_dump
+      BACKUP_PG_RESTORE: /usr/lib/postgresql/18/bin/pg_restore
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-java@v6.1.0
@@ -49,6 +51,14 @@ jobs:
           java-version: '25'
           cache: maven
           cache-dependency-path: backend/pom.xml
+      - name: Install matching-major PostgreSQL archive clients
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          curl --fail --silent --show-error https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc > /dev/null
+          . /etc/os-release
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-18
       - run: ./mvnw -B -ntp -Pintegration verify
         working-directory: backend
       - uses: actions/upload-artifact@v7.0.2
@@ -74,6 +84,8 @@ jobs:
       E2E_PLAYER_USERNAME: browser-player
       E2E_PLAYER_PASSWORD: ci-browser-player-only
       E2E_BASE_URL: http://localhost:8080
+      BACKUP_OPERATOR_USERNAME: browser-dm
+      BACKUPS_DAILY_ENABLED: 'false'
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.1.0
@@ -90,11 +102,112 @@ jobs:
           docker compose -f deploy/compose.yaml config --quiet
           docker compose -f deploy/compose.yaml up --build -d
           curl --fail --retry 40 --retry-delay 3 --retry-all-errors --max-time 5 --retry-max-time 120 http://localhost:8080/api/auth/csrf > /dev/null
-      - run: npm run test:e2e
+      - run: E2E_A03HS_CAPTURE_FILE="$RUNNER_TEMP/a03hs-browser.json" E2E_A03E_CAPTURE_FILE="$RUNNER_TEMP/a03e-controls.json" E2E_A03F_CAPTURE_FILE="$RUNNER_TEMP/a03f-browser.json" E2E_A03G_CAPTURE_FILE="$RUNNER_TEMP/a03g-browser.json" E2E_A03H_CAPTURE_FILE="$RUNNER_TEMP/a03h-browser.json" E2E_A05_CAPTURE_FILE="$RUNNER_TEMP/a05-browser.json" E2E_A06_CAPTURE_FILE="$RUNNER_TEMP/a06-browser.json" npm run test:e2e
         working-directory: frontend
+      - name: Verify persistence and browser-created controls across backend and PostgreSQL restart
+        run: |
+          node scripts/check-campaign-restart.mjs capture "$RUNNER_TEMP/p10-campaign-restart.json"
+          node scripts/check-asset-restart.mjs seed "$RUNNER_TEMP/asset-restart.json"
+          node scripts/check-token-restart.mjs seed "$RUNNER_TEMP/token-restart.json"
+          node scripts/check-map-restart.mjs seed "$RUNNER_TEMP/map-restart.json"
+          node scripts/check-p02-restart.mjs seed "$RUNNER_TEMP/p02-restart.json"
+          node scripts/check-character-restart.mjs seed "$RUNNER_TEMP/character-restart.json"
+          node scripts/check-content-restart.mjs seed "$RUNNER_TEMP/content-restart.json"
+          node scripts/check-dice-restart.mjs seed "$RUNNER_TEMP/dice-restart.json"
+          node scripts/check-combat-restart.mjs seed "$RUNNER_TEMP/combat-restart.json"
+          node scripts/check-timeline-restart.mjs seed "$RUNNER_TEMP/timeline-restart.json"
+          node scripts/check-notes-restart.mjs seed "$RUNNER_TEMP/notes-restart.json"
+          node scripts/check-module-restart.mjs seed "$RUNNER_TEMP/module-restart.json"
+          node scripts/check-lifecycle-restart.mjs seed "$RUNNER_TEMP/lifecycle-restart.json"
+          node scripts/check-operations-restart.mjs seed "$RUNNER_TEMP/operations-restart.json"
+          node scripts/check-attack-previews-restart.mjs seed "$RUNNER_TEMP/attack-previews-restart.json"
+          node scripts/check-movement-restart.mjs seed "$RUNNER_TEMP/movement-restart.json"
+          node scripts/check-materials-restart.mjs seed "$RUNNER_TEMP/materials-restart.json"
+          node scripts/check-portable-restart.mjs seed "$RUNNER_TEMP/portable-restart.json"
+          node scripts/check-bindings-restart.mjs seed "$RUNNER_TEMP/bindings-restart.json"
+          node scripts/check-operation-migrations-restart.mjs seed "$RUNNER_TEMP/operation-migrations-restart.json"
+          docker compose -f deploy/compose.yaml restart db
+          docker compose -f deploy/compose.yaml up -d --wait db
+          docker compose -f deploy/compose.yaml restart backend
+          curl --fail --retry 40 --retry-delay 3 --retry-all-errors --max-time 5 --retry-max-time 120 http://localhost:8080/api/auth/csrf > /dev/null
+          node scripts/check-asset-restart.mjs verify "$RUNNER_TEMP/asset-restart.json"
+          node scripts/check-token-restart.mjs verify "$RUNNER_TEMP/token-restart.json"
+          node scripts/check-map-restart.mjs verify "$RUNNER_TEMP/map-restart.json"
+          node scripts/check-p02-restart.mjs verify "$RUNNER_TEMP/p02-restart.json"
+          node scripts/check-character-restart.mjs verify "$RUNNER_TEMP/character-restart.json"
+          node scripts/check-content-restart.mjs verify "$RUNNER_TEMP/content-restart.json"
+          node scripts/check-dice-restart.mjs verify "$RUNNER_TEMP/dice-restart.json"
+          node scripts/check-combat-restart.mjs verify "$RUNNER_TEMP/combat-restart.json"
+          node scripts/check-timeline-restart.mjs verify "$RUNNER_TEMP/timeline-restart.json"
+          node scripts/check-notes-restart.mjs verify "$RUNNER_TEMP/notes-restart.json"
+          node scripts/check-module-restart.mjs verify "$RUNNER_TEMP/module-restart.json"
+          node scripts/check-lifecycle-restart.mjs verify "$RUNNER_TEMP/lifecycle-restart.json"
+          node scripts/check-operations-restart.mjs verify "$RUNNER_TEMP/operations-restart.json"
+          node scripts/check-attack-previews-restart.mjs verify "$RUNNER_TEMP/attack-previews-restart.json"
+          node scripts/check-movement-restart.mjs verify "$RUNNER_TEMP/movement-restart.json"
+          node scripts/check-controls-restart.mjs "$RUNNER_TEMP/a03e-controls.json"
+          node scripts/check-attack-previews-restart.mjs verify "$RUNNER_TEMP/a05-browser.json"
+          node scripts/check-movement-restart.mjs verify "$RUNNER_TEMP/a06-browser.json"
+          node scripts/check-materials-restart.mjs verify "$RUNNER_TEMP/materials-restart.json"
+          node scripts/check-materials-restart.mjs verify "$RUNNER_TEMP/a03f-browser.json"
+          node scripts/check-portable-restart.mjs verify "$RUNNER_TEMP/portable-restart.json"
+          node scripts/check-portable-restart.mjs verify "$RUNNER_TEMP/a03g-browser.json"
+          node scripts/check-bindings-restart.mjs verify "$RUNNER_TEMP/bindings-restart.json"
+          node scripts/check-bindings-restart.mjs verify "$RUNNER_TEMP/a03h-browser.json"
+          node scripts/check-operation-migrations-restart.mjs verify "$RUNNER_TEMP/operation-migrations-restart.json"
+          node scripts/check-operation-migrations-restart.mjs verify "$RUNNER_TEMP/a03hs-browser.json"
+          node scripts/check-campaign-restart.mjs verify "$RUNNER_TEMP/p10-campaign-restart.json"
+      - name: Restore a complete migration archive into a separate Compose project
+        run: |
+          node scripts/check-campaign-restart.mjs capture "$RUNNER_TEMP/p10-campaign-restore.json"
+          for group in asset token map p02 character content dice combat timeline notes module lifecycle operations attack-previews movement materials portable bindings operation-migrations; do
+            node "scripts/check-$group-restart.mjs" seed "$RUNNER_TEMP/restore-$group.json"
+          done
+          node scripts/check-pending-backup.mjs capture "$RUNNER_TEMP/restore-pending.json"
+          node scripts/check-backup.mjs "$RUNNER_TEMP/deployment-backup.zip" migration
+          docker compose -f deploy/compose.yaml stop backend
+          docker compose -f deploy/compose.yaml cp backend:/var/lib/dnd-roll/backups/write-fence "$RUNNER_TEMP/source-write-fence"
+          export APP_PORT=8081
+          export ASSET_STORAGE_ROOT=/var/lib/dnd-roll/assets/restored
+          docker compose -p dnd-roll-restored -f deploy/compose.yaml build backend web
+          docker compose -p dnd-roll-restored -f deploy/compose.yaml up -d --wait db
+          export RESTORE_DATABASE_URL="jdbc:postgresql://db:5432/$POSTGRES_DB"
+          export RESTORE_DATABASE_USERNAME="$POSTGRES_USER"
+          export RESTORE_DATABASE_PASSWORD="$POSTGRES_PASSWORD"
+          docker compose -p dnd-roll-restored -f deploy/compose.yaml run --rm --no-deps --entrypoint java -v "$RUNNER_TEMP/deployment-backup.zip:/restore/backup.zip:ro" -e RESTORE_DATABASE_URL -e RESTORE_DATABASE_USERNAME -e RESTORE_DATABASE_PASSWORD backend -Dloader.main=io.dndroll.backup.RestoreCommand -cp /app/app.jar org.springframework.boot.loader.launch.PropertiesLauncher /restore/backup.zip /var/lib/dnd-roll/assets/restored
+          docker compose -p dnd-roll-restored -f deploy/compose.yaml up -d backend web
+          curl --fail --retry 40 --retry-delay 3 --retry-all-errors --max-time 5 --retry-max-time 120 http://localhost:8081/api/auth/csrf > /dev/null
+          export E2E_BASE_URL=http://localhost:8081
+          node scripts/check-pending-backup.mjs verify "$RUNNER_TEMP/restore-pending.json"
+          node scripts/check-campaign-restart.mjs verify "$RUNNER_TEMP/p10-campaign-restore.json"
+          for group in asset token map p02 character content dice combat timeline notes module lifecycle operations attack-previews movement materials portable bindings operation-migrations; do
+            node "scripts/check-$group-restart.mjs" verify "$RUNNER_TEMP/restore-$group.json"
+          done
+          node scripts/check-controls-restart.mjs "$RUNNER_TEMP/a03e-controls.json"
+          node scripts/check-attack-previews-restart.mjs verify "$RUNNER_TEMP/a05-browser.json"
+          node scripts/check-movement-restart.mjs verify "$RUNNER_TEMP/a06-browser.json"
+          node scripts/check-materials-restart.mjs verify "$RUNNER_TEMP/a03f-browser.json"
+          node scripts/check-portable-restart.mjs verify "$RUNNER_TEMP/a03g-browser.json"
+          node scripts/check-bindings-restart.mjs verify "$RUNNER_TEMP/a03h-browser.json"
+          node scripts/check-operation-migrations-restart.mjs verify "$RUNNER_TEMP/a03hs-browser.json"
+          npm --prefix frontend run test:e2e -- p10-campaign.spec.ts mobile.spec.ts
+          node scripts/check-attack-previews-restart.mjs resume "$RUNNER_TEMP/restore-attack-previews.json"
+          node scripts/check-movement-restart.mjs resume "$RUNNER_TEMP/restore-movement.json"
+          node scripts/check-materials-restart.mjs resume "$RUNNER_TEMP/restore-materials.json"
+          node scripts/check-portable-restart.mjs resume "$RUNNER_TEMP/restore-portable.json"
+          node scripts/check-bindings-restart.mjs resume "$RUNNER_TEMP/restore-bindings.json"
+          node scripts/check-operation-migrations-restart.mjs resume "$RUNNER_TEMP/restore-operation-migrations.json"
+          node scripts/check-capacity.mjs "$RUNNER_TEMP/p10-capacity.json" &
+          capacity_pid=$!
+          while kill -0 "$capacity_pid" 2>/dev/null; do
+            docker stats --no-stream --format '{{json .}}' >> "$RUNNER_TEMP/p10-memory.jsonl"
+          done
+          wait "$capacity_pid"
       - name: Save container logs
         if: always()
-        run: docker compose -f deploy/compose.yaml logs --no-color > compose.log
+        run: |
+          docker compose -f deploy/compose.yaml logs --no-color > compose.log
+          APP_PORT=8081 docker compose -p dnd-roll-restored -f deploy/compose.yaml logs --no-color > restored-compose.log
       - uses: actions/upload-artifact@v7.0.2
         if: always()
         with:
@@ -103,3 +216,6 @@ jobs:
             frontend/test-results
             frontend/playwright-report
             compose.log
+            restored-compose.log
+            ${{ runner.temp }}/p10-capacity.json
+            ${{ runner.temp }}/p10-memory.jsonl

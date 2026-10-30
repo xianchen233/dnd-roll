@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {readFile,writeFile} from 'node:fs/promises';
+import {Session,required,privateHeaders} from './acceptance-support.mjs';
+const [mode,file]=process.argv.slice(2);assert.ok(['verify','resume'].includes(mode)&&file);
+const e=JSON.parse(await readFile(file,'utf8')),dm=await new Session().login(required('E2E_DM_USERNAME'),required('E2E_DM_PASSWORD')),player=await new Session().login(required('E2E_PLAYER_USERNAME'),required('E2E_PLAYER_PASSWORD'));
+async function snapshot(){return {cards:await Promise.all(e.ids.map(id=>dm.get(e.root+'/characters/'+id))),histories:await Promise.all(e.ids.map(id=>dm.get(e.root+'/characters/'+id+'/history'))),states:await Promise.all(e.ids.slice(0,2).map(id=>dm.get(e.root+'/characters/'+id+'/stabilization'))),history:await Promise.all(e.ids.slice(0,2).map(id=>dm.get(e.root+'/characters/'+id+'/stabilization/history'))),rolls:await dm.get(e.root+'/rolls')};}
+assert.deepEqual(await snapshot(),e.snapshot);for(const p of e.posts)assert.deepEqual(await dm.post(p.path,p.body),p.ack);assert.deepEqual(await snapshot(),e.snapshot);
+const path=e.root+'/characters/'+e.ids[1]+'/stabilization';privateHeaders(await player.call(path,{status:403}));assert.deepEqual(await dm.post(path+'/preview',e.review),e.plan);
+if(mode==='resume'){
+ const before=await dm.get(e.root+'/characters/'+e.ids[1]),helper=await dm.get(e.root+'/characters/'+e.ids[2]),rolls=await dm.get(e.root+'/rolls');const body={...e.review,requestId:randomUUID(),planHash:e.plan.hash,reason:'Continue saved stabilization after actual restart'},ack=await dm.post(path+'/applications',body);assert.deepEqual(await dm.post(path+'/applications',body),ack);
+ const after=await dm.get(e.root+'/characters/'+e.ids[1]);assert.equal(after.version,before.version+1);assert.equal(after.sheet.combat.hp,0);assert.equal(after.sheet.combat.tempHp,before.sheet.combat.tempHp);assert.equal(after.sheet.combat.deathSuccesses,0);assert.equal(after.sheet.combat.deathFailures,0);assert.equal(after.sheet.conditions.length,2);assert.deepEqual(after.sheet.resources,before.sheet.resources);assert.deepEqual(await dm.get(e.root+'/characters/'+e.ids[2]),helper);assert.deepEqual(await dm.get(e.root+'/rolls'),rolls);for(const p of e.posts)assert.deepEqual(await dm.post(p.path,p.body),p.ack);assert.deepEqual(await dm.get(e.root+'/characters/'+e.ids[1]),after);
+ await writeFile(file+'.resumed.json',JSON.stringify(await snapshot(),null,2),{flag:'wx'});console.log('STABILIZATION RESUMED VERIFIED: saved check/plan applies once, HP/tempHP/helper/resources/dice preserved; old receipts do not overwrite later play');
+}else console.log('STABILIZATION VERIFIED: fresh sessions preserve full cards/history/state/dice and original receipts; saved plan stable');

@@ -21,36 +21,48 @@ public final class SceneService {
         <T> T locked(UUID campaignId, Supplier<T> action);
     }
     public interface Events { void changed(UUID campaignId); }
+    public interface MovementPermission { boolean canMove(UUID campaign,UUID token,String actor,Role role); }
+    public interface MovementAudit { void unmeasured(UUID campaign,UUID token); }
     private final Store store;
     private final Events events;
-    public SceneService(Store store, Events events) { this.store = store; this.events = events; }
+    private final MovementPermission permission;
+    private MovementAudit audit=(c,t)->{};
+    public SceneService auditing(MovementAudit audit){this.audit=audit;return this;}
+    public SceneService(Store store, Events events) { this(store,events,(c,t,a,r)->true); }
+    public SceneService(Store store, Events events,MovementPermission permission) { this.store = store; this.events = events;this.permission=permission; }
     public List<CampaignView> campaigns(String actor) { return store.campaigns(actor); }
     public Snapshot snapshot(UUID campaignId, String actor) {
         return store.locked(campaignId, () -> {
             var role = requireMember(campaignId, actor);
             var scene = store.scene(campaignId);
-            var tokens = scene.tokens().stream().map(t -> Movement.view(t, role, actor)).filter(java.util.Objects::nonNull).toList();
+            var tokens = scene.tokens().stream().map(t -> Movement.view(t, role, actor)).filter(java.util.Objects::nonNull).map(t->new TokenView(t.id(),t.name(),t.x(),t.y(),t.version(),t.canMove()&&permission.canMove(campaignId,t.id(),actor,role))).toList();
             return new Snapshot(scene.id(), scene.campaignId(), scene.name(), scene.width(), scene.height(), scene.gridSize(), scene.version(), tokens);
         });
     }
     public TokenView move(UUID campaignId, UUID tokenId, String actor, Command command) {
+        return moveRecorded(campaignId,tokenId,actor,command,()->audit.unmeasured(campaignId,tokenId));
+    }
+    /** Internal measured adapter records its ledger in this same transaction. */
+    public TokenView moveRecorded(UUID campaignId,UUID tokenId,String actor,Command command,Runnable record) {
         return store.locked(campaignId, () -> {
             var role = requireMember(campaignId, actor);
             var scene = store.scene(campaignId);
+            // Current scene visibility is checked before disclosing any receipt state.
+            var token = findToken(scene, tokenId);
+            var visible = Movement.view(token, role, actor);
+            if (visible == null) throw new DomainException("NOT_FOUND", 404, "Token not found");
+            if (!visible.canMove()) throw new DomainException("FORBIDDEN", 403, "You cannot move this token");
+            if (!permission.canMove(campaignId,tokenId,actor,role)) throw new DomainException("FORBIDDEN",403,"Current turn or DM movement permission required");
             var existing = store.receipt(campaignId, actor, command.requestId());
             if (existing != null) {
                 if (!existing.tokenId().equals(tokenId) || !existing.command().equals(command))
                     throw new DomainException("IDEMPOTENCY_CONFLICT", 409, "Request ID was already used with different parameters");
-                // Recheck current visibility/control even when replaying an earlier response.
-                var token = findToken(scene, tokenId);
-                var visible = Movement.view(token, role, actor);
-                if (visible == null) throw new DomainException("NOT_FOUND", 404, "Token not found");
-                if (!visible.canMove()) throw new DomainException("FORBIDDEN", 403, "You cannot move this token");
                 return existing.response();
             }
-            var moved = Movement.move(findToken(scene, tokenId), role, actor, command, scene.width(), scene.height());
+            var moved = Movement.move(token, role, actor, command, scene.width(), scene.height());
             var response = Movement.view(moved, role, actor);
             store.save(campaignId, actor, moved, command, response);
+            record.run();
             events.changed(campaignId);
             return response;
         });

@@ -1,0 +1,20 @@
+package io.dndroll.domain;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import java.util.*;
+class StabilizationDamageEffectTest {
+    final UUID attempt=UUID.fromString("10000000-0000-0000-0000-000000000001");
+    CharacterSheet zero(){var s=CharacterSheet.empty("Target");var b=s.combat();return s.change(s.name(),new CharacterSheet.Combat(12,0,7,b.speed(),1,2,b.acMode(),b.manualAc(),b.source()),s.resources(),List.of(),s.overrides());}
+    List<CharacterSheet.Condition> canonical(){return StabilizationEffect.plan(zero(),CharacterSheet.empty("Helper"),attempt,true,true,true,20).annotations();}
+    CharacterSheet stable(int temp){var s=zero();var b=s.combat();return s.change(s.name(),new CharacterSheet.Combat(12,0,temp,b.speed(),0,0,b.acMode(),b.manualAc(),b.source()),s.resources(),canonical(),s.overrides());}
+    StabilizationDamageEffect.Plan plan(CharacterSheet s,int n,boolean critical){return StabilizationDamageEffect.plan(s,canonical(),true,n,critical,true);}
+    void manual(StabilizationDamageEffect.Plan p,String reason){assertEquals("MANUAL_REQUIRED",p.status());assertTrue(p.reasons().contains(reason),p.reasons().toString());assertNull(p.hp());assertNull(p.absorbed());assertTrue(p.removed().isEmpty());}
+    @Test void normalDamageLeavesZeroHpAndUnconsciousButRemovesOnlyStableAndAddsOneFailure(){var s=stable(0);var p=plan(s,1,false);assertEquals("CANDIDATE",p.status());assertEquals(0,p.hp());assertEquals(0,p.tempHp());assertEquals(0,p.absorbed());assertEquals(0,p.deathSuccesses());assertEquals(1,p.deathFailures());assertEquals(List.of(canonical().getFirst().id()),p.removed());assertEquals(stable(0),s);}
+    @Test void criticalAddsTwoFailuresWithoutDoublingFinalDamageAgain(){var p=plan(stable(7),3,true);assertEquals("CANDIDATE",p.status());assertEquals(2,p.deathFailures());assertEquals(3,p.absorbed());assertEquals(4,p.tempHp());}
+    @Test void fullyAndPartiallyAbsorbedPositiveDamageStillLosesStability(){for(int temp:List.of(0,2,3,7)){var p=plan(stable(temp),3,false);assertEquals("CANDIDATE",p.status());assertEquals(Math.min(temp,3),p.absorbed());assertEquals(Math.max(0,temp-3),p.tempHp());assertEquals(1,p.deathFailures());assertEquals(1,p.removed().size());}}
+    @Test void zeroAndPotentiallyFatalDamageAreManualEvenWithLargeTemporaryHp(){manual(plan(stable(7),0,false),"POSITIVE_DAMAGE_REQUIRED");for(int n:List.of(12,13,220000))manual(plan(stable(100000),n,true),"POTENTIALLY_FATAL_DAMAGE_REQUIRES_MANUAL");}
+    @Test void unchangedOriginReviewAndCanonicalPairAreRequired(){manual(StabilizationDamageEffect.plan(stable(7),canonical(),false,1,false,true),"UNCHANGED_STABILIZATION_ORIGIN_REQUIRED");manual(StabilizationDamageEffect.plan(stable(7),canonical(),true,1,false,false),"DAMAGE_REVIEW_REQUIRED");manual(StabilizationDamageEffect.plan(stable(7),null,true,1,false,true),"CANONICAL_STABILIZATION_PAIR_REQUIRED");var s=stable(7);manual(plan(s.change(s.name(),s.combat(),s.resources(),canonical().subList(1,2),s.overrides()),1,false),"CANONICAL_STABILIZATION_PAIR_REQUIRED");}
+    @Test void rejectsAlteredCountersNonzeroHpAndAdjustments(){var s=stable(7);var b=s.combat();for(var c:List.of(new CharacterSheet.Combat(12,1,7,b.speed(),0,0,b.acMode(),b.manualAc(),b.source()),new CharacterSheet.Combat(12,0,7,b.speed(),0,1,b.acMode(),b.manualAc(),b.source()))){manual(plan(s.change(s.name(),c,s.resources(),s.conditions(),s.overrides()),1,false),"STABILIZATION_VALUES_REQUIRED");}manual(plan(s.change(s.name(),b,s.resources(),s.conditions(),List.of(new CharacterSheet.Override("ac",20,"test"))),1,false),"TARGET_ADJUSTMENTS_REQUIRE_MANUAL");}
+    @Test void invalidInputsAreRejected(){assertThrows(DomainException.class,()->plan(null,1,false));for(int n:List.of(-1,220001,Integer.MAX_VALUE))assertThrows(DomainException.class,()->plan(stable(7),n,false));}
+    @Test void plansAreDeterministicAndImmutable(){var p=plan(stable(7),3,false);assertEquals(p,plan(stable(7),3,false));assertThrows(UnsupportedOperationException.class,()->p.removed().add("x"));assertThrows(UnsupportedOperationException.class,()->p.reasons().add("x"));}
+}

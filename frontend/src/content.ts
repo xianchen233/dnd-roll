@@ -1,0 +1,10 @@
+import type { Source,Sheet } from './characters';
+export const contentTypes=['SPECIES','BACKGROUND','FEATURE','SPELL','ITEM','ATTACK','RULE'] as const;
+export const typeNames:Record<string,string>={SPECIES:'物种',BACKGROUND:'背景',FEATURE:'特性/专长',SPELL:'法术',ITEM:'物品',ATTACK:'攻击',RULE:'仅说明资料'};
+export type ContentData={name:string;aliases:string[];type:string;source:Source;description:string;spellLevel:number;dice:string;damageType:string;rights:string};
+export type ContentEntry=ContentData & {id:string;license:string;attribution:string;changes:string;admitted:boolean;support:'DESCRIPTION'};
+export type Catalog={campaignVersion:number;mode:'REVIEW'|'FREE';approvedIds:string[];entries:ContentEntry[];total:number;structured:number;automated:number};
+export type ContentFilters={q:string;type:string;source:string;rules:string;admitted:string};
+export type ContentChoice={expectedVersion:number;entryId:string;ability:string;castingId:string};
+export type ContentPreview={entryId:string;expectedVersion:number;policyVersion:number;sheet:Sheet;warning:string};
+export type ContentFill=ContentChoice & {requestId:string;policyVersion:number;reason:string};

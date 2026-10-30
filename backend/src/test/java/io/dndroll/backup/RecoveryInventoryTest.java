@@ -1,0 +1,24 @@
+package io.dndroll.backup;
+import static org.junit.jupiter.api.Assertions.*;
+import java.util.*;
+import org.junit.jupiter.api.Test;
+class RecoveryInventoryTest {
+    Map<String,List<String>> schema(){var r=new TreeMap<String,List<String>>();RecoveryInventory.catalog().forEach((k,v)->r.put(k,v.signatures()));return r;}
+    Map<String,BackupArchive.Table> rows(){var r=new TreeMap<String,BackupArchive.Table>();schema().keySet().forEach(k->r.put(k,new BackupArchive.Table(k.equals("stabilization_state")?1:0,"a".repeat(64))));return r;}
+    RecoveryInventory.Report check(Map<String,List<String>> schema,Map<String,BackupArchive.Table> declared,Map<String,BackupArchive.Table> actual){return RecoveryInventory.inspect(schema,declared,actual,RecoveryInventory.Mode.SAME_ID);}
+    void blocked(RecoveryInventory.Report r,String reason){assertEquals("BLOCKED",r.status());assertTrue(r.blockers().contains(reason),r.blockers().toString());}
+    @Test void coversEveryTableIncludingEmptyM3Ledgers(){var r=check(schema(),rows(),rows());assertEquals("SCHEMA_AND_ROWS_VERIFIED",r.status());assertEquals(schema().size(),r.tables().size());for(String name:List.of("attack_preview","attack_preview_receipt","stabilization_state","stabilization_history","stabilization_receipt","stabilization_healing_history","stabilization_damage_history","restabilization_state","restabilization_history","restabilization_healing_history","restabilization_damage_history","instability_healing_history","initial_instability_healing_history"))assertTrue(r.tables().stream().anyMatch(t->t.name().equals(name)),name);}
+    @Test void missingEmptyManifestTableStillBlocks(){var declared=rows();declared.remove("initial_instability_healing_history");blocked(check(schema(),declared,rows()),"DECLARED_TABLE_SET_MISMATCH");}
+    @Test void changedRowsOrDigestsBlock(){for(var bad:List.of(new BackupArchive.Table(2,"a".repeat(64)),new BackupArchive.Table(1,"b".repeat(64)))){var actual=rows();actual.put("stabilization_state",bad);blocked(check(schema(),rows(),actual),"ROW_DIGEST_MISMATCH:stabilization_state");}}
+    @Test void unknownTableNeverSilentlyDisappears(){var s=schema();s.put("future_private_evidence",List.of("column|1|id|uuid|true|"));var data=rows();data.put("future_private_evidence",new BackupArchive.Table(0,"a".repeat(64)));blocked(check(s,data,data),"UNCLASSIFIED_TABLE:future_private_evidence");}
+    @Test void removedTableOrAlteredColumnAndConstraintBlock(){var s=schema();s.remove("attack_preview");blocked(check(s,rows(),rows()),"SCHEMA_TABLE_SET_MISMATCH");s=schema();var changed=new ArrayList<>(s.get("stabilization_state"));changed.add("column|99|unreviewed_source|jsonb|false|");s.put("stabilization_state",changed);blocked(check(s,rows(),rows()),"SCHEMA_SIGNATURE_MISMATCH:stabilization_state");s=schema();changed=new ArrayList<>(s.get("restabilization_history"));changed.removeIf(v->v.startsWith("constraint|f|"));s.put("restabilization_history",changed);blocked(check(s,rows(),rows()),"SCHEMA_SIGNATURE_MISMATCH:restabilization_history");}
+    @Test void remapNeverClaimsExecutableContinuation(){var r=RecoveryInventory.inspect(schema(),rows(),rows(),RecoveryInventory.Mode.CAMPAIGN_REMAP);blocked(r,"REMAP_WRITER_NOT_IMPLEMENTED");assertTrue(r.blockers().contains("REMAP_REQUIRED:TYPED_EVIDENCE_REBIND_REQUIRED:stabilization_state"));assertFalse(r.tables().isEmpty());}
+    @Test void invalidMetadataAndEmptyInventoryBlock(){var data=rows();data.put("stabilization_state",new BackupArchive.Table(-1,"not-a-hash"));blocked(check(schema(),data,data),"INVALID_TABLE_METADATA:stabilization_state");blocked(check(schema(),Map.of(),Map.of()),"ACTUAL_TABLE_SET_MISMATCH");}
+    @Test void reportsAndCatalogCannotBeMutated(){var r=check(schema(),rows(),rows());assertThrows(UnsupportedOperationException.class,()->r.tables().add(new RecoveryInventory.Table("x",0,"x")));assertThrows(UnsupportedOperationException.class,()->r.blockers().add("x"));assertThrows(UnsupportedOperationException.class,()->RecoveryInventory.catalog().clear());}
+    @Test void nativeRestoreCheckRenderingIsAcceptedButChangedOrMissingChecksStillBlock(){
+        var s=schema();s.replaceAll((name,signatures)->signatures.stream().map(v->v.startsWith("constraint|c|")&&v.contains("::text[]")?v.replace("::character varying","::character varying::text").replace("]::text[]","]"):v).sorted().toList());
+        assertEquals("SCHEMA_AND_ROWS_VERIFIED",check(s,rows(),rows()).status());
+        var nativeMember=s.get("campaign_member");s.put("campaign_member",nativeMember.stream().map(v->v.replace("'PLAYER'","'ADMIN'")).toList());blocked(check(s,rows(),rows()),"SCHEMA_SIGNATURE_MISMATCH:campaign_member");
+        s.put("campaign_member",nativeMember.stream().filter(v->!v.startsWith("constraint|c|")).toList());blocked(check(s,rows(),rows()),"SCHEMA_SIGNATURE_MISMATCH:campaign_member");
+    }
+}

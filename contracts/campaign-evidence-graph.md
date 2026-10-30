@@ -1,0 +1,11 @@
+# A24c typed nested evidence extraction (review only)
+
+Read a trusted native archive and matching isolated database/assets in one audited read-only repeatable-read transaction. Extract only declared A08–A23 adapters: character_card/history, dice_roll, combat_action, attack_preview, both stabilization state/history ledgers and six healing/damage journals. Unknown JSON properties or record shapes block. Other runtime/module/file/permission adapters remain follow-up work.
+
+Use current Java record types, never UUID string search or text replacement. Check SQL/JSON identities and versions, exact historical card versions, embedded rolls against stored immutable rolls, dedicated A16/A19 attempt aliases and target/state aliases. A19 originVersion refers to A18; A20/A21 originVersion to shared result history; A22 damageVersion to A21; A23 damageVersion to A18. Check SQL timeline aliases. Canonical annotations reference typed owners; fixed source/content/resource keys stay unchanged. No hash rebinding, authority grant or receipt copying.
+
+Private output contains only declared UUIDs, versions, fixed adapter paths/counts and fixed error codes. No cards, text, actors, source text, paths or credentials. Always BLOCKED/executable=false even if consistent=true. CREATE_NEW; CLI: archive assets output sourceCampaign REVIEW_ONLY. RECOVERY_AUDIT_DATABASE_URL/_USERNAME/_PASSWORD; exit 2 for review, 1 for failure. Writer, full rebinding, permissions/files/modules, new-campaign continuation and M3 closure remain pending.
+
+Authoritative card versions come from after-history, with exact SQL-row-bound before snapshots for subsequent versions; current cards must match the latest history. Event IDs are unique within each owner, correction/link edges resolve in that owner's namespace, and each ledger accepts only its own known statuses. Canonical annotations use the actual recorded roll total, including failed checks. Dedicated A15/A16/A19 provenance checks read source dice receipt fingerprints and actors without exporting or copying receipts.
+
+Consistent means the declared structural/provenance/version/canonical checks passed. It does not mean every saved plan hash has been regenerated, all state transitions have been replayed, or a new-target command is authorized. No source gate in the existing application is relaxed.

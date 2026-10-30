@@ -1,0 +1,12 @@
+import type {Asset,VersionedCommand} from './types';
+import type {Roll} from './dice';
+import type {CombatAction} from './combat';
+export type TimelineMessage={version:number;actor:string;characterId:string;sourceVersion:number;name:string;text:string;attachments:Asset[];edited:boolean;canEdit:boolean};
+export type TimelineEntry={id:string;kind:'RP'|'OOC'|'DICE'|'ACTION';at:string;sessionId:string;data:TimelineMessage|Roll|CombatAction;reply:{id:string;kind:string}|null};
+export type TimelineListing={entries:TimelineEntry[];next:string};
+export type TimelineRevision={version:number;actor:string;name:string;text:string;attachments:Asset[];at:string;reason:string};
+export type TimelineFilters={q:string;kind:string;characterId:string;sessionId:string;from:string;to:string};
+export type TimelineSend=VersionedCommand&{characterId:string;kind:string;text:string;replyTo:string;attachments:string[]};
+export type TimelineEdit=VersionedCommand&{text:string;attachments:string[];reason:string};
+export type TimelineSessions={campaignVersion:number;sessions:{id:string;name:string;archived:boolean}[]};
+export const timelineFilters=():TimelineFilters=>({q:'',kind:'',characterId:'',sessionId:'',from:'',to:''});

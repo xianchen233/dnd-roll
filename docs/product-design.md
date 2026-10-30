@@ -1,3 +1,276 @@
+## A24d 当前入口：已识别 JSON/hash 本地有界通过（2026-10-31，未提交）
+
+接续A24c，按最新余项顺延A24d；只处理A24c已声明的A08–A23 records，不是新团writer。
+先核真实records/JDBC/原hash算法与[字段矩阵](research/campaign-evidence-rebind.md)，
+再独立[契约](../contracts/campaign-evidence-rebind.md)、实际行为RED及实现。明确class/字段
+重绑，保持专用骰/attempt、state/target、时间线/消息/骰/行动硬alias；事件及更正按owner
+namespace派生并核源事件/源目标映射/全库SQL UUID碰撞。角色、共享账本、独立再次稳定
+账本与origin/damage版本分别保留并验证历史闭包，canonical全文按正确owner/target重建。
+
+Preview.hash与六类Entry.planHash先按完整源证据验证旧值，再复用原服务算法/历史来源门
+重生；A22/A23包含完整新A21/A18日志与新hash。私密records仅内存，报告只固定元数据、
+UUID/版本/计数/hash证明/代码。Source/内容身份/资源本地键/自由文本/历史actor/controllers
+保持明确策略，不转为目标授权。A13–A15未持久化的临时review不从摘要猜测；源回执留源。
+
+最终固定代码313离线unit、382完整真实PG/HTTP/WS IT全部零失败/错误/跳过，177契约通过。
+新PG18516/dnd_a24d_identity与独立资产根从原生档案副本恢复；最终16组A08–A23全部
+consistent，覆盖7种持久hash适配器、38份hash证明，重复输出稳定、CREATE_NEW拒绝覆盖。
+后审计全76表/54资产VERIFIED，无源数据或资产改写。所有报告仍BLOCKED/executable=false、
+CLI退出2，不是新团恢复成功。停库清DB环境后313offline再次通过。详见[a24d-tdd.md](a24d-tdd.md)。
+
+329份入口已备份仓库外.tools/a24d-entry；前端/UI、OpenAPI、迁移、旧业务与云补充字节保持，
+14个既有UI构建文件摘要保持。本片未重跑前端/Chrome，不冒称新437/77。分支
+feat/accounts-and-invitations、HEAD c034aa48fe1176f8e4e0711cf22031d04b5f6ebd及空暂存区保持；
+PR #1开工只读核为open/draft、HEAD相同，没有暂存/提交/推送/合并/发布/PR元数据修改。
+只启动本轮新PG18516，已核实际进程身份停止；库/资产/档案/报告保留，未启动常驻Java/网页。
+未操作dnd-roll-local/旧服务/旧数据/旧fence或ui-concepts演示目录。
+
+下一步先界定剩余运行时证据及权限/文件/模组图的单独有界适配器和阻断矩阵，再契约→
+实际RED→验收；之后才隔离事务writer与独立新团重新预览确认/续办。CAMPAIGN_REMAP保持
+BLOCKED，P09/M3不关闭；容量、精确交付HEAD CI、云端与物理真机及其他既有余项继续待办。
+以下历史原文保留，以本入口及[m3-remaining.md](m3-remaining.md)为准。
+
+## A24c 与 UI 适配当前入口（2026-10-31，未提交）
+
+A24c嵌套证据图完成本地有界验收；A07–A24b不重做。先核对真实records/JDBC/
+迁移及[字段矩阵](research/campaign-evidence-graph.md)，再独立[契约](../contracts/campaign-evidence-graph.md)、
+实际行为RED与实现。新离线CampaignEvidenceGraph/Command在同一只读repeatable-read
+事务中先审计原生档案/schema/全库/资产，再按已知records提取A08–A23证据。
+核对角色历史、两本独立账本与origin/damage版本、专用骰/attempt/target别名、
+时间线硬alias、事件/更正闭包、canonical注记和固定Source。源专用骰回执仅用于
+只读指纹来源核验，不输出、不复制、不变成新团授权。未知结构/字段/状态明确阻断。
+报告只含类型化UUID/版本/路径/计数和固定代码，不含私密Card/文本/账号/凭据。
+
+本轮完整301unit与377真实PG/HTTP/WS IT通过；最终来源修复后，303离线unit及5项真实PG专项通过（不同IT共378），177契约通过。原生档案副本
+恢复在新PG18514/dnd_a24c_identity及独立资产根，最终构建16组A08–A23证据图
+一致、稳定重试/CREATE_NEW通过；后审计76表/54资产VERIFIED，数据未变。
+全部图仍BLOCKED/executable=false、CLI退出2；不是已恢复新团。
+详见[a24c-tdd.md](a24c-tdd.md)，完整回归与最终专项分开记录，不称一次378项全量；最终专项及原生报告对应最终构建。
+
+用户追加的2026-10-26新UI已适配真实React/Pixi：v5门扉登录、v4桌面材质及五套
+本地配色，保留全部业务/权限/原工作区。437前端测试/生产构建及最终固定构建
+77真实Chrome零retry通过；1440/390px截图和五配色保留选择通过。
+演示目录只读，复制两张源图并核hash；79份入口已有frontend改动逐字节保持。
+详见[UI适配及证据边界](ui-adaptation.md)。不把历史A24a的435/77算作本轮结果。
+
+314份入口未提交文件及云补充备份于仓库外.tools/a24c-entry；UI clean入口另备份。
+分支feat/accounts-and-invitations、HEAD c034aa48fe1176f8e4e0711cf22031d04b5f6ebd、
+空暂存区保持；PR #1实时核为open/draft且HEAD相同，连接器429后使用GCM只读核查。
+没有暂存/提交/推送/合并/发布/PR元数据修改，不操作dnd-roll-local/旧数据/旧fence。
+新Java18177/网页18178/PG18514已核实际进程身份停止，数据库/资产/报告保留。
+
+下一步先推进完整JSON重绑定/hash再生，再权限/文件/模组图、隔离事务writer与
+独立新团续办，各自契约→实际RED→验收。CAMPAIGN_REMAP保持BLOCKED，P09/M3
+仍未关闭；容量、精确交付HEAD CI、云端与物理真机后置，全部其他未完成项保留。
+以下历史原文保留，以本入口及[全部余项](m3-remaining.md)为准。
+
+## A24b 当前入口：类型化SQL身份建议本地有界通过（2026-10-31，未提交）
+
+A07–A24a保持。本轮不新增5R效果；先核对当前records/JDBC/关系schema，形成
+[字段/namespace/版本/alias/hash/回执矩阵](research/campaign-remap-fields.md)，再
+[独立只读契约](../contracts/campaign-remap-plan.md)与实际失败测试。2个子agent
+承担字段盘点、只读风险审查，主线整合代码与真实验收；所有任务已完成，无后台代理。
+
+新增离线CampaignRemapPlan/Command：同一只读repeatable-read Connection中复用
+A24a完整档案/schema/76表行摘要/资产检查，之后才提取所选团的SQL身份。76表每列
+有策略，三类无campaign_id历史经角色/笔记/RP父表限制，账号和全局回执不入复制
+范围；团内源回执仅统计并保留。明确runtime namespace生成稳定新ID建议，SQL版本
+原值列出；目标/全库已占用UUID、引用namespace/闭包、表/列/scope/身份行覆盖校验。
+时间线ID必须复用所属消息/骰/行动ID；已知alias显式列出，不独立换ID。自由文本、
+内容键、资源键、JSON与opaque归档不扫描替换；seq/ordinal、内容身份另需审核。
+
+实际6unit RED、4真实PG RED、timeline alias额外1unit RED后实现；最终278离线unit、
+373完整真实PG/HTTP/WS IT零失败/错误/跳过，177契约通过。既有前端/OpenAPI/迁移/
+云补充字节保持；前端435/构建和77Chrome沿用A24a证据，本轮未改界面、不冒称重跑。
+独立新PG18512：原生P09档案副本经RestoreCommand恢复到本轮新库/新资产根，用
+A08–A23的16个真实历史战役生成76表提案，SQL闭包与时间线alias核对通过；同seed
+重复结果逐字节相同，CREATE_NEW拒绝已有输出。16份报告均BLOCKED/executable=false、
+CLI退出2；后置全库/54资产审计VERIFIED，证明只读规划未改源。新PG按身份停机、
+数据保留，清DB环境后278离线再通过。详见[a24b-tdd.md](a24b-tdd.md)。
+
+A24b仅完成SQL身份建议与缺口清单，尚无完整JSON重绑定或writer。下一步A24c先做
+A08–A23嵌套证据图的类型化提取与一致性校验，保持专用骰/尝试/目标别名、独立
+账本版本、canonical注记和Source固定内容，再契约与实际RED；hash重建、权限/文件/
+模组图、事务writer及独立新团续办按后续切片。CAMPAIGN_REMAP仍BLOCKED。完整
+P09/M3、容量、精确交付HEAD日志未完，云端/物理真机后置；其余规则未完项保留。
+
+307入口文件及云补充已备份；原分支feat/accounts-and-invitations、HEAD c034aa4、
+草稿PR #1与空暂存区保持，无提交/推送/合并/发布/PR修改，不操作dnd-roll-local及
+数据或旧fence。只有本轮新PG18512曾启动，现已停止；旧服务/档案/数据保留。
+[全部分工](work-packages.md)/[余项](m3-remaining.md)。以下历史原文保留，以本段为准。
+
+## A24a 当前入口：M3清单与原生同ID恢复本地有界通过（2026-10-30，未提交）
+
+A07–A23不重做。本轮不是新规则效果；先核对P09/A03h实现与既有契约，形成
+[来源/版本/骰/回执/注记矩阵](m3-recovery-matrix.md)，再[独立只读契约](../contracts/recovery-audit.md)
+与实际RED。P09整部署同ID恢复与A03h新ID定义恢复分开；后者不含运行时历史。
+
+新增离线RecoveryInventory/RecoveryAuditCommand及34次迁移/76张public表显式清单。
+只读repeatable-read核schema/完整表集（含空表）/行数/摘要/全部已提交资产hash，
+未知表/列/FK、表遗漏、行或资产变化阻断；新报告CREATE_NEW，不输出游戏内容/
+凭据/主机路径，不改fence。SAME_ID全符才VERIFIED；CAMPAIGN_REMAP明确BLOCKED、
+退出2及REMAP_WRITER_NOT_IMPLEMENTED。无新HTTP/前端行为/数据库迁移，旧规则保持。
+
+实际7unit RED与3真实PG RED后通过，原生恢复再复现CHECK等价表示差异，新增1unit/
+1真实PG RED后显式兼容13条已审阅写法，改值/删约束仍阻断。最终270离线unit；
+368完整真实PG/HTTP/WS IT及修复后4恢复专项IT通过（不同IT共369）；
+435前端/构建、177契约、77完整Chrome零retry。16个独立浏览器战役保存A08–A23
+证据/旧回执/方案，实际P09迁移备份下载并保持源写栅栏；76表/34迁移/54资产，
+18张必要运行时证据表均非空。源三服务停机后，通过原生RestoreCommand恢复到
+新PG/新资产根，离线审计76表通过；新会话16组全快照/旧回执/私密门/保存方案
+核对，16组待办各续办一次，再真正停启Java/网页/PG深比较完整续办后快照通过。
+原源库单独只读审计仍与档案一致；两套六服务最终核身份停止、保留数据和源fence。
+停库清DB环境后270离线unit再通过。详见[a24-tdd.md](a24-tdd.md)。
+
+独立战役ID重映射writer仍未实现，审计不会假称通过；下一步A24b先列类型化字段/
+namespace/固定内容身份/权限/源回执/hash策略与可审阅映射计划，再契约和实际RED，
+之后writer/独立新团续办。完整P09/M3未关闭；容量、精确交付HEAD日志待，云端/
+物理真机后置。连续受伤/再Help、自动死豁/死亡/复活、1d4小时、完整状态/动作/
+资源、公开自动应用及复杂范围等未完项保留。[全部分工](work-packages.md)/[余项](m3-remaining.md)。
+
+297入口文件/云补充逐字节备份；原分支feat/accounts-and-invitations、HEAD c034aa4、
+草稿PR #1不变，无暂存/提交/推送/合并/发布/PR修改，不操作dnd-roll-local及数据/
+旧fence。新源18508/18173/18174及恢复18510/18175/18176均已停止。以下历史原文
+保留，以本段为准。
+
+## A23原A18直接治疗补充（2026-10-29，未提交）
+
+稳定后首次受伤的原结果未改时，DM可裁定真实治疗量、审阅后预览并确认：HP上限
+封顶、死豁归零，仅移除唯一原0HP昏迷，临时生命/资源/原骰/施救者保持。核对
+A16→A18原来源/方案hash/完整状态与卡，新方案绑定整份原伤害日志，原子写治疗
+及历史/回执。未应用的新Help证据原样保留，父版本推进使其不能继续应用；当前
+权限先于旧回执，玩家历史不含私有声明，界面核对本入口历史。A17/A20/A22来源门
+保持，无治疗骰/资源/动作/完整状态引擎。见[矩阵](research/initial-instability-healing-5r.md)、
+[契约](../contracts/initial-instability-healing-effects.md)和[实际TDD](a23-tdd.md)。
+下一步整理M3恢复总清单与独立战役重映射；云端/真机后置，以下历史保留。
+
+## A22原失稳结果治疗补充（2026-10-29，未提交）
+
+再次稳定后受伤的原结果未改时，可由DM裁定真实治疗量、审阅后预览并确认：HP
+上限封顶，死豁归零，仅解除唯一原0HP昏迷；临时生命/资源/施救者/原骰保持。
+完整重建A16→A18→A19→A21，核对原A21方案hash/前后状态及日志版本，并将整份
+原伤害日志绑定新方案。双账本HEALED/完整卡/历史/日志/回执原子写，当前权限先
+于旧回执；新界面核对本入口治疗历史，不误报其他治疗完成。旧A20双记录支持门
+保持，无治疗骰/资源/行动或完整状态执行。见[5R矩阵](research/instability-healing-5r.md)、
+[契约](../contracts/instability-healing-effects.md)与[实际TDD](a22-tdd.md)。
+M3未关闭，云端/真机后置；以下历史保留。
+
+## A21再次稳定后受伤补充（2026-10-29，未提交）
+
+DM可对保存的再次稳定结果未改的目标，审阅最终伤害与重击属性，预览后确认首次
+有界受伤。HP仍0，先扣临时生命，只移除本次稳定并保留原0HP昏迷，死豁失败普通1/
+重击2。临时生命全吸收也失稳；金额不再倍增，零或达到maxHP转人工。完整重建
+A16→A18→A19来源、三版本/hash/双账本原子写、私有声明隔离和精确重试已落实。
+新失稳状态不误进旧Help/治疗入口；原骰/资源/施救者不改，无自动死亡/连续伤害/
+死豁或完整状态引擎。见[5R矩阵](research/restabilization-damage-5r.md)、
+[契约](../contracts/restabilization-damage-effects.md)和[实际TDD](a21-tdd.md)。
+M3未关闭，云端/真机后置；以下历史保留。
+
+## A20再次稳定后治疗补充（2026-10-29，未提交）
+
+原A19再次稳定后未改的目标，可由DM声明已裁定真实治疗，先预览再确认：HP上限
+封顶，死豁0/0，准确移除新稳定和原0HP昏迷两条来源记录；临时生命/资源/原骰
+保持。完整重建A16→A18→A19并绑定双账本/完整卡/三版本/hash，不靠记录名称
+或手工编辑推断来源。原/新施救者后续编辑不妨碍历史治疗，当前目标后续编辑则
+转人工。双账本/角色历史/新日志/回执原子保存，私有声明不进玩家历史，未知结果
+精确重试不会重复治疗或覆盖后续游玩。旧A17/A18边界保持。见[5R矩阵](research/restabilization-healing-5r.md)、
+[契约](../contracts/restabilization-healing-effects.md)和[实际TDD](a20-tdd.md)。
+M3未关闭，云端/真机后置；以下为历史。
+
+## A19再次稳定补充（2026-10-29，未提交）
+
+原A18失稳后未改目标可经新的独立Help医药检定再次稳定。失败也持久，新动作
+替代旧尝试；成功后预览再确认，HP0/tempHP保持、死豁归零，原0HP昏迷记录逐字
+保留，新增本次来源化稳定记录。不重用旧A16/A18或普通骰，不自动醒来/治疗/
+计时/投死豁/消耗资源。服务器完整重建旧A16应用和A18伤害结果，绑定原日志及
+本次双方完整快照/版本和服务器骰；原施救者后续编辑不影响历史，但新施救者
+检定后须未改。独立私有账本、未知结果精确重试、权限与安全角色历史均落实。
+见[5R矩阵](research/restabilization-5r.md)、[契约](../contracts/restabilization-effects.md)
+与[实际TDD](a19-tdd.md)。M3未关闭，云端/真机后置；以下为历史。
+
+## A18首次受伤失稳补充（2026-10-29，未提交）
+
+原A16稳定后未改目标可由DM声明最终受伤金额及是否来自重击，审阅例外后预览，
+再确认首次非致死伤害：HP仍0、tempHP先扣；原稳定记录移除、0HP昏迷保留，
+死豁失败普通1/重击2。tempHP全吸收也属于受伤，critical不再倍增已裁定金额。
+0伤害不应用、达到生命上限保守转人工；连续受伤、自动死豁/死亡/重击判断、
+完整状态与资源未执行。通用0HP伤害门保持。完整原卡/服务器骰/版本/hash绑定、
+精确重试、私有记录与安全角色历史均落实，原A16/A17后端保持。
+见[来源矩阵](research/stabilization-damage-5r.md)、[契约](../contracts/stabilization-damage-effects.md)
+与[实际TDD](a18-tdd.md)。M3未关闭，云端/真机后置；以下为历史。
+
+## A17治疗解除补充（2026-10-29，未提交）
+
+原A16稳定后未改目标可由DM输入已裁定普通真实治疗量，审阅合法来源/例外，预览
+后另行确认恢复生命并解除原稳定/0HP昏迷两条来源记录。HP上限封顶，tempHP、
+资源、原检定与施救者保持；不执行治疗骰/资源/行动/倒地或其他完整状态效果。
+完整原卡、原服务器骰、独立尝试与版本/hash绑定，未知结果精确重试，权限先于
+旧回执，治疗私有理由不进入玩家角色历史。治疗历史不可变，原A16证据保留。
+后续再进入普通0HP时可独立审阅新的Help，旧证据不自动应用。
+见[5R矩阵](research/stabilization-healing-5r.md)、[契约](../contracts/stabilization-healing-effects.md)
+与[实际TDD](a17-tdd.md)。A07–A16不重做，M3未关闭，云端/真机后置；以下为历史。
+
+## A16b有界效果补充（2026-10-28，未提交）
+
+普通角色0HP伤势稳定已有DM显式入口：确认Help动作/接触与无例外，保存专用服务器
+WIS医药检定，再预览和确认稳定。失败也保存；成功保持0HP、临时生命与资源，
+死豁归零并添加来源化稳定及0HP昏迷记录。界面明确仍昏迷，无自动唤醒/治疗/计时。
+专用尝试/双卡版本/服务器骰与方案绑定，精确未知结果重试；私有检定和操作理由不
+进入玩家角色历史。V27增加独立状态/历史/回执，保留旧行为。来源/矩阵及限制见
+[查证](research/stabilization-5r.md)、[契约](../contracts/stabilization-effects.md)、
+[实际TDD](a16-tdd.md)。A07–A15不重做，M3未关闭，云端/真机后置；以下为历史。
+
+## A16a内部计算补充（2026-10-28，未提交）
+
+普通角色0HP稳定已完成来源/支持矩阵、内部契约和纯领域计算；成功方案仍为0HP且
+昏迷、死豁归零，临时生命保持。此计算未接入任何业务入口：持久专用医药检定、
+独立确认应用及中文界面尚未实现，旧0HP回退保持，不能称稳定自动执行已可用。
+见[来源](research/stabilization-5r.md)、[契约](../contracts/stabilization-effects.md)、
+[实际TDD](a16-tdd.md)。A07–A15不重做，M3未关闭，云端/真机后置。以下原文保留。
+
+## A15有界效果补充（2026-10-28，未提交）
+
+新增原击昏的动作急救：DM审阅普通WIS医药施救者、动作/接触及例外；专用服务器
+骰先保存，失败也留痕，只读方案再显式解除。仅A11/A12未改原目标，生命/资源保持，
+醒来仍倒地。普通骰不能冒充专用尝试，读与同请求重试不重掷，旧回执不覆盖后续记录。
+0HP稳定及优劣势/修正器/覆盖、完整动作预算/距离/状态引擎仍人工；A13/A14保持。
+见[来源矩阵](research/knockout-first-aid-5r.md)、[契约](../contracts/knockout-first-aid-effects.md)
+和[实际TDD](a15-tdd.md)。M3余项与最终门槛按[m3-remaining.md](m3-remaining.md)保留。
+
+## A14有界效果补充（2026-10-27，未提交）
+
+新增原击昏短休完成解除：仅A11/A12应用后未另行修改的目标卡；DM审阅并声明连续
+游戏内休息时长及中断情况，服务器预览后显式解除，保存分钟数与未中断结论。
+生命/临时生命/资源保持，满HP可解除，醒来仍倒地。无现实时间计时或自动资源恢复；
+未完成/中断/来源变化、重新开始休息和急救仍人工。A13治疗及通用编辑语义保持。
+见[来源矩阵](research/knockout-rest-5r.md)、[契约](../contracts/knockout-rest-effects.md)
+及[实际TDD](a14-tdd.md)。M3余项与最终门槛按[m3-remaining.md](m3-remaining.md)保留。
+
+## A13有界效果补充（2026-10-27，未提交）
+
+新增A11/A12击昏后的独立治疗入口：仅未另行修改的目标卡，DM先裁定治疗量与资源，
+审阅例外后读取服务器方案，再显式原子恢复实际HP和移除原击昏注记。满HP不解除；
+临时生命不算治疗；醒来仍倒地。通用加血/编辑/更正不推断解除，短休、急救和完整
+状态执行仍人工。见[来源矩阵](research/knockout-healing-5r.md)、[契约](../contracts/knockout-healing-effects.md)
+及[实际TDD](a13-tdd.md)。M3剩余范围与最终验收按[m3-remaining.md](m3-remaining.md)保留。
+
+## A12有界效果补充（2026-10-27，未提交）
+
+新增独立普通匕首STR/DEX近战击昏：明确近战/投掷方式、例外审阅、服务器方案、
+独立确认再原子应用生命与昏迷记录。投掷及轻型额外攻击/迅击/偷袭等未支持效果
+仍人工；A11短棒与旧伤害/箭支/死亡配置保持。短休、治疗/急救解除及昏迷关联规则
+仍由DM处理。见[来源矩阵](research/dagger-knockout-5r.md)、[契约](../contracts/dagger-knockout-effects.md)
+及[实际TDD](a12-tdd.md)。M3与其余门槛按[m3-remaining.md](m3-remaining.md)保留。
+
+## A11有界效果补充（2026-10-27，未提交）
+
+新增独立的普通短棒STR近战击昏记录：DM明确选择和审阅后，服务器从保存伤害
+推导1HP/tempHP=0，独立确认再原子应用并记录昏迷。短休开始/结束、治疗/急救解除
+以及昏迷的失能/倒地/掉落/速度/攻防/专注仍由DM处理，醒来仍倒地；不是完整状态
+执行器。旧伤害/箭支/死亡配置保持。来源与范围见[矩阵](research/knockout-effects-5r.md)，
+契约见[knockout-effects.md](../contracts/knockout-effects.md)，实际结果见[a11-tdd.md](a11-tdd.md)。
+M3及其余范围仍按[m3-remaining.md](m3-remaining.md)保留，云端/真机后置。
+
 # 线上 D&D 虚拟桌面设计方案 v0.2
 
 日期：2026-10-18。状态：产品设计基线。2026-10-18 用户已授权进入实现，实施阶段和测试状态见 [实施路线](implementation-plan.md)。
@@ -117,6 +390,12 @@ DM 手动揭露或遮盖地图，全队共享已揭露区域；单位隐藏独�
 当前角色控制者可以结束回合；DM 可跳过、调整顺序、切换行动单位，不设强制倒计时。首版通过 DM 放行处理回合外的移动，回合外投掷和裁定仍可记录；不能将“限制移动”扩展为封禁所有回合外操作。
 
 第二阶段自动结算：声明行动 → 收集规则与数值快照 → 计算候选结果与解释 → DM 确认 → 一次应用数值/资源/状态 → 发布按权限裁剪的记录。DM 可开启公开行动自动应用；暗骰始终先交 DM，应用结果与公开细节是独立选择。
+
+当前A10另有普通怪物0HP死亡配置：DM明确选择怪物即死并审阅例外，服务器推导生命归零，另行应用时原子保存死亡注记。死亡注记不自动删除棋子、移出先攻或执行全部死者规则；角色死亡豁免、击昏和复活等仍人工。见 [来源矩阵](research/monster-death-5r.md) 与 [契约](../contracts/monster-death-effects.md)。A08/A09原回退门保持。
+
+当前A09另有普通短弓DEX箭支配置：DM明确映射本团箭支计数器，服务器按每次攻击耗1（失手也耗），与目标受支持的生命变化在单独应用时原子处理。其他资源、库存和战后回收仍人工；详见 [短弓箭支矩阵](research/ammunition-effects-5r.md) 与 [契约](../contracts/ammunition-effects.md)。
+
+当前A08仅支持普通武器伤害在保持正HP时先扣临时生命、再扣HP的服务器方案，DM明确确认后另行应用。0HP、状态和死亡记录转人工；专注/受伤触发等仍须DM审阅。具体来源与执行边界见 [生命扣减支持矩阵](research/damage-effects-5r.md) 和 [契约](../contracts/damage-effects.md)。
 
 未支持的规则进入人工裁定，不静默按另一版本执行。自动化以 5R 为基线逐项标明适用内容、扩展版本和例外，先覆盖明确行动，不承诺所有扩展都可自动处理。状态定义和持续时间提示也采用当前版本，不沿用旧版同名状态的数值解释。
 
